@@ -1,81 +1,88 @@
-Stylus is a browser extension to restyle the websites via CSS themes, compatible with Chrome, Firefox, and any Chromium-based browsers.
+<div align="center">
 
-## Highlights
+<img src="graphics/icon-512.png" width="128" alt="白い熊 Stylus">
 
-* No analytics/tracking - this is our foundational principle as Stylus was created solely because the original Stylish extension was sold to a Web analytics company.
-* Lots of themes in external galleries like [USW](https://userstyles.world/explore), [USO archive](https://uso.kkx.one/browse/categories), [greasyfork](https://greasyfork.org/en/scripts/by-site/*?language=css):
-  * click the `Find` button in the popup UI,
-  * click the screenshot to apply the style to the website,
-  * click the screenshot again to uninstall the style.
-* [UserCSS](https://github.com/openstyles/stylus/wiki/Usercss) styles with advanced customization installable from any raw plain text URL.
-* Cloud sync for Dropbox, GDrive, OneDrive, or any WebDAV-compatible server.
-* Backup to a JSON file compatible with other userstyles managers.
-* Auto-update for styles, configurable in each style and globally in the options.
-* Lightweight content script (~10kB) in the web pages runs in about a millisecond.
-* Lots of options to configure UI and behavior.
-* Built-in editor for your own CSS themes (CSS/LESS/Stylus) that highlights problems using up-to-date linters ([Stylelint](https://stylelint.io/) and [CSSLint-mod](https://github.com/openstyles/csslint-mod)) with customizable rules.
-* Support for external IDE or advanced editor via the [live reload feature](https://github.com/openstyles/stylus/wiki/Writing-UserCSS#live-reload-on-the-fly-previewingwhen-developing-styles-locally-in-another-editoride) e.g. you can write SASS/SCSS by setting up a build step to produce standard CSS in a separate file that will be tracked by Stylus.
+# 白い熊 Stylus
 
-<details><summary>
+**Restyle the web with your own CSS — in 白い熊 火狐, on the desktop and on Android.**
 
-## Screenshots
+A personal fork of [Stylus](https://github.com/openstyles/stylus), the userstyle manager,
+carrying its own add-on ID and its own black-and-yellow identity so it installs **alongside**
+an unmodified Stylus rather than replacing it.
 
-</summary>
+📥 **[Latest release](https://github.com/ShiroiKuma0/shiroikuma-kako-stylus/releases/latest)** —
+a Mozilla-signed `.xpi` that installs in any Firefox.
 
-* Manager
+</div>
 
-   ![Style manager](.github/screenshots/manager.png)
+## What it does
 
-* Installer
+Inject your own CSS into any site, matched per URL, domain or regexp, each style switchable on
+and off from the toolbar. A full CodeMirror editor with live Stylelint / CSSLint linting, one-click
+installs from the style galleries, **UserCSS** styles with per-style configuration from any raw
+URL, automatic style updates, and library sync to Dropbox, Google Drive, OneDrive or any WebDAV
+server. No analytics, no tracking — upstream's founding principle, kept.
 
-  ![Installer](.github/screenshots/installer.png)
+## What this fork changes
 
-* Editor
+The fork is, so far, a **pure identity layer** — no behaviour is patched. That is deliberate: the
+smaller the diff, the more cleanly it replays onto each new upstream release.
 
-  ![Style editor](.github/screenshots/editor.png)
+### 🆔 Its own add-on identity
 
-* Popup search
+`stylus@shiroikuma`, permanently ours. AMO will not sign an ID registered to somebody else, add-on
+updates are keyed to the ID forever, and owning it is what lets this build sit beside an unmodified
+Stylus in the same profile.
 
-  ![Popup inline search](.github/screenshots/popup-search.png)
+### 🎨 A traced black-and-yellow icon
 
-* Popup config
+Upstream's own icon, run through potrace and redrawn in the house palette — pure yellow `#FFFF00`
+on black. Nothing is freehand, so it still reads as the same extension. All 26 assets, including
+upstream's washed-out and all-disabled toolbar states and the whole `light/` set for light
+toolbars, regenerate from one master SVG via `graphics/make-icons.py`.
 
-  ![Popup config for usercss](.github/screenshots/popup-config.png)
+### 🤖 Declared for Firefox on Android
 
-* Manager config
+Upstream ships no `gecko_android` key at all; this fork declares one, so the build is a first-class
+Android add-on rather than a desktop-only one.
 
-  ![Style manager config for usercss](.github/screenshots/manager-config.png)
+### 🔗 Our name and our links throughout
 
-* Options
+The extension name, the browser-action tooltip, the editor's window title, the options page title,
+the links panel and the crash reporter all carry this fork's name and point at this repository.
+Localized strings are renamed **at build time** from an explicit key allowlist, so `src/_locales/`
+stays byte-identical to upstream and its weekly Transifex churn never conflicts with us.
 
-  ![Options](.github/screenshots/options.png)
+### 🔢 A version that says which upstream it is
 
-</details>
+`<upstream version>.<our build>` — `2.4.10.1` is our first build on upstream's 2.4.10.
 
-## Releases
+## Building
 
-1. [Chrome Web Store](https://chromewebstore.google.com/detail/stylus/clngdbkpkpeebahjckkjfobafhncgmne) or [beta](https://chromewebstore.google.com/detail/stylus-beta/apmmpaebfobifelkijhaljbmpcgbjbdo)<br>for modern Chrome (v128+) and Chromium-based browsers like Brave, Opera, Vivaldi.
+Needs **Node ≥ 24** and **pnpm**.
 
-2. [Mozilla addons](https://addons.mozilla.org/firefox/addon/styl-us/) or [beta](https://github.com/openstyles/stylus/releases) (as an xpi file)<br>for Firefox and any Gecko-based browser.
+```bash
+pnpm i
+pnpm build-firefox        # -> dist-firefox-mv2/
+node tools/build-fork.mjs # bump the counter, build, and drop the .xpi in ~/tmp
+```
 
-3. [Zip file](https://github.com/openstyles/stylus/releases) with `-mv2` suffix to _load as an unpacked extension_<br>for older Chromium-based browsers which only support ManifestV2 version.
+Load `dist-firefox-mv2/` through `about:debugging` while iterating — 白い熊 火狐 is built with
+`MOZ_REQUIRE_SIGNING` unset, so it takes unsigned extensions directly and no AMO round-trip is
+needed until release.
 
-## Pre-release test builds (nightlies) [![badge](https://github.com/openstyles/stylus/actions/workflows/ci.yml/badge.svg)](https://github.com/openstyles/stylus/actions/workflows/ci.yml)
+## Credits and licence
 
-1. click a workflow entry in https://github.com/openstyles/stylus/actions/workflows/ci.yml,
-2. download the file in `Artifacts` - this requires a github.com account,
-3. install it, see [the instruction](https://github.com/openstyles/stylus/wiki/Install-Stylus-from-GitHub).
+Built on [Stylus](https://github.com/openstyles/stylus) by the Stylus Team, which is itself the
+community's continuation of Jason Barnabe's original Stylish after that name was sold to an
+analytics company. Upstream's documentation wiki remains the reference for
+[writing styles](https://github.com/openstyles/stylus/wiki/Writing-styles) and
+[UserCSS](https://github.com/openstyles/stylus/wiki/Usercss).
 
-## Asking questions, participating, contributing
+### Licence: [GPLv3](./LICENSE)
 
-* Bugs, discussions, questions, ideas, pull requests: https://github.com/openstyles/stylus
-* Wiki for many common tasks and questions: https://github.com/openstyles/stylus/wiki
-* Discord: https://discordapp.com/widget?id=379521691774353408 ![Discord](https://img.shields.io/discord/379521691774353408.svg)
-* Helping with translation: https://explore.transifex.com/github-7/Stylus/
-* Guidelines and more info: https://github.com/openstyles/stylus/CONTRIBUTING.md
-
-## License: [GPLv3](./LICENSE)
-
-* Copyright &copy; 2017-2025 [Stylus Team](https://github.com/openstyles/stylus/graphs/contributors)
-* Copyright &copy; 2005-2014 [Jason Barnabe](jason.barnabe@gmail.com) for the ever diminishing parts of the original [Stylish](https://github.com/stylish-userstyles/stylish/).
-* Licenses of modified external libraries: [vendor-overwrites](./src/vendor-overwrites).
+* Copyright &copy; 2026 白い熊, for the changes in this fork.
+* Copyright &copy; 2017-2025 [Stylus Team](https://github.com/openstyles/stylus/graphs/contributors).
+* Copyright &copy; 2005-2014 Jason Barnabe, for the ever diminishing parts of the original
+  [Stylish](https://github.com/stylish-userstyles/stylish/).
+* Licences of modified external libraries: [vendor-overwrites](./src/vendor-overwrites).
