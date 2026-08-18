@@ -10,6 +10,7 @@ const {RawEnvPlugin} = require('./wp-raw-patch-plugin');
 const {
   nukeHtmlSpaces, transESM2var, transSourceMap, BUILD, DEV, HMR, FLAVOR, MANIFEST, MV3, SRC,
 } = require('./util');
+const fork = require('./fork');
 const augment = require('./webpack.base');
 const {
   CSS, JS, SHIM, OUTPUT_MODULE, SEP_ESC, THEME_NAMES, THEME_PATH, CM_PATH, DST, ALIASES,
@@ -108,6 +109,9 @@ function makeManifest(files) {
       else base[key] = val;
     }
   }
+  // shiroikuma fork: upstream's version with our build counter appended as a fourth
+  // component. See tools/fork.js — the family's "+NNN" form cannot appear in a manifest.
+  base.version += '.' + fork.BUILD;
   let ver = base.version;
   if (BUILD === 'firefox') {
     delete base.key;
@@ -220,7 +224,9 @@ module.exports = [
           {context: SRC + 'content', from: 'install*.js', to: DST + JS},
           {context: SRC, from: MANIFEST.replace('.', `?(-${FLAVOR}*).`), to: MANIFEST,
             transformAll: makeManifest},
-          {context: SRC, from: '_locales/**', to: DST},
+          // shiroikuma fork: the product is renamed here rather than in the files, so
+          // upstream's weekly Transifex pulls never conflict with us. See tools/fork.js.
+          {context: SRC, from: '_locales/**', to: DST, transform: fork.brandLocale},
           {context: THEME_PATH, from: '*.css', to: DST + CM_PATH},
           ...[
             ['csslint-mod/dist/csslint.js', 'csslint.js', true],

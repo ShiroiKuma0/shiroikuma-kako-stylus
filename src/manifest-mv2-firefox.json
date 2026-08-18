@@ -1,8 +1,11 @@
 {
   "browser_specific_settings": {
     "gecko": {
-      "id": "{7a7a4a92-a2a0-41d1-9fd7-1e92480d612d}",
+      "id": "stylus@shiroikuma",
       "strict_min_version": "68.0"
+    },
+    "gecko_android": {
+      "strict_min_version": "120.0"
     }
   },
   "options_ui": {

@@ -9,3 +9,8 @@ desktop.ini
 /dist*/
 /node_modules/
 /yarn.lock
+
+# shiroikuma fork
+amo.properties
+web-ext-artifacts/
+.scratch/

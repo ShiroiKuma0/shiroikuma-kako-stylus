@@ -1,9 +1,9 @@
 {
-  "name": "Stylus",
+  "name": "白い熊 Stylus",
   "version": "2.4.10",
   "minimum_chrome_version": "",
   "description": "__MSG_description__",
-  "homepage_url": "https://github.com/openstyles/stylus",
+  "homepage_url": "https://github.com/ShiroiKuma0/shiroikuma-kako-stylus",
   "manifest_version": 0,
   "icons": {
     "16": "icon/16.png",
@@ -50,7 +50,7 @@
       "19": "icon/19w.png",
       "38": "icon/38w.png"
     },
-    "default_title": "Stylus",
+    "default_title": "白い熊 Stylus",
     "default_popup": "popup.html"
   },
   "default_locale": "en",

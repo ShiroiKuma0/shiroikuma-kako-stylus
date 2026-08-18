@@ -1,10 +1,10 @@
 {
-  "name": "Stylus",
+  "name": "shiroikuma-kako-stylus",
   "version": "2.4.10",
-  "description": "Redesign the web with Stylus, a user styles manager",
+  "description": "白い熊 Stylus — a user styles manager for 白い熊 火狐, on desktop and Android.",
   "license": "GPL-3.0-only",
-  "repository": "openstyles/stylus",
-  "author": "Stylus Team",
+  "repository": "ShiroiKuma0/shiroikuma-kako-stylus",
+  "author": "白い熊",
   "dependencies": {
     "@eight04/draggable-list": "^0.3.0",
     "codemirror": "5.65.20",
