@@ -25,9 +25,12 @@ patched, which keeps the diff small enough to replay cleanly onto each new relea
 
 - Named **白い熊 Stylus** in the manifest, the browser-action tooltip, the options page title, the
   editor's window title, the connection-failure message and the injector's console messages.
-- The links panel, the crash reporter's issue search and report links, and the UserCSS template's
-  `@namespace` all point at this repository. Upstream's Transifex link is dropped — this fork has no
-  translation project of its own.
+- **Every user-facing link points at this repository** — the links panel, the editor's
+  style-writing and UserCSS documentation icons, the popup's hotkeys wiki link, the crash reporter's
+  issue search and report links, and the UserCSS template's `@namespace`. Upstream's Transifex link
+  is dropped — this fork has no translation project of its own. Only code comments citing an
+  upstream issue number still point upstream, those being source citations rather than links a user
+  can follow.
 - Localized strings are renamed **at build time** from an explicit allowlist of message keys
   (`tools/fork.js`), so `src/_locales/` stays byte-identical to upstream and its weekly Transifex
   churn never conflicts with the fork.

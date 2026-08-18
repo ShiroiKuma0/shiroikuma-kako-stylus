@@ -58,7 +58,7 @@ Team" (GPL credit), and internal type names like `StylusClientData`.
 | Name, tooltip, homepage | 白い熊 Stylus, our repo | `src/manifest.json` |
 | Package identity | name, description, `repository`, author 白い熊 | `package.json` (its `version` stays upstream's literal) |
 | Icon | traced black-yellow, all 26 assets | `src/icon/`, from `graphics/icon.svg` via `graphics/make-icons.py` |
-| Identity links | our repo / wiki / issues | `src/manage.html` links panel, `src/js/dom-error.js`, `src/background/usercss-template.js` |
+| Every user-facing link | our repo / wiki / issues | `src/manage.html` links panel, `src/edit.html` (Writing-styles, Writing-UserCSS), `src/popup/hotkeys.js` (Popup), `src/js/dom-error.js`, `src/background/usercss-template.js`. Only code comments citing an upstream issue number still point upstream — those are source citations, and our tracker has no such issues |
 | Product name in the UI | 白い熊 Stylus | `src/options.html`, `src/edit/editor.js` (window title), `src/js/msg-api.js`, two console messages |
 | Localized product name | renamed **at build time** | `tools/fork.js` → `BRANDED_KEYS` + `brandLocale`, wired into the `_locales/**` CopyPlugin pattern |
 | Version | upstream's + our build counter | `tools/fork.js` → `BUILD`, appended in `makeManifest` |

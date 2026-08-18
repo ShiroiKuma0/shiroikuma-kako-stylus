@@ -75,9 +75,8 @@ needed until release.
 
 Built on [Stylus](https://github.com/openstyles/stylus) by the Stylus Team, which is itself the
 community's continuation of Jason Barnabe's original Stylish after that name was sold to an
-analytics company. Upstream's documentation wiki remains the reference for
-[writing styles](https://github.com/openstyles/stylus/wiki/Writing-styles) and
-[UserCSS](https://github.com/openstyles/stylus/wiki/Usercss).
+analytics company. This fork's [wiki](https://github.com/ShiroiKuma0/shiroikuma-kako-stylus/wiki)
+carries the style-writing reference, which upstream's own wiki documents in full.
 
 ### Licence: [GPLv3](./LICENSE)
 
