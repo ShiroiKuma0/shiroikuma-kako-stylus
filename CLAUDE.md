@@ -138,6 +138,42 @@ Upstream ships **no `CHANGELOG.md`** — its release notes live only on GitHub R
 `/publish-version` shape: our releases newest-first, each naming the upstream release it is built on,
 with the upstream notes for that release folded in.
 
+## Open threads
+
+Three things are deliberately unfinished. None is blocking; all three need 白い熊's input.
+
+### The wiki is not initialized
+
+The extension's four Help links — the editor's **Writing-styles**, **Writing-UserCSS** and
+**Applying-styles-to-specific-sites** (anchored at `#advanced-matching-with-regular-expressions`),
+and the popup's **Popup** — point at this repository's wiki, which **does not exist yet**, so they
+404. GitHub creates a repo's wiki git remote only after the first page is saved through the web UI;
+there is no API for it and `git push` to `…​.wiki.git` fails until then.
+
+**Five pages are already written and staged in the gitignored `.scratch/wiki/`** — `Home` plus one
+per link, each describing the topic for this fork and pointing at upstream's page for the full text.
+Once 白い熊 has created any first page at
+<https://github.com/ShiroiKuma0/shiroikuma-kako-stylus/wiki>, push them:
+
+```bash
+git clone git@github.com:ShiroiKuma0/shiroikuma-kako-stylus.wiki.git /tmp/skwiki
+cp .scratch/wiki/*.md /tmp/skwiki/ && cd /tmp/skwiki && git add -A && git commit && git push
+```
+
+### The Android install path is unsettled
+
+Firefox for Android installs add-ons only from AMO or a **custom AMO collection**, and an
+unlisted-signed `.xpi` cannot be put in a collection. Desktop is fine — 白い熊 火狐 takes the `.xpi`
+directly. How the build reaches the phone is an open question: **ask, do not assume `adb push` does
+anything useful there.**
+
+### Nothing is signed or released yet
+
+`stylus@shiroikuma` has never been through AMO — the "First signed" column in the key file's
+"Extension IDs we own" table still reads `pending`. **The ID becomes permanent at the moment of the
+first signing run**, so settle the Android question before signing. `2.4.10.1` exists only as an
+unsigned build in `~/tmp`; no tag has been cut and no release published.
+
 ## HARD RULES
 
 - **Never `git push` without 白い熊's explicit go-ahead.** Build, let them test, and push only on
