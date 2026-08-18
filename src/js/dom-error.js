@@ -3,6 +3,9 @@ import {ownRoot} from '@/js/urls';
 import {t} from '@/js/util';
 import {MF} from '@/js/util-webext';
 
+/** shiroikuma fork: reports about this build come to us, not to upstream. */
+const REPO = 'ShiroiKuma0/shiroikuma-kako-stylus';
+
 export default showUnhandledError;
 export let elError;
 let elEntry;
@@ -36,7 +39,7 @@ function showUnhandledError(a, b, c, d, err = a /* window.onerror has 5 params *
         .join('\n').trim() + '\n```\n\n- UA: ' +
       navigator.userAgent.replace(
         /\(KHTML.+?\) |(Mozilla|AppleWebKit|Gecko)\S+ | Safari\/537\.36/g, '') +
-      `\n- Stylus: ${MF.version} (MV${__.MV3 ? 3 : 2})\n`;
+      `\n- 白い熊 Stylus: ${MF.version} (MV${__.MV3 ? 3 : 2})\n`;
     const onauxclick = elError.onauxclick = async (evt, target = evt.target) => {
       if (target.href !== '')
         return;
@@ -47,12 +50,13 @@ function showUnhandledError(a, b, c, d, err = a /* window.onerror has 5 params *
       let url;
       try {
         url = 'https://api.github.com/search/issues?q=' + encodeURIComponent(title) +
-          '+in:title+repo:openstyles/stylus+is:issue&sort=created&order=asc&per_page=1';
+          '+in:title+repo:' + REPO +
+          '+is:issue&sort=created&order=asc&per_page=1';
         url = (
           await (await fetch(url, {headers: {'Accept': 'application/vnd.github+json'}})).json()
         ).items[0].html_url;
       } catch {
-        url = 'https://github.com/openstyles/stylus/issues/new?' + new URLSearchParams({
+        url = `https://github.com/${REPO}/issues/new?` + new URLSearchParams({
           title,
           labels: 'bug',
           body: formatText(target),

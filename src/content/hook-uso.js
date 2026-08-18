@@ -45,7 +45,7 @@ function onGesture(e) {
 
 function isTrusted(data) {
   return (pageLoading === location.href || performance.now() - gesture < 1000)
-    || console.warn('Stylus is ignoring request not initiated by the user:', data);
+    || console.warn('白い熊 Stylus is ignoring request not initiated by the user:', data);
 }
 
 async function onPageEvent({detail: {id, cmd, data}}) {

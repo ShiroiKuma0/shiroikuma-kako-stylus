@@ -320,7 +320,7 @@ function initCreationDoc(style) {
     if (retry && ffCsp && (ass = assDoc[kAss])) { // ffCsp bug got fixed
       initAss();
       console.debug(
-        'Stylus switched to document.adoptedStyleSheets due to a strict CSP of the page');
+        '白い熊 Stylus switched to document.adoptedStyleSheets due to a strict CSP of the page');
       return createStyle(style);
     }
     creationDoc = document;
@@ -379,7 +379,7 @@ function restoreOrder(mutations) {
   }
   if (!bad) return;
   if (!mutations || ++reorderCnt < 10) addAllElements();
-  else console.debug(`Stylus ignored wrong order of styles to avoid an infinite loop of mutations.`); // eslint-disable-line max-len
+  else console.debug(`白い熊 Stylus ignored wrong order of styles to avoid an infinite loop of mutations.`); // eslint-disable-line max-len
   const t = performance.now();
   if (t - reorderStart > 250) {
     reorderCnt = 0;

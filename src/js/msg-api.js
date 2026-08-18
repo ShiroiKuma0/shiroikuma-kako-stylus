@@ -85,7 +85,7 @@ export async function apiSendProxy(path, ...args) {
       }
     }
     if (!__.MV3 && retry) {
-      throw new Error('Stylus could not connect to the background script.');
+      throw new Error('白い熊 Stylus could not connect to the background script.');
     }
     if (!__.MV3)
       await bgReadying;

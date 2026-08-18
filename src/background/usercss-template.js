@@ -11,7 +11,7 @@ const key = LZ_KEY.usercssTemplate;
 const DEFAULT = `\
 /* ==UserStyle==
 @name           ${''/* just a visual reminder to keep trailing spaces */}
-@namespace      github.com/openstyles/stylus
+@namespace      github.com/ShiroiKuma0/shiroikuma-kako-stylus
 @version        1.0.0
 @description    A new userstyle
 @author         Me

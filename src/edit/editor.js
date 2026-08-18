@@ -146,7 +146,7 @@ const editor = self.editor = {
       isDirty ? '* ' : ''
     }${
       customName || name || t('styleMissingName')
-    } - Stylus`; // the suffix enables external utilities to process our windows e.g. pin on top
+    } - 白い熊 Stylus`; // the suffix enables external utilities to process our windows e.g. pin on top
   },
 
   updateToc(added) {
