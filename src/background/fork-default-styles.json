@@ -1,0 +1,396 @@
+[
+ {
+  "name": "bg all",
+  "enabled": true,
+  "sections": [
+   {
+    "code": "*:not(#sk-never),\n*:not(#sk-never)::before,\n*:not(#sk-never)::after {\n    background-color: black !important;\n}\n",
+    "urls": [],
+    "urlPrefixes": [],
+    "domains": [],
+    "regexps": []
+   }
+  ],
+  "exclusions": [
+   "*://*.claude.ai/*",
+   "*://*.owncloud.online/*"
+  ],
+  "inclusions": [],
+  "updateUrl": null
+ },
+ {
+  "name": "bg blocks",
+  "enabled": true,
+  "sections": [
+   {
+    "code": "section:not(#sk-never), article:not(#sk-never), main:not(#sk-never),\naside:not(#sk-never), nav:not(#sk-never), header:not(#sk-never),\nfooter:not(#sk-never), form:not(#sk-never), ul:not(#sk-never),\nol:not(#sk-never), table:not(#sk-never), thead:not(#sk-never),\ntbody:not(#sk-never), tfoot:not(#sk-never), tr:not(#sk-never) {\n    background-color: black !important;\n}\n",
+    "urls": [],
+    "urlPrefixes": [],
+    "domains": [],
+    "regexps": []
+   }
+  ],
+  "exclusions": [],
+  "inclusions": [],
+  "updateUrl": null
+ },
+ {
+  "name": "bg div",
+  "enabled": true,
+  "sections": [
+   {
+    "code": "div:not(#sk-never) {\n    background-color: black !important;\n}\n",
+    "urls": [],
+    "urlPrefixes": [],
+    "domains": [],
+    "regexps": []
+   }
+  ],
+  "exclusions": [
+   "*://*.claude.ai/*"
+  ],
+  "inclusions": [],
+  "updateUrl": null
+ },
+ {
+  "name": "bg ground",
+  "enabled": true,
+  "sections": [
+   {
+    "code": "html:not(#sk-never), body:not(#sk-never) {\n    background-color: black !important;\n}\n",
+    "urls": [],
+    "urlPrefixes": [],
+    "domains": [],
+    "regexps": []
+   }
+  ],
+  "exclusions": [
+   "*://*.claude.ai/*"
+  ],
+  "inclusions": [],
+  "updateUrl": null
+ },
+ {
+  "name": "bg text",
+  "enabled": true,
+  "sections": [
+   {
+    "code": "p:not(#sk-never), span:not(#sk-never), li:not(#sk-never),\ntd:not(#sk-never), th:not(#sk-never), h1:not(#sk-never),\nh2:not(#sk-never), h3:not(#sk-never), h4:not(#sk-never),\nh5:not(#sk-never), h6:not(#sk-never), blockquote:not(#sk-never),\ndt:not(#sk-never), dd:not(#sk-never), figcaption:not(#sk-never),\nlabel:not(#sk-never) {\n    background-color: black !important;\n}\n",
+    "urls": [],
+    "urlPrefixes": [],
+    "domains": [],
+    "regexps": []
+   }
+  ],
+  "exclusions": [],
+  "inclusions": [],
+  "updateUrl": null
+ },
+ {
+  "name": "fg all",
+  "enabled": true,
+  "sections": [
+   {
+    "code": "*:not(#sk-never),\n*:not(#sk-never)::before,\n*:not(#sk-never)::after {\n    color: yellow !important;\n}\n",
+    "urls": [],
+    "urlPrefixes": [],
+    "domains": [],
+    "regexps": []
+   }
+  ],
+  "exclusions": [
+   "*://*.sumo.or.jp/*",
+   "*://*.claude.ai/*"
+  ],
+  "inclusions": [],
+  "updateUrl": null
+ },
+ {
+  "name": "fg blocks",
+  "enabled": true,
+  "sections": [
+   {
+    "code": "section:not(#sk-never), article:not(#sk-never), main:not(#sk-never),\naside:not(#sk-never), nav:not(#sk-never), header:not(#sk-never),\nfooter:not(#sk-never), form:not(#sk-never), ul:not(#sk-never),\nol:not(#sk-never), table:not(#sk-never), thead:not(#sk-never),\ntbody:not(#sk-never), tfoot:not(#sk-never), tr:not(#sk-never) {\n    color: yellow !important;\n}\n",
+    "urls": [],
+    "urlPrefixes": [],
+    "domains": [],
+    "regexps": []
+   }
+  ],
+  "exclusions": [
+   "*://*.sumo.or.jp/*",
+   "*://*.claude.ai/*"
+  ],
+  "inclusions": [],
+  "updateUrl": null
+ },
+ {
+  "name": "fg div",
+  "enabled": true,
+  "sections": [
+   {
+    "code": "div:not(#sk-never) {\n    color: yellow !important;\n}\n",
+    "urls": [],
+    "urlPrefixes": [],
+    "domains": [],
+    "regexps": []
+   }
+  ],
+  "exclusions": [
+   "*://*.sumo.or.jp/*",
+   "*://*.claude.ai/*"
+  ],
+  "inclusions": [],
+  "updateUrl": null
+ },
+ {
+  "name": "fg ground",
+  "enabled": true,
+  "sections": [
+   {
+    "code": "html:not(#sk-never), body:not(#sk-never) {\n    color: yellow !important;\n}\n",
+    "urls": [],
+    "urlPrefixes": [],
+    "domains": [],
+    "regexps": []
+   }
+  ],
+  "exclusions": [
+   "*://*.sumo.or.jp/*"
+  ],
+  "inclusions": [],
+  "updateUrl": null
+ },
+ {
+  "name": "fg text",
+  "enabled": true,
+  "sections": [
+   {
+    "code": "p:not(#sk-never), span:not(#sk-never), li:not(#sk-never),\ntd:not(#sk-never), th:not(#sk-never), h1:not(#sk-never),\nh2:not(#sk-never), h3:not(#sk-never), h4:not(#sk-never),\nh5:not(#sk-never), h6:not(#sk-never), blockquote:not(#sk-never),\ndt:not(#sk-never), dd:not(#sk-never), figcaption:not(#sk-never),\nlabel:not(#sk-never) {\n    color: yellow !important;\n}\n",
+    "urls": [],
+    "urlPrefixes": [],
+    "domains": [],
+    "regexps": []
+   }
+  ],
+  "exclusions": [
+   "*://*.sumo.or.jp/*"
+  ],
+  "inclusions": [],
+  "updateUrl": null
+ },
+ {
+  "name": "line-height",
+  "enabled": true,
+  "sections": [
+   {
+    "code": "*, *::before, *::after {\n    line-height: 1em !important;\n}\n\nhtml, body, div, section,\narticle, main, aside, nav,\nheader, footer, form, ul,\nol, table, thead, tbody,\ntfoot, tr, p, span,\nli, td, th, h1,\nh2, h3, h4, h5,\nh6, blockquote, dt, dd,\nfigcaption, label {\n    line-height: 1em !important;\n}\n\n/* icons, controls and media keep their own metrics */\ni, svg, use, symbol,\n[class*=\"icon\" i], [class*=\"glyph\" i], [class*=\"symbol\" i], [class*=\"ico-\" i],\n.fa, [class*=\"fa-\"], [class*=\"material-icons\"], [class*=\"material-symbols\"],\n[class*=\"octicon\"], [class*=\"bi-\"], [class*=\"emoji\" i], [role=\"img\"],\n[aria-hidden=\"true\"], button, input, select,\ntextarea, option, optgroup, progress,\nmeter, summary, [role=\"button\"], [role=\"tab\"],\n[role=\"menuitem\"], [role=\"switch\"], [role=\"checkbox\"], [role=\"radio\"],\nimg, picture, video, canvas,\nobject, embed, iframe, i::before,\ni::after, [class*=\"icon\" i]::before, [class*=\"icon\" i]::after, [class*=\"fa-\"]::before,\n[class*=\"fa-\"]::after, [class*=\"material-icons\"]::before, [class*=\"material-symbols\"]::before, [class*=\"octicon\"]::before,\n[class*=\"bi-\"]::before {\n    line-height: normal !important;\n}\n",
+    "urls": [],
+    "urlPrefixes": [],
+    "domains": [],
+    "regexps": []
+   }
+  ],
+  "exclusions": [],
+  "inclusions": [],
+  "updateUrl": null
+ },
+ {
+  "name": "sans-serif",
+  "enabled": true,
+  "sections": [
+   {
+    "code": "*:not(i, svg, use, symbol, [class*=\"icon\" i], [class*=\"glyph\" i], [class*=\"symbol\" i], [class*=\"ico-\" i], .fa, [class*=\"fa-\"], [class*=\"material-icons\"], [class*=\"material-symbols\"], [class*=\"octicon\"], [class*=\"bi-\"], [class*=\"emoji\" i], [role=\"img\"], [aria-hidden=\"true\"]),\n*:not(i, svg, use, symbol, [class*=\"icon\" i], [class*=\"glyph\" i], [class*=\"symbol\" i], [class*=\"ico-\" i], .fa, [class*=\"fa-\"], [class*=\"material-icons\"], [class*=\"material-symbols\"], [class*=\"octicon\"], [class*=\"bi-\"], [class*=\"emoji\" i], [role=\"img\"], [aria-hidden=\"true\"])::before,\n*:not(i, svg, use, symbol, [class*=\"icon\" i], [class*=\"glyph\" i], [class*=\"symbol\" i], [class*=\"ico-\" i], .fa, [class*=\"fa-\"], [class*=\"material-icons\"], [class*=\"material-symbols\"], [class*=\"octicon\"], [class*=\"bi-\"], [class*=\"emoji\" i], [role=\"img\"], [aria-hidden=\"true\"])::after {\n    font-family: Arial, Helvetica, sans-serif !important;\n}\n\n/* Code keeps a monospace face and a colour that is not body-yellow. #sk-never is an id\n   that matches nothing; it exists purely to put these rules on the same specificity\n   ladder as the bg/fg blankets, which would otherwise repaint the code yellow. */\npre:not(#sk-never), code:not(#sk-never), kbd:not(#sk-never), samp:not(#sk-never), tt:not(#sk-never) {\n    font-family: \"DejaVu Sans Mono\", \"Liberation Mono\", Consolas, monospace !important;\n    color: #e0e0e0 !important;\n}\n\npre:not(#sk-never) :not(#sk-never), code:not(#sk-never) :not(#sk-never) {\n    font-family: \"DejaVu Sans Mono\", \"Liberation Mono\", Consolas, monospace !important;\n    color: inherit !important;\n}\n",
+    "urls": [],
+    "urlPrefixes": [],
+    "domains": [],
+    "regexps": []
+   }
+  ],
+  "exclusions": [],
+  "inclusions": [],
+  "updateUrl": null
+ },
+ {
+  "name": "text-align",
+  "enabled": true,
+  "sections": [
+   {
+    "code": "p, span, li, td,\nth, h1, h2, h3,\nh4, h5, h6, blockquote,\ndt, dd, figcaption, label {\n    text-align: left !important;\n}\n",
+    "urls": [],
+    "urlPrefixes": [],
+    "domains": [],
+    "regexps": []
+   }
+  ],
+  "exclusions": [],
+  "inclusions": [],
+  "updateUrl": null
+ },
+ {
+  "name": "ui: borders",
+  "enabled": true,
+  "sections": [
+   {
+    "code": "*:not(#sk-never),\n*:not(#sk-never)::before,\n*:not(#sk-never)::after {\n    border-color: #ffff00 !important;\n    outline-color: #ffff00 !important;\n    column-rule-color: #ffff00 !important;\n    caret-color: #ffff00 !important;\n}\n\nhr:not(#sk-never) {\n    border-color: #ffff00 !important;\n    background-color: #ffff00 !important;\n    color: #ffff00 !important;\n}\n",
+    "urls": [],
+    "urlPrefixes": [],
+    "domains": [],
+    "regexps": []
+   }
+  ],
+  "exclusions": [],
+  "inclusions": [],
+  "updateUrl": null
+ },
+ {
+  "name": "ui: controls",
+  "enabled": true,
+  "sections": [
+   {
+    "code": "/* buttons and selects: black ground, yellow trace, pill */\nbutton:not(#sk-never), select:not(#sk-never),\n[role=\"button\"]:not(#sk-never), [role=\"tab\"]:not(#sk-never),\n[role=\"switch\"]:not(#sk-never) {\n    background-color: #000000 !important;\n    color: #ffff00 !important;\n    outline: 1px solid #ffff00 !important;\n    outline-offset: -1px !important;\n    border-radius: 999px !important;\n}\n\n/* the same treatment for links that act as buttons */\na[href^=\"javascript:\" i]:not(#sk-never):not(#sk-never),\na[class*=\"btn\" i]:not(#sk-never):not(#sk-never),\na[class*=\"button\" i]:not(#sk-never):not(#sk-never) {\n    background-color: #000000 !important;\n    color: #ffff00 !important;\n    outline: 1px solid #ffff00 !important;\n    outline-offset: -1px !important;\n    border-radius: 999px !important;\n    padding: 0.25em 0.9em !important;\n}\n\n/* single-line text entry: a yellow pill, traced rather than filled. The outline\n   follows border-radius, and being an outline it adds no layout of its own — only\n   the padding does, which the rounded ends need so text is not clipped. */\ninput:not(#sk-never):is([type=text], [type=search], [type=email], [type=url], [type=tel],\n  [type=password], [type=number], [type=date], [type=datetime-local],\n  :not([type])) {\n    background-color: #000000 !important;\n    color: #ffff00 !important;\n    caret-color: #ffff00 !important;\n    border: none !important;\n    border-radius: 999px !important;\n    outline: 1px solid #ffff00 !important;\n    outline-offset: -1px !important;\n    padding-left: 0.7em !important;\n    padding-right: 0.7em !important;\n}\n\ninput:not(#sk-never)::placeholder {\n    color: #999900 !important;\n}\n\n/* a textarea is not a pill — it keeps the traced-box treatment */\ntextarea:not(#sk-never) {\n    background-color: #000000 !important;\n    color: #ffff00 !important;\n    caret-color: #ffff00 !important;\n    outline: 1px solid #ffff00 !important;\n    outline-offset: -1px !important;\n}\n\ntextarea:not(#sk-never)::placeholder {\n    color: #999900 !important;\n}\n\ninput:not(#sk-never):is([type=checkbox], [type=radio]) {\n    accent-color: #ffff00 !important;\n}\n\nbutton:not(#sk-never):hover,\n[role=\"button\"]:not(#sk-never):hover,\ninput:not(#sk-never):is([type=submit], [type=button]):hover,\na[href^=\"javascript:\" i]:not(#sk-never):not(#sk-never):hover,\na[class*=\"btn\" i]:not(#sk-never):not(#sk-never):hover,\na[class*=\"button\" i]:not(#sk-never):not(#sk-never):hover {\n    background-color: #ffff00 !important;\n    color: #000000 !important;\n}\n",
+    "urls": [],
+    "urlPrefixes": [],
+    "domains": [],
+    "regexps": []
+   }
+  ],
+  "exclusions": [],
+  "inclusions": [],
+  "updateUrl": null
+ },
+ {
+  "name": "ui: image-ground",
+  "enabled": true,
+  "sections": [
+   {
+    "code": "img:not(#sk-never), picture:not(#sk-never),\nobject:not(#sk-never), embed:not(#sk-never) {\n    background-color: #808080 !important;\n}\n",
+    "urls": [],
+    "urlPrefixes": [],
+    "domains": [],
+    "regexps": []
+   }
+  ],
+  "exclusions": [],
+  "inclusions": [],
+  "updateUrl": null
+ },
+ {
+  "name": "ui: no-backdrops",
+  "enabled": true,
+  "sections": [
+   {
+    "code": "*:empty:not(#sk-never):not(i, svg, use, symbol, [class*=\"icon\" i], [class*=\"glyph\" i], [class*=\"symbol\" i], [class*=\"ico-\" i], .fa, [class*=\"fa-\"], [class*=\"material-icons\"], [class*=\"material-symbols\"], [class*=\"octicon\"], [class*=\"bi-\"], [class*=\"emoji\" i], [role=\"img\"], [aria-hidden=\"true\"]):not(img, picture, video, canvas, object, embed, iframe) {\n    background-image: none !important;\n}\n",
+    "urls": [],
+    "urlPrefixes": [],
+    "domains": [],
+    "regexps": []
+   }
+  ],
+  "exclusions": [],
+  "inclusions": [],
+  "updateUrl": null
+ },
+ {
+  "name": "ui: focus",
+  "enabled": true,
+  "sections": [
+   {
+    "code": ":focus-visible:not(#sk-never) {\n    outline: 2px solid #00ffff !important;\n    outline-offset: 0 !important;\n}\n",
+    "urls": [],
+    "urlPrefixes": [],
+    "domains": [],
+    "regexps": []
+   }
+  ],
+  "exclusions": [],
+  "inclusions": [],
+  "updateUrl": null
+ },
+ {
+  "name": "ui: full-width",
+  "enabled": true,
+  "sections": [
+   {
+    "code": "*:not(#sk-never):not(img, picture, video, canvas, object, embed, iframe) {\n    max-width: none !important;\n}\n",
+    "urls": [],
+    "urlPrefixes": [],
+    "domains": [],
+    "regexps": []
+   }
+  ],
+  "exclusions": [],
+  "inclusions": [],
+  "updateUrl": null
+ },
+ {
+  "name": "ui: links",
+  "enabled": true,
+  "sections": [
+   {
+    "code": "a:any-link:not(#sk-never),\n[role=\"link\"]:not(#sk-never),\na:any-link *:not(#sk-never):not(i, svg, use, symbol, [class*=\"icon\" i], [class*=\"glyph\" i], [class*=\"symbol\" i], [class*=\"ico-\" i], .fa, [class*=\"fa-\"], [class*=\"material-icons\"], [class*=\"material-symbols\"], [class*=\"octicon\"], [class*=\"bi-\"], [class*=\"emoji\" i], [role=\"img\"], [aria-hidden=\"true\"]),\n[role=\"link\"] *:not(#sk-never):not(i, svg, use, symbol, [class*=\"icon\" i], [class*=\"glyph\" i], [class*=\"symbol\" i], [class*=\"ico-\" i], .fa, [class*=\"fa-\"], [class*=\"material-icons\"], [class*=\"material-symbols\"], [class*=\"octicon\"], [class*=\"bi-\"], [class*=\"emoji\" i], [role=\"img\"], [aria-hidden=\"true\"]) {\n    color: #00ffff !important;\n}\n\na:visited:not(#sk-never) {\n    color: #ff80ff !important;\n}\n\na:any-link:not(#sk-never):hover, a:any-link:not(#sk-never):hover *:not(#sk-never),\na:any-link:not(#sk-never):focus-visible, a:any-link:not(#sk-never):focus-visible *:not(#sk-never),\n[role=\"link\"]:not(#sk-never):hover, [role=\"link\"]:not(#sk-never):hover *:not(#sk-never) {\n    color: #000000 !important;\n    background-color: #00ffff !important;\n}\n",
+    "urls": [],
+    "urlPrefixes": [],
+    "domains": [],
+    "regexps": []
+   }
+  ],
+  "exclusions": [],
+  "inclusions": [],
+  "updateUrl": null
+ },
+ {
+  "name": "site: casopisargument.cz",
+  "enabled": true,
+  "sections": [
+   {
+    "code": "*, *::before, *::after {\n    font-size: 16px !important;\n}\n\nhtml, body, div, section,\narticle, main, aside, nav,\nheader, footer, form, ul,\nol, table, thead, tbody,\ntfoot, tr, p, span,\nli, td, th, h1,\nh2, h3, h4, h5,\nh6, blockquote, dt, dd,\nfigcaption, label {\n    font-size: 16px !important;\n}\n",
+    "urls": [],
+    "urlPrefixes": [],
+    "domains": [
+     "casopisargument.cz"
+    ],
+    "regexps": []
+   }
+  ],
+  "exclusions": [],
+  "inclusions": [],
+  "updateUrl": null
+ },
+ {
+  "name": "site: claude.ai",
+  "enabled": true,
+  "sections": [
+   {
+    "code": "pre.code-block__code {\n    padding: 4px 8px !important;\n    margin: 2px 0 !important;\n}\n",
+    "urls": [],
+    "urlPrefixes": [],
+    "domains": [
+     "claude.ai"
+    ],
+    "regexps": []
+   }
+  ],
+  "exclusions": [],
+  "inclusions": [],
+  "updateUrl": null
+ },
+ {
+  "name": "site: nikkansports.com",
+  "enabled": true,
+  "sections": [
+   {
+    "code": "html, body, div, section,\narticle, main, aside, nav,\nheader, footer, form, ul,\nol, table, thead, tbody,\ntfoot, tr, p, span,\nli, td, th, h1,\nh2, h3, h4, h5,\nh6, blockquote, dt, dd,\nfigcaption, label {\n    font-size: 30px !important;\n}\n\nh1 {\n    font-size: 40px !important;\n}\n",
+    "urls": [],
+    "urlPrefixes": [],
+    "domains": [
+     "nikkansports.com"
+    ],
+    "regexps": []
+   }
+  ],
+  "exclusions": [],
+  "inclusions": [],
+  "updateUrl": null
+ }
+]

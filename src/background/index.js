@@ -20,6 +20,10 @@ import download from './download';
 import {refreshIconsWhenReady} from './icon-manager';
 import setClientData from './set-client-data';
 import * as styleMan from './style-manager';
+// shiroikuma fork: the preinstalled style library, synced to this build at startup. Deliberately out of alphabetical order —
+// it pulls in ./style-manager, so importing it after that keeps upstream's module evaluation
+// order exactly as it was. The module hooks itself onto bgBusy; there is nothing to call.
+import './fork-default-styles';
 import {inferHomepages} from './style-manager/fixer';
 import {styleMap} from './style-manager/util';
 import initStyleViaApi from './style-via-api';
