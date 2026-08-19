@@ -89,8 +89,10 @@ TEXT_INPUTS = ('[type=text], [type=search], [type=email], [type=url], [type=tel]
 # bare host and any subdomain.  See buildOverrideRe() in
 # src/background/style-manager/matcher.js.
 SUMO = "*://*.sumo.or.jp/*"
+JISHO = "*://*.jisho.org/*"
 CLAUDE = "*://*.claude.ai/*"
 OWNCLOUD = "*://*.owncloud.online/*"
+ALZA = "*://*.alza.cz/*"
 
 YELLOW = "#ffff00"
 DIM_YELLOW = "#999900"   # text-legible cousin of the icon's #666600 disabled state
@@ -186,10 +188,25 @@ SANS_SERIF = (
 
 styles = [
     # --- background: black, global with exceptions -------------------------
-    style("bg all", rule(blanket(), BG), [CLAUDE, OWNCLOUD]),
+    # Note `guarded(ALL)` and not `blanket()`: the background blanket deliberately does NOT reach
+    # ::before/::after. A pseudo-element with `content` is decoration — very often a transparent
+    # absolutely-positioned overlay for a hover shade — and giving it a background paints an
+    # opaque sheet over whatever it covers. That is what blanked the product tiles in alza.cz's
+    # carousel: image, stars, name and price vanished under the tile's own ::before, while the
+    # discount badge (z-index 1) and the button outside the tile box survived.
+    #
+    # Colour is different: `fg all` keeps the pseudo-elements, because text drawn in a pseudo has
+    # to be yellow like any other text. Painting a pseudo can only hide; colouring one cannot.
+    style("bg all", rule(guarded(ALL), BG), [CLAUDE, OWNCLOUD]),
     style("bg blocks", rule(guarded(BLOCKS), BG)),
     style("bg div", rule(guarded(DIV), BG), [CLAUDE]),
-    style("bg ground", rule(guarded(GROUND), BG), [CLAUDE]),
+    # The page ground also drops its background *image*. background-color paints behind an image,
+    # never over it, so a body wallpaper keeps showing through wherever the content wrapper does
+    # not cover it — the light bands down both margins on forum.mobilism.org are a
+    # `linear-gradient(#ccc, #e8e8e8)` on <body>. Safe to generalise, unlike the same fix
+    # elsewhere: a background image on <html> or <body> is page decoration by definition, and it
+    # is precisely the thing a black ground is meant to replace.
+    style("bg ground", rule(guarded(GROUND), BG, "background-image: none"), [CLAUDE]),
     style("bg text", rule(guarded(TEXT), BG)),
 
     # --- colour: yellow, global with exceptions ----------------------------
@@ -224,9 +241,17 @@ styles = [
     # edge on every control costs no reflow and cannot shift a single pixel of the page.
     style("ui: controls",
           "/* buttons and selects: black ground, yellow trace, pill */\n"
+          # input[type=submit|button|reset] are buttons too. Leaving them out is what left the
+          # Search button unpainted on forum.mobilism.org.
           + rule(guarded(["button", "select", '[role="button"]',
-                          '[role="tab"]', '[role="switch"]'], per_line=2),
+                          '[role="tab"]', '[role="switch"]',
+                          'input[type="submit"]', 'input[type="button"]',
+                          'input[type="reset"]'], per_line=2),
                  "background-color: #000000",
+                 # a control's background image is a gloss gradient, never content — and colour
+                 # paints behind an image, so without this the button stays white. This is what
+                 # left forum.mobilism.org's Search button light even once it was being targeted.
+                 "background-image: none",
                  "color: %s" % YELLOW,
                  "outline: 1px solid %s" % YELLOW,
                  "outline-offset: -1px",
@@ -234,6 +259,7 @@ styles = [
           + "\n/* the same treatment for links that act as buttons */\n"
           + rule(guarded(LINK_BUTTONS, NEVER + NEVER, per_line=1),
                  "background-color: #000000",
+                 "background-image: none",
                  "color: %s" % YELLOW,
                  "outline: 1px solid %s" % YELLOW,
                  "outline-offset: -1px",
@@ -244,6 +270,7 @@ styles = [
             "   the padding does, which the rounded ends need so text is not clipped. */\n"
           + rule("input%s:is(%s)" % (NEVER, TEXT_INPUTS),
                  "background-color: #000000",
+                 "background-image: none",
                  "color: %s" % YELLOW,
                  "caret-color: %s" % YELLOW,
                  "border: none",
@@ -257,6 +284,7 @@ styles = [
           + "\n/* a textarea is not a pill — it keeps the traced-box treatment */\n"
           + rule("textarea" + NEVER,
                  "background-color: #000000",
+                 "background-image: none",
                  "color: %s" % YELLOW,
                  "caret-color: %s" % YELLOW,
                  "outline: 1px solid %s" % YELLOW,
@@ -291,20 +319,44 @@ styles = [
     # background-color cannot remove a background *image*, so decorative gradients and banner
     # textures survive the blanket and keep painting pale bars across otherwise-black pages.
     #
-    # SHIPPED DISABLED, and renamed so the sync withdraws the enabled copy an earlier build
-    # installed — the sync deliberately preserves a style's on/off state, so shipping the same
-    # name disabled would have changed nothing on a profile that already had it on.
+    # The `:empty` restriction is what makes this safe enough to ship on. Unrestricted it erased
+    # the jisho.org logo (`h1.logo a { background: url(…) }` behind hidden text) and every product
+    # thumbnail in alza.cz's carousels; both are now provably spared — the logo because its <a>
+    # holds text, the thumbnails because they are <img> and media is excluded — and the behavioural
+    # test asserts each of them while this style is active.
     #
-    # It is off because there is no way in CSS to tell a decorative gradient from a content
-    # image, and the attempts cost real content twice: unrestricted, it erased the jisho.org
-    # logo (`h1.logo a { background: url(…) }` behind hidden text); restricted to `:empty`, it
-    # erased every product thumbnail in alza.cz's carousels, which are empty elements carrying a
-    # background image. Enable it per site — tick "only apply to included sites" and add the
-    # domain — where a pale bar is worth more than whatever else it takes with it.
+    # What it still cannot survive is content that genuinely IS an empty element with only a
+    # background: alza.cz's rating histogram bars are empty 150x10 divs whose whole content is
+    # `linear-gradient(270deg, #3cb2f5, #0094e7)`. Nothing distinguishes that from a decorative
+    # strip, so alza.cz is seeded as an exclusion rather than pretending a cleverer selector
+    # exists. That is also the answer to "shouldn't the site rule override the global one": Stylus
+    # has no scope precedence — one author-origin cascade, specificity then injection order — and
+    # `background-image: none` cannot be undone anyway, since `revert` lands on the UA value, which
+    # is also none. "Global except here" is spelled with an exclusion.
+    #
+    # Earlier history, for the record: restricted to `:empty`, an unrestricted ancestor rule
+    # also took pseudo-element overlays before `bg all` stopped painting those.
     style("ui: strip-backdrops",
           rule("*:empty%s%s%s" % (NEVER, NOT_ICONS, NOT_MEDIA),
                "background-image: none"),
-          enabled=False),
+          [ALZA]),
+
+    # Elements whose class says outright that they are a transparent layer over the page. Painting
+    # one turns it into a sheet that hides everything beneath — the same failure as the ::before
+    # overlays, and the reason a black bar appeared across the bottom of alza.cz.
+    #
+    # This is the ICONS heuristic applied again: match how the thing is named, not which site it
+    # is on. The asymmetry justifies it — if the guess is wrong, a light scrim stays light, which
+    # is cosmetic; if we paint one that should be transparent, page content disappears.
+    #
+    # A separate style rather than a :not() on the bg blankets, deliberately: adding a :not() there
+    # would lift them from (1,0,0) to (1,1,0) and they would start outranking `ui: controls` at
+    # (1,0,1). The doubled guard here puts this at (2,1,0), above every bg rule, and leaves the
+    # ladder untouched.
+    style("ui: overlays",
+          rule(guarded(['[class*="overlay" i]', '[class*="backdrop" i]', '[class*="scrim" i]'],
+                       NEVER + NEVER, per_line=1),
+               "background-color: transparent")),
 
     style("ui: focus",
           rule(":focus-visible" + NEVER,
@@ -313,8 +365,33 @@ styles = [
 
     # Sites constrain article text to a narrow column with max-width; this hands the window back.
     # Media keeps its own max-width, which is what stops an oversized image overflowing.
+    # max-width alone is not enough, and that took two archives to establish: substack.com pins its
+    # column with `width: 728px; margin: 0 auto` and unherd.com with a Bootstrap `width: 960px`
+    # grid column. Neither is a max-width, so both survived the first version of this style.
+    #
+    # This is the most invasive rule in the library — `width: auto` on every element that is not
+    # media, a control or an icon. Layouts that size a sidebar or a card explicitly will change.
+    # It is a separate style precisely so it is one keystroke to switch off on a site where the
+    # trade is not worth it.
     style("ui: full-width",
-          rule("*%s:not(%s)" % (NEVER, ", ".join(MEDIA)), "max-width: none")),
+          rule("*%s%s%s%s" % (NEVER, NOT_MEDIA, NOT_ICONS,
+                              ":not(%s)" % ", ".join(CONTROLS)),
+               "max-width: none",
+               "width: auto")
+          + "\n/* A flex item pinned by flex-basis ignores width. Restricted to :only-child, which\n"
+            "   is what makes it safe: a lone column growing to fill its row cannot disturb a\n"
+            "   multi-column layout, because there is no second column. unherd.com's article sits\n"
+            "   in a flex row of exactly one child at `flex: 0 0 50%`, beside 960px of nothing. */\n"
+          + rule("*:only-child%s%s%s%s" % (NEVER, NOT_MEDIA, NOT_ICONS,
+                                           ":not(%s)" % ", ".join(CONTROLS)),
+                 "flex-grow: 1")
+          + "\n/* Releasing every column would leave the text hard against the window edge, so the\n"
+            "   page keeps a gutter. On <body> rather than on the text elements, so it reads as a\n"
+            "   page margin instead of an indent stacking onto whatever padding a card already has. */\n"
+          + rule("body" + NEVER,
+                 "padding-left: 1em",
+                 "padding-right: 1em"),
+          [JISHO]),
 
     # a:any-link and its descendants, lifted over the fg blanket. The descendant term is what does
     # the real work — modern sites wrap link text in a span — but it must skip icons, or every
@@ -337,11 +414,47 @@ styles = [
                  "background-color: %s" % CYAN)),
 
     # --- site-specific leftovers -------------------------------------------
+    # unherd.com sizes the article with a Bootstrap `flex: 0 0 50%` in a row that only adds up to
+    # 75% — a 25% tag sidebar, the 50% article, and 25% of nothing. No width or max-width rule can
+    # reach that, and growing every flex item globally would wreck layouts with a deliberately
+    # fixed sidebar, so the article column is grown here instead. It takes the free quarter and
+    # ends at 75%; going to 100% would mean hiding the tag column, which is content.
+    style("site: unherd.com",
+          rule(wrap([".col-sm-8" + NEVER + NEVER, ".col-lg-6" + NEVER + NEVER], 1),
+               "flex-grow: 1")
+          + "\n/* and the tag column beside it, so the article takes the whole row. Scoped to the\n"
+            "   article row: the same Bootstrap classes carry real content elsewhere on the site. */\n"
+          + rule(".article-body.row > .col-lg-3" + NEVER, "display: none"),
+          domains=["unherd.com"]),
+
     style("site: casopisargument.cz",
           rule(wrap(["*", "*::before", "*::after"], 3), "font-size: 16px")
           + "\n" + rule(wrap(EVERY), "font-size: 16px"),
           domains=["casopisargument.cz"]),
     # pre/code colour is global now; only the block metrics remain site-specific
+    # The pale band across the product page is a section texture: #detailItem carries
+    # background-image: url(.../sectbgr.png), and background-color cannot remove a background
+    # *image*. No global rule can fix this class of thing — CSS gives no way to tell a decorative
+    # texture from a logo or a thumbnail drawn the same way — so it is treated where it lives.
+    # Two elements on alza that no global rule can handle, for the same underlying reason: CSS
+    # cannot see what an element is *for*. #detailItem is a page section carrying a texture image
+    # that background-color paints behind, never over. #fixedBottom is a transparent,
+    # pointer-events:none container pinned to the bottom purely to host floating widgets — giving
+    # it a background turns it into a 64px black band across every page.
+    #
+    # Both carry the NEVER guard: at (2,0,0) they clear `bg div` at (1,0,1). An id alone would be
+    # (1,0,0) and would lose.
+    style("site: alza.cz",
+          rule("#detailItem" + NEVER, "background-image: none")
+          + "\n"
+          # .fabs-row is a third transparent, pointer-events:none host. Found by toggling our own
+          # stylesheets inside 白い熊's saved archive and listing every wide element that flipped to
+          # opaque black — it was the only one carrying pointer-events:none.
+          + rule(wrap(["#fixedBottom" + NEVER,
+                       ".js-cookies-info" + NEVER + NEVER,
+                       ".fabs-row" + NEVER + NEVER], 1),
+                 "background-color: transparent"),
+          domains=["alza.cz"]),
     style("site: claude.ai",
           rule("pre.code-block__code", "padding: 4px 8px", "margin: 2px 0"),
           domains=["claude.ai"]),

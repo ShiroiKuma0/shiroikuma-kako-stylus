@@ -33,7 +33,9 @@ sheets = "\n".join(
 PAGE = """<!doctype html><meta charset="utf-8"><title>verify</title>
 <style id="page">
   /* a plausible site, including the `!important` fights that broke earlier versions */
-  body { font-family: Georgia, serif; line-height: 1.8; color: #333; background: #fff; }
+  /* the forum.mobilism.org pattern: a light wallpaper on <body> that black paints behind */
+  body { font-family: Georgia, serif; line-height: 1.8; color: #333;
+         background: #fff linear-gradient(#ccc, #e8e8e8); }
   .fa { font-family: "Font Awesome 6 Free"; font-weight: 900; line-height: 1; }
   .material-icons { font-family: "Material Icons"; }
   .navIcon { font-family: "SiteIcons"; }
@@ -41,6 +43,9 @@ PAGE = """<!doctype html><meta charset="utf-8"><title>verify</title>
   #sidebar { background: #ffffff !important; }
   .whiteBar { background: #ffffff !important; }
   .article { max-width: 320px !important; }
+  /* the substack.com pattern: a centred column pinned by width, not max-width */
+  .fixedCol { width: 300px; margin: 0 auto; }
+  .glossBtn { background-image: linear-gradient(#fff, #ddd); }
   a { color: #0066cc; }
   a.styled { color: #0066cc !important; }
   .cta { background: #00cfff !important; color: #fff !important; border: 1px solid #000; }
@@ -49,6 +54,12 @@ PAGE = """<!doctype html><meta charset="utf-8"><title>verify</title>
   hr { border: 0; border-top: 1px solid #d0d7de; }
   input.q { background: #fff !important; color: #111 !important; border: 1px solid #ccc; }
   img { max-width: 100%; }
+  /* the alza.cz carousel pattern: a transparent ::before overlay inside a stacking context,
+     used for a hover shade. Painting it black covers everything beneath it. */
+  .tile { position: relative; isolation: isolate; width: 120px; height: 80px; }
+  .tile::before { content: ""; position: absolute; inset: 0; background: transparent; }
+  /* a transparent full-width host pinned to the bottom, the alza.cz #fixedBottom pattern */
+  .pageOverlay { position: fixed; bottom: 0; width: 100%; height: 40px; pointer-events: none; }
   .gradientBar { background-image: linear-gradient(#fff, #eee) !important; height: 8px; }
   .spriteIcon { background-image: url("data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="); }
   /* the jisho.org pattern: a logo drawn as a background behind text that is then hidden */
@@ -68,6 +79,7 @@ __SHEETS__
     <a href="https://example.com/o" class="styled" id="link-styled">page-important link</a>
     <button id="btn">Press</button>
     <button class="cta" id="cta">Rozum&iacute;m</button>
+  <input type="submit" id="submit" value="Search">
   <a class="cookieAccept" id="jslink" href="javascript:acceptAll();">Rozum&iacute;m</a>
   <a class="btn-primary" id="clslink" href="/x">Podrobn&eacute; nastaven&iacute;</a>
     <input id="inp" class="q" placeholder="type">
@@ -78,6 +90,10 @@ __SHEETS__
   <div id="sidebar">sidebar</div>
   <div class="whiteBar" id="whitebar">top bar</div>
   <div class="article" id="article">a narrow article column</div>
+  <div class="fixedCol" id="fixedcol">a column pinned by width</div>
+  <button class="glossBtn" id="gloss">Search</button>
+  <div class="tile" id="tile"><img id="tileimg" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="></div>
+  <div class="pageOverlay" id="overlay"></div>
   <div class="gradientBar" id="gradbar"></div>
   <span class="spriteIcon" id="sprite"></span>
   <h1 class="logoWrap"><a class="brandLogo" id="logo" href="#">Jisho</a></h1>
@@ -86,6 +102,7 @@ __SHEETS__
   <svg id="inline-svg" width="12" height="12"><rect width="12" height="12"/></svg>
 <script>
 const g = id => getComputedStyle(document.getElementById(id));
+const g2 = sel => getComputedStyle(document.querySelector(sel));
 const fs = id => getComputedStyle(document.getElementById(id)).fontSize;
 const BLACK = 'rgb(0, 0, 0)', YELLOW = 'rgb(255, 255, 0)', CYAN = 'rgb(0, 255, 255)';
 const checks = [];
@@ -108,6 +125,8 @@ t('beats #sidebar{background !important}', g('sidebar').backgroundColor,
   g('sidebar').backgroundColor === BLACK);
 t('beats .whiteBar{background !important}', g('whitebar').backgroundColor,
   g('whitebar').backgroundColor === BLACK);
+t('the page wallpaper is cleared, not just painted behind',
+  g2('body').backgroundImage, g2('body').backgroundImage === 'none');
 t('prose font is Arial', g('para').fontFamily, /Arial/.test(g('para').fontFamily));
 t('prose line-height is 1em', g('para').lineHeight + ' vs ' + fs('para'),
   g('para').lineHeight === fs('para'));
@@ -142,6 +161,10 @@ t('beats .cta{background+color !important}',
   g('cta').backgroundColor === BLACK && g('cta').color === YELLOW);
 t('button trace costs no layout', g('btn').outlineOffset, g('btn').outlineOffset === '-1px');
 t('buttons are pills', g('btn').borderRadius, g('btn').borderRadius === '999px');
+t('input[type=submit] is treated as a button',
+  g('submit').backgroundColor + ' / ' + g('submit').color + ' / ' + g('submit').outlineColor,
+  g('submit').backgroundColor === BLACK && g('submit').color === YELLOW
+    && g('submit').outlineColor === YELLOW);
 t('a href="javascript:" is treated as a button, not a link',
   g('jslink').backgroundColor + ' / ' + g('jslink').color + ' / ' + g('jslink').borderRadius
     + ' / ' + g('jslink').outlineColor,
@@ -171,15 +194,29 @@ t('span inside code inherits grey', g('code-span').color, g('code-span').color =
 
 // --- full width -----------------------------------------------------------
 t('narrow column is released', g('article').maxWidth, g('article').maxWidth === 'none');
+t('a column pinned by width (not max-width) is released too',
+  g('fixedcol').width, g('fixedcol').width !== '300px');
+t('a control loses its gloss gradient, so black actually shows',
+  g('gloss').backgroundImage, g('gloss').backgroundImage === 'none');
 t('images keep their max-width', g('img').maxWidth, g('img').maxWidth !== 'none');
+
+// --- decorative pseudo-elements --------------------------------------------
+{
+  const before = getComputedStyle(document.getElementById('tile'), '::before');
+  t('a transparent ::before overlay is NOT painted black (it would cover the content)',
+    before.backgroundColor, before.backgroundColor === 'rgba(0, 0, 0, 0)');
+}
+
+t('an element named as an overlay is left transparent, not painted into a sheet',
+  g('overlay').backgroundColor, g('overlay').backgroundColor === 'rgba(0, 0, 0, 0)');
 
 // --- transparent artwork ---------------------------------------------------
 t('image ground is mid grey, so neither dark nor light ink can vanish',
   g('img').backgroundColor, g('img').backgroundColor === 'rgb(128, 128, 128)');
 t('inline svg gets no ground (it follows currentColor already)',
   g('inline-svg').backgroundColor, g('inline-svg').backgroundColor === BLACK);
-t('a decorative background-image is LEFT ALONE by default (strip-backdrops ships off)',
-  g('gradbar').backgroundImage, g('gradbar').backgroundImage !== 'none');
+t('a decorative background-image is removed (strip-backdrops now ships on)',
+  g('gradbar').backgroundImage, g('gradbar').backgroundImage === 'none');
 t('a sprite icon keeps its background-image', g('sprite').backgroundImage,
   g('sprite').backgroundImage !== 'none');
 t('a logo drawn as a background behind text SURVIVES (the jisho.org pattern)',
