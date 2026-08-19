@@ -5,6 +5,69 @@ for the upstream [Stylus](https://github.com/openstyles/stylus) release it is bu
 ships no changelog file of its own — its notes live only on GitHub Releases — so this file is
 entirely ours to maintain, newest first.
 
+## 白い熊 Stylus 2.4.10.24 — 2026-08-19
+
+Thirteen builds of fixes to the preinstalled library, all of them found by measuring real pages
+rather than reading CSS. The library is now 26 styles: 21 global and 5 site-specific.
+
+### Stop painting over things that were never painted
+
+A run of faults with one shape — an element transparent by design, given a background and turned
+into an opaque sheet over whatever it covered.
+
+- **`bg all` no longer touches `::before`/`::after`.** A pseudo-element carrying `content` is
+  decoration, very often a transparent absolutely-positioned overlay for a hover shade. Painting
+  them blanked **24 overlays** in alza.cz's product carousel, taking the image, stars, name and
+  price with them while the z-indexed badge and the buttons outside the tile survived. Colour still
+  reaches pseudo-elements, because text drawn in one has to be yellow: painting can only hide,
+  colouring cannot.
+- **New `ui: overlays`** leaves anything whose class says `overlay`, `backdrop` or `scrim` with its
+  own background. The same heuristic as the icon list — match how a thing is named. The asymmetry
+  justifies it: a light scrim staying light is cosmetic, a painted one hides the page.
+- Three transparent, `pointer-events: none` hosts on alza.cz — `#fixedBottom`, `.js-cookies-info`
+  and `.fabs-row` — each of which became a black band across the bottom of every page.
+
+### Colour paints behind an image, never over it
+
+- **`bg ground` clears the page wallpaper.** A `linear-gradient(#ccc, #e8e8e8)` on `<body>` was what
+  showed down both margins on forum.mobilism.org, untouched by any amount of `background-color`.
+- **Controls clear their gloss gradient**, which is what kept that site's Search button white even
+  once the selector was reaching it, and `input[type=submit|button|reset]` are now treated as the
+  buttons they are.
+- A **mid-grey ground behind transparent artwork** rather than white: white fixes dark ink and
+  destroys light ink, which erased a set of nav icons. `#808080` is the one value where neither can
+  disappear.
+
+### Width
+
+`ui: full-width` neutralises `width`, not only `max-width` — neither page that prompted the style
+was constrained by `max-width` at all. substack.com pins its column with `width: 728px` and auto
+margins; it now fills the window. The style keeps a `1em` gutter on `<body>` so released text does
+not sit against the window edge, and ships with jisho.org excluded.
+
+### Per-site rules, where no selector can generalise
+
+- **alza.cz** — `#detailItem`'s section texture; the three transparent bottom hosts above.
+- **unherd.com** — the article is a `flex: 0 0 50%` column in a row that only adds up to 75%. The
+  column is grown and the tag sidebar hidden, taking body text from 944px to the full row.
+
+### Specificity, and the ladder
+
+An `!important` beats another `!important` only on specificity, so a blanket `*` rule loses to any
+page `.card { background: #fff !important }`. Every rule that must win such a fight carries
+`:not(#sk-never)`, an id matching nothing: **(1,0,0)** for the blankets, **(1,0,1)** for element
+groups, **(1,1,x)** for UI affordances, **(2,0,0)** for site rules that have to clear them all.
+
+### Elsewhere
+
+- The **running build is stamped at the foot of the popup**, read from the manifest. A screenshot
+  that does not say which version produced it costs a whole round trip.
+- **Unsigned builds are named `…-unsigned.xpi`.** Only a signed build may go to the phone, and only
+  a signed build installs in a stock Firefox; the file name is the only thing visible when
+  installing.
+- The behavioural test is up to **48 assertions**, run in both Gecko and Blink, and now honours the
+  shipped `enabled` flag so a style that ships off is not tested as though it were live.
+
 ## 白い熊 Stylus 2.4.10.11 — 2026-08-19
 
 The first published release, on upstream **v2.4.10**. Two layers: an identity layer that makes this

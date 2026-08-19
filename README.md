@@ -32,7 +32,7 @@ each new upstream release.
 
 ### 📚 A reading library, preinstalled
 
-A fresh profile arrives with **23 styles already installed** — no import, no setup. Ten of them are
+A fresh profile arrives with **26 styles already installed** — no import, no setup. Ten of them are
 a matrix: black background and yellow text, each split by selector group (`all`, `html/body`, `div`,
 block containers, text elements) so that turning the yellow off for `div` **on one site** does not
 lose it everywhere. They occupy popup positions 1–9 and 0, so tuning a site is a three-key gesture:
@@ -42,6 +42,10 @@ Alongside them: forced sans-serif and a tight line height, both with a carve-out
 fonts working; monospace and a readable grey for code; cyan links that stay distinct from body text;
 traced yellow pills for buttons and text fields; a visible focus ring; a grey ground behind
 transparent artwork so neither dark nor light ink can vanish on a black page.
+
+Where no selector can generalise — a section texture, a transparent container that becomes a
+black band, an article column pinned by a flex basis — the fix lives in a small **per-site style**
+instead of being forced on every page.
 
 The library is **synced to every build**, matching by name and replacing only the CSS — your
 per-site exclusions, and which styles you have switched off, survive an update untouched.
