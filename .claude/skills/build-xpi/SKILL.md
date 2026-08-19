@@ -79,22 +79,19 @@ only 1–4 plain dot-separated integers with no zero padding, so this fork carri
 
 ## Delivery
 
-The `.xpi` goes to `~/tmp/`, named per the rule above. Desktop installs it directly. **Firefox for Android installs add-ons
-only from AMO or a custom AMO collection**, and an unlisted-signed build cannot go into a collection —
-so the Android install path is still an open question; ask 白い熊 rather than assuming `adb push`
-will do anything useful.
+The `.xpi` goes to `~/tmp/`, named per the rule above. Desktop installs it directly.
 
 ### Signed builds go to the phone; unsigned ones never do (hard rule)
 
-**Only a Mozilla-signed `.xpi` is ever delivered to the phone.** An unsigned build stays on the PC,
-for loading through `about:debugging` or installing into 白い熊 火狐 desktop, and is never pushed
-over adb or scp. Iteration builds are unsigned by definition, so in practice the phone only sees
-release builds.
+**Every Mozilla-signed `.xpi` goes to the phone, automatically — do not wait to be asked.** Signing
+finishes, the file lands in `~/tmp`, it is delivered. An unsigned build stays on the PC, for loading
+through `about:debugging` or installing into 白い熊 火狐 desktop, and is never pushed over adb or
+scp. Iteration builds are unsigned by definition, so in practice the phone sees exactly the release
+builds and nothing else.
 
-Whether Firefox **for Android** will install a signed `.xpi` from the filesystem at all is still the
-open question recorded in `CLAUDE.md` — stock Firefox for Android takes add-ons only from AMO or a
-custom collection, and an unlisted-signed build cannot go into a collection. Deliver the signed file
-when asked, but do not assert it will install; ask 白い熊 rather than assuming.
+Delivery is the `/adb-check` → `/adb-push` chain: connect (`192.168.1.73:5555`, then `skhw:15555`),
+push to `/sdcard/tmp/`, and **`adb disconnect` at the end of the batch** — a standing wireless
+session pins the WiFi radio awake. Every `adb` call runs with `dangerouslyDisableSandbox: true`.
 
 ### ⚠ Never delete an older build (hard rule)
 

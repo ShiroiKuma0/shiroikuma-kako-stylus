@@ -145,7 +145,8 @@ with the upstream notes for that release folded in.
 
 ## Open threads
 
-Three things are deliberately unfinished. None is blocking; all three need 白い熊's input.
+One thing is still unfinished — the wiki — and it needs 白い熊's hand, not code. The section
+below it records where signing and releasing stand.
 
 ### The wiki is not initialized
 
@@ -165,19 +166,15 @@ git clone git@github.com:ShiroiKuma0/shiroikuma-kako-stylus.wiki.git /tmp/skwiki
 cp .scratch/wiki/*.md /tmp/skwiki/ && cd /tmp/skwiki && git add -A && git commit && git push
 ```
 
-### The Android install path is unsettled
+### Signed and released
 
-Firefox for Android installs add-ons only from AMO or a **custom AMO collection**, and an
-unlisted-signed `.xpi` cannot be put in a collection. Desktop is fine — 白い熊 火狐 takes the `.xpi`
-directly. How the build reaches the phone is an open question: **ask, do not assume `adb push` does
-anything useful there.**
+`stylus@shiroikuma` went through AMO on **2026-08-19** and the ID is now permanent. Two releases are
+published — `2.4.10.11` and `2.4.10.24` — each a Mozilla-signed unlisted `.xpi` attached to a GitHub
+release, with the repo's default branch on `custom`. Every signed build is delivered to the phone at
+`/sdcard/tmp/` as a matter of course; see `.claude/skills/build-xpi`.
 
-### Nothing is signed or released yet
-
-`stylus@shiroikuma` has never been through AMO — the "First signed" column in the key file's
-"Extension IDs we own" table still reads `pending`. **The ID becomes permanent at the moment of the
-first signing run**, so settle the Android question before signing. `2.4.10.1` exists only as an
-unsigned build in `~/tmp`; no tag has been cut and no release published.
+The "First signed" column in `~/〇/[666] 私資料/[666][27] 暗号/firefox-amo-api-keys.org` may still
+read `pending` — that file is outside this repo and has not been updated.
 
 ## HARD RULES
 
