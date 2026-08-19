@@ -89,7 +89,8 @@ TEXT_INPUTS = ('[type=text], [type=search], [type=email], [type=url], [type=tel]
 # bare host and any subdomain.  See buildOverrideRe() in
 # src/background/style-manager/matcher.js.
 SUMO = "*://*.sumo.or.jp/*"
-JISHO = "*://*.jisho.org/*"
+SUBSTACK = "*://*.substack.com/*"
+UNHERD = "*://*.unherd.com/*"
 CLAUDE = "*://*.claude.ai/*"
 OWNCLOUD = "*://*.owncloud.online/*"
 ALZA = "*://*.alza.cz/*"
@@ -129,7 +130,11 @@ def rule(selectors, *decls):
     return "%s {\n%s}\n" % (selectors, body)
 
 
-def style(name, code, exclusions=(), domains=(), enabled=True):
+def style(name, code, exclusions=(), domains=(), enabled=True, only_on=()):
+    """`only_on` turns the style into an allowlist: Stylus applies it to those sites and nowhere
+    else. That is `inclusions` plus the `overridden` flag — the "only apply to included sites"
+    checkbox — see cache.js:41. Adding a site later is one keystroke in the popup: the menu's
+    `+` on the domain row."""
     return {
         "name": name,
         "enabled": enabled,
@@ -141,7 +146,8 @@ def style(name, code, exclusions=(), domains=(), enabled=True):
             "regexps": [],
         }],
         "exclusions": list(exclusions),
-        "inclusions": [],
+        "inclusions": list(only_on),
+        "overridden": bool(only_on),
         "updateUrl": None,
     }
 
@@ -198,7 +204,18 @@ styles = [
     # Colour is different: `fg all` keeps the pseudo-elements, because text drawn in a pseudo has
     # to be yellow like any other text. Painting a pseudo can only hide; colouring one cannot.
     style("bg all", rule(guarded(ALL), BG), [CLAUDE, OWNCLOUD]),
-    style("bg blocks", rule(guarded(BLOCKS), BG)),
+    # The table rule lives HERE, not in ui: strip-backdrops, and that placement is the point.
+    # A background image on a table cell or row is a tiled gradient strip in every case I have met
+    # — vBulletin paints every .thead/.tcat/.tfoot bar that way, which is where mobileread.com's
+    # light-blue bars and the white strips under yellow text came from — and colour paints behind
+    # an image, so `bg blocks` was leaving its own work half done. Putting it in strip-backdrops
+    # first was a mistake: that style ships enabled but the sync preserves each profile's own
+    # on/off state, so on a profile where it had been switched off the fix could never run.
+    style("bg blocks",
+          rule(guarded(BLOCKS), BG)
+          + "\n"
+          + rule(guarded(["table", "thead", "tbody", "tfoot", "tr", "td", "th"], NEVER, per_line=4),
+                 "background-image: none")),
     style("bg div", rule(guarded(DIV), BG), [CLAUDE]),
     # The page ground also drops its background *image*. background-color paints behind an image,
     # never over it, so a body wallpaper keeps showing through wherever the content wrapper does
@@ -338,7 +355,8 @@ styles = [
     # also took pseudo-element overlays before `bg all` stopped painting those.
     style("ui: strip-backdrops",
           rule("*:empty%s%s%s" % (NEVER, NOT_ICONS, NOT_MEDIA),
-               "background-image: none"),
+               "background-image: none")
+          ,
           [ALZA]),
 
     # Elements whose class says outright that they are a transparent layer over the page. Painting
@@ -369,13 +387,26 @@ styles = [
     # column with `width: 728px; margin: 0 auto` and unherd.com with a Bootstrap `width: 960px`
     # grid column. Neither is a max-width, so both survived the first version of this style.
     #
-    # This is the most invasive rule in the library — `width: auto` on every element that is not
-    # media, a control or an icon. Layouts that size a sidebar or a card explicitly will change.
-    # It is a separate style precisely so it is one keystroke to switch off on a site where the
-    # trade is not worth it.
+    # The most invasive rule in the library — `width: auto` on every element that is not media, a
+    # control or an icon — so it ships as an ALLOWLIST rather than globally: on only the two sites
+    # where it has been measured, and nowhere else until 白い熊 adds a domain from the popup menu
+    # (☰, then `1` on the domain row). Layouts that size a sidebar or a card explicitly change
+    # shape under it, which is not a thing to inflict on every site by default.
+    # `[style*="width"]` is excluded, and the reason is not cosmetic. An !important author rule
+    # outranks a NON-important inline style, so `width: auto !important` beats
+    # `style="width: 41px"` — and an absolutely-positioned empty div then shrink-to-fits to zero.
+    # Any extension that draws overlays into the page and sizes them inline (highlighters,
+    # annotation tools, region selectors, tooltips) loses its geometry that way, and the failure
+    # looks like *that* extension is broken. Reported by the 白い熊 SurfingKeys session, whose
+    # in-page search marks collapsed to 1px hairlines; measured here as width 41px -> 0px.
+    #
+    # Dropping `width: auto` and keeping only `max-width: none` was the other option offered, and
+    # it does not work: substack.com pins its column with `width: 728px; margin: 0 auto`, which is
+    # the case this style exists for. Neither page that prompted it was limited by max-width.
     style("ui: full-width",
-          rule("*%s%s%s%s" % (NEVER, NOT_MEDIA, NOT_ICONS,
-                              ":not(%s)" % ", ".join(CONTROLS)),
+          rule("*%s%s%s%s%s" % (NEVER, NOT_MEDIA, NOT_ICONS,
+                                ":not(%s)" % ", ".join(CONTROLS),
+                                ':not([style*="width"])'),
                "max-width: none",
                "width: auto")
           + "\n/* A flex item pinned by flex-basis ignores width. Restricted to :only-child, which\n"
@@ -391,7 +422,7 @@ styles = [
           + rule("body" + NEVER,
                  "padding-left: 1em",
                  "padding-right: 1em"),
-          [JISHO]),
+          only_on=[SUBSTACK, UNHERD]),
 
     # a:any-link and its descendants, lifted over the fg blanket. The descendant term is what does
     # the real work — modern sites wrap link text in a span — but it must skip icons, or every

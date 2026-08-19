@@ -16,6 +16,7 @@
    "*://*.owncloud.online/*"
   ],
   "inclusions": [],
+  "overridden": false,
   "updateUrl": null
  },
  {
@@ -23,7 +24,7 @@
   "enabled": true,
   "sections": [
    {
-    "code": "section:not(#sk-never), article:not(#sk-never), main:not(#sk-never),\naside:not(#sk-never), nav:not(#sk-never), header:not(#sk-never),\nfooter:not(#sk-never), form:not(#sk-never), ul:not(#sk-never),\nol:not(#sk-never), table:not(#sk-never), thead:not(#sk-never),\ntbody:not(#sk-never), tfoot:not(#sk-never), tr:not(#sk-never) {\n    background-color: black !important;\n}\n",
+    "code": "section:not(#sk-never), article:not(#sk-never), main:not(#sk-never),\naside:not(#sk-never), nav:not(#sk-never), header:not(#sk-never),\nfooter:not(#sk-never), form:not(#sk-never), ul:not(#sk-never),\nol:not(#sk-never), table:not(#sk-never), thead:not(#sk-never),\ntbody:not(#sk-never), tfoot:not(#sk-never), tr:not(#sk-never) {\n    background-color: black !important;\n}\n\ntable:not(#sk-never), thead:not(#sk-never), tbody:not(#sk-never), tfoot:not(#sk-never),\ntr:not(#sk-never), td:not(#sk-never), th:not(#sk-never) {\n    background-image: none !important;\n}\n",
     "urls": [],
     "urlPrefixes": [],
     "domains": [],
@@ -32,6 +33,7 @@
   ],
   "exclusions": [],
   "inclusions": [],
+  "overridden": false,
   "updateUrl": null
  },
  {
@@ -50,6 +52,7 @@
    "*://*.claude.ai/*"
   ],
   "inclusions": [],
+  "overridden": false,
   "updateUrl": null
  },
  {
@@ -68,6 +71,7 @@
    "*://*.claude.ai/*"
   ],
   "inclusions": [],
+  "overridden": false,
   "updateUrl": null
  },
  {
@@ -84,6 +88,7 @@
   ],
   "exclusions": [],
   "inclusions": [],
+  "overridden": false,
   "updateUrl": null
  },
  {
@@ -103,6 +108,7 @@
    "*://*.claude.ai/*"
   ],
   "inclusions": [],
+  "overridden": false,
   "updateUrl": null
  },
  {
@@ -122,6 +128,7 @@
    "*://*.claude.ai/*"
   ],
   "inclusions": [],
+  "overridden": false,
   "updateUrl": null
  },
  {
@@ -141,6 +148,7 @@
    "*://*.claude.ai/*"
   ],
   "inclusions": [],
+  "overridden": false,
   "updateUrl": null
  },
  {
@@ -159,6 +167,7 @@
    "*://*.sumo.or.jp/*"
   ],
   "inclusions": [],
+  "overridden": false,
   "updateUrl": null
  },
  {
@@ -177,6 +186,7 @@
    "*://*.sumo.or.jp/*"
   ],
   "inclusions": [],
+  "overridden": false,
   "updateUrl": null
  },
  {
@@ -193,6 +203,7 @@
   ],
   "exclusions": [],
   "inclusions": [],
+  "overridden": false,
   "updateUrl": null
  },
  {
@@ -209,6 +220,7 @@
   ],
   "exclusions": [],
   "inclusions": [],
+  "overridden": false,
   "updateUrl": null
  },
  {
@@ -225,6 +237,7 @@
   ],
   "exclusions": [],
   "inclusions": [],
+  "overridden": false,
   "updateUrl": null
  },
  {
@@ -241,6 +254,7 @@
   ],
   "exclusions": [],
   "inclusions": [],
+  "overridden": false,
   "updateUrl": null
  },
  {
@@ -257,6 +271,7 @@
   ],
   "exclusions": [],
   "inclusions": [],
+  "overridden": false,
   "updateUrl": null
  },
  {
@@ -273,6 +288,7 @@
   ],
   "exclusions": [],
   "inclusions": [],
+  "overridden": false,
   "updateUrl": null
  },
  {
@@ -291,6 +307,7 @@
    "*://*.alza.cz/*"
   ],
   "inclusions": [],
+  "overridden": false,
   "updateUrl": null
  },
  {
@@ -307,6 +324,7 @@
   ],
   "exclusions": [],
   "inclusions": [],
+  "overridden": false,
   "updateUrl": null
  },
  {
@@ -323,6 +341,7 @@
   ],
   "exclusions": [],
   "inclusions": [],
+  "overridden": false,
   "updateUrl": null
  },
  {
@@ -330,17 +349,19 @@
   "enabled": true,
   "sections": [
    {
-    "code": "*:not(#sk-never):not(img, picture, video, canvas, object, embed, iframe):not(i, svg, use, symbol, [class*=\"icon\" i], [class*=\"glyph\" i], [class*=\"symbol\" i], [class*=\"ico-\" i], .fa, [class*=\"fa-\"], [class*=\"material-icons\"], [class*=\"material-symbols\"], [class*=\"octicon\"], [class*=\"bi-\"], [class*=\"emoji\" i], [role=\"img\"], [aria-hidden=\"true\"]):not(button, input, select, textarea, option, optgroup, progress, meter, summary, [role=\"button\"], [role=\"tab\"], [role=\"menuitem\"], [role=\"switch\"], [role=\"checkbox\"], [role=\"radio\"]) {\n    max-width: none !important;\n    width: auto !important;\n}\n\n/* A flex item pinned by flex-basis ignores width. Restricted to :only-child, which\n   is what makes it safe: a lone column growing to fill its row cannot disturb a\n   multi-column layout, because there is no second column. unherd.com's article sits\n   in a flex row of exactly one child at `flex: 0 0 50%`, beside 960px of nothing. */\n*:only-child:not(#sk-never):not(img, picture, video, canvas, object, embed, iframe):not(i, svg, use, symbol, [class*=\"icon\" i], [class*=\"glyph\" i], [class*=\"symbol\" i], [class*=\"ico-\" i], .fa, [class*=\"fa-\"], [class*=\"material-icons\"], [class*=\"material-symbols\"], [class*=\"octicon\"], [class*=\"bi-\"], [class*=\"emoji\" i], [role=\"img\"], [aria-hidden=\"true\"]):not(button, input, select, textarea, option, optgroup, progress, meter, summary, [role=\"button\"], [role=\"tab\"], [role=\"menuitem\"], [role=\"switch\"], [role=\"checkbox\"], [role=\"radio\"]) {\n    flex-grow: 1 !important;\n}\n\n/* Releasing every column would leave the text hard against the window edge, so the\n   page keeps a gutter. On <body> rather than on the text elements, so it reads as a\n   page margin instead of an indent stacking onto whatever padding a card already has. */\nbody:not(#sk-never) {\n    padding-left: 1em !important;\n    padding-right: 1em !important;\n}\n",
+    "code": "*:not(#sk-never):not(img, picture, video, canvas, object, embed, iframe):not(i, svg, use, symbol, [class*=\"icon\" i], [class*=\"glyph\" i], [class*=\"symbol\" i], [class*=\"ico-\" i], .fa, [class*=\"fa-\"], [class*=\"material-icons\"], [class*=\"material-symbols\"], [class*=\"octicon\"], [class*=\"bi-\"], [class*=\"emoji\" i], [role=\"img\"], [aria-hidden=\"true\"]):not(button, input, select, textarea, option, optgroup, progress, meter, summary, [role=\"button\"], [role=\"tab\"], [role=\"menuitem\"], [role=\"switch\"], [role=\"checkbox\"], [role=\"radio\"]):not([style*=\"width\"]) {\n    max-width: none !important;\n    width: auto !important;\n}\n\n/* A flex item pinned by flex-basis ignores width. Restricted to :only-child, which\n   is what makes it safe: a lone column growing to fill its row cannot disturb a\n   multi-column layout, because there is no second column. unherd.com's article sits\n   in a flex row of exactly one child at `flex: 0 0 50%`, beside 960px of nothing. */\n*:only-child:not(#sk-never):not(img, picture, video, canvas, object, embed, iframe):not(i, svg, use, symbol, [class*=\"icon\" i], [class*=\"glyph\" i], [class*=\"symbol\" i], [class*=\"ico-\" i], .fa, [class*=\"fa-\"], [class*=\"material-icons\"], [class*=\"material-symbols\"], [class*=\"octicon\"], [class*=\"bi-\"], [class*=\"emoji\" i], [role=\"img\"], [aria-hidden=\"true\"]):not(button, input, select, textarea, option, optgroup, progress, meter, summary, [role=\"button\"], [role=\"tab\"], [role=\"menuitem\"], [role=\"switch\"], [role=\"checkbox\"], [role=\"radio\"]) {\n    flex-grow: 1 !important;\n}\n\n/* Releasing every column would leave the text hard against the window edge, so the\n   page keeps a gutter. On <body> rather than on the text elements, so it reads as a\n   page margin instead of an indent stacking onto whatever padding a card already has. */\nbody:not(#sk-never) {\n    padding-left: 1em !important;\n    padding-right: 1em !important;\n}\n",
     "urls": [],
     "urlPrefixes": [],
     "domains": [],
     "regexps": []
    }
   ],
-  "exclusions": [
-   "*://*.jisho.org/*"
+  "exclusions": [],
+  "inclusions": [
+   "*://*.substack.com/*",
+   "*://*.unherd.com/*"
   ],
-  "inclusions": [],
+  "overridden": true,
   "updateUrl": null
  },
  {
@@ -357,6 +378,7 @@
   ],
   "exclusions": [],
   "inclusions": [],
+  "overridden": false,
   "updateUrl": null
  },
  {
@@ -375,6 +397,7 @@
   ],
   "exclusions": [],
   "inclusions": [],
+  "overridden": false,
   "updateUrl": null
  },
  {
@@ -393,6 +416,7 @@
   ],
   "exclusions": [],
   "inclusions": [],
+  "overridden": false,
   "updateUrl": null
  },
  {
@@ -411,6 +435,7 @@
   ],
   "exclusions": [],
   "inclusions": [],
+  "overridden": false,
   "updateUrl": null
  },
  {
@@ -429,6 +454,7 @@
   ],
   "exclusions": [],
   "inclusions": [],
+  "overridden": false,
   "updateUrl": null
  },
  {
@@ -447,6 +473,7 @@
   ],
   "exclusions": [],
   "inclusions": [],
+  "overridden": false,
   "updateUrl": null
  }
 ]

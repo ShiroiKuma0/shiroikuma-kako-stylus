@@ -83,6 +83,10 @@ export default async function syncDefaultStyles() {
         item.enabled = old.enabled;
         if (old.exclusions?.length) item.exclusions = old.exclusions;
         if (old.inclusions?.length) item.inclusions = old.inclusions;
+        // `overridden` is the "only apply to included sites" switch. Once a profile has an opinion
+        // about it, keep that opinion — otherwise every library update would re-tick a box the
+        // user deliberately cleared.
+        if ('overridden' in old) item.overridden = old.overridden;
         if (old.customName) item.customName = old.customName;
         if (!old[MARK]) adopted++;
       }

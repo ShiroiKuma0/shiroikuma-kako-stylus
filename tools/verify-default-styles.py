@@ -23,6 +23,9 @@ lib = json.load(open(lib_path, encoding="utf-8"))
 # Only the global styles apply on an arbitrary page — and only the ones shipped enabled.
 globals_ = [s for s in lib if not s["sections"][0]["domains"] and s["enabled"]]
 disabled = [s["name"] for s in lib if not s["enabled"]]
+# Allowlisted styles reach only their listed sites. They are still injected here, because this
+# fixture tests what the CSS *does*; where it applies is decided by inclusions, not by the rules.
+allowlisted = [s["name"] for s in lib if s.get("overridden")]
 
 sheets = "\n".join(
     '<style data-name="%s" data-rules="%d">%s</style>'
@@ -63,6 +66,8 @@ PAGE = """<!doctype html><meta charset="utf-8"><title>verify</title>
   .gradientBar { background-image: linear-gradient(#fff, #eee) !important; height: 8px; }
   .spriteIcon { background-image: url("data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="); }
   /* the jisho.org pattern: a logo drawn as a background behind text that is then hidden */
+  /* the vBulletin pattern: a tiled gradient strip on a table cell that holds text */
+  td.thead { background-image: linear-gradient(#6989b4, #4a6d99); }
   .brandLogo { background-image: url("data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="); display: block; width: 88px; height: 42px; text-indent: -9999px; }
 </style>
 __SHEETS__
@@ -94,9 +99,12 @@ __SHEETS__
   <button class="glossBtn" id="gloss">Search</button>
   <div class="tile" id="tile"><img id="tileimg" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="></div>
   <div class="pageOverlay" id="overlay"></div>
+  <!-- an extension's in-page overlay, positioned and sized with inline styles -->
+  <div id="inlineMark" style="position:absolute;width:41px;height:12px;border:1px solid yellow"></div>
   <div class="gradientBar" id="gradbar"></div>
   <span class="spriteIcon" id="sprite"></span>
   <h1 class="logoWrap"><a class="brandLogo" id="logo" href="#">Jisho</a></h1>
+  <table><tr><td class="thead" id="thead">Forum header cell</td></tr></table>
   <div class="gradientBar" id="gradbar-ws">   </div>
   <img id="img" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==">
   <svg id="inline-svg" width="12" height="12"><rect width="12" height="12"/></svg>
@@ -194,6 +202,8 @@ t('span inside code inherits grey', g('code-span').color, g('code-span').color =
 
 // --- full width -----------------------------------------------------------
 t('narrow column is released', g('article').maxWidth, g('article').maxWidth === 'none');
+t('an inline-sized overlay keeps its geometry (extension marks, tooltips, region selectors)',
+  g('inlineMark').width, g('inlineMark').width === '41px');
 t('a column pinned by width (not max-width) is released too',
   g('fixedcol').width, g('fixedcol').width !== '300px');
 t('a control loses its gloss gradient, so black actually shows',
@@ -219,6 +229,8 @@ t('a decorative background-image is removed (strip-backdrops now ships on)',
   g('gradbar').backgroundImage, g('gradbar').backgroundImage === 'none');
 t('a sprite icon keeps its background-image', g('sprite').backgroundImage,
   g('sprite').backgroundImage !== 'none');
+t('a table cell loses its gradient strip (from bg blocks, not strip-backdrops)',
+  g('thead').backgroundImage, g('thead').backgroundImage === 'none');
 t('a logo drawn as a background behind text SURVIVES (the jisho.org pattern)',
   g('logo').backgroundImage, g('logo').backgroundImage !== 'none');
 checks.push({name: 'NOTE :empty vs whitespace-only element', ok: true,
@@ -242,5 +254,6 @@ document.body.replaceChildren(out);
 out = os.path.join(ROOT, ".scratch", "verify.html")
 os.makedirs(os.path.dirname(out), exist_ok=True)
 open(out, "w", encoding="utf-8").write(PAGE.replace("__SHEETS__", sheets))
-print("%s  <-  %s (%d enabled global styles; off by default: %s)"
-      % (out, os.path.basename(lib_path), len(globals_), ", ".join(disabled) or "none"))
+print("%s  <-  %s (%d enabled global styles; off by default: %s; allowlisted: %s)"
+      % (out, os.path.basename(lib_path), len(globals_),
+         ", ".join(disabled) or "none", ", ".join(allowlisted) or "none"))
