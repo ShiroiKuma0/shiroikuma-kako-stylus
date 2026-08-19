@@ -75,6 +75,21 @@ only from AMO or a custom AMO collection**, and an unlisted-signed build cannot 
 so the Android install path is still an open question; ask 白い熊 rather than assuming `adb push`
 will do anything useful.
 
+### ⚠ Never delete an older build (hard rule)
+
+Every `~/tmp/shiroikuma-kako-stylus_*.xpi` stays where it is. Do **not** remove, overwrite or tidy
+away a previous version — not when a newer one supersedes it, not to "reduce confusion" at install
+time, not because an earlier build turned out to be broken, and **not because 白い熊 asked you to
+delete one once**. A one-off request to clear a specific file is exactly that: one file, that time.
+It is never a standing licence to prune.
+
+The build counter exists so versions accumulate: each `.xpi` is the only remaining record of the
+source state that produced it, and once the tree has moved on it cannot be rebuilt. Keeping them is
+what makes it possible to go back to a build that worked, or to compare two, when a change turns
+out to have broken something.
+
+Name the new build's full path in the handover and leave the rest alone.
+
 ## If the build breaks
 
 - `Node <n> is too old` — the nvm line above was not run in *this* shell.
