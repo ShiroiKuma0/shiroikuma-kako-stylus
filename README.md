@@ -25,8 +25,31 @@ server. No analytics, no tracking — upstream's founding principle, kept.
 
 ## What this fork changes
 
-The fork is, so far, a **pure identity layer** — no behaviour is patched. That is deliberate: the
-smaller the diff, the more cleanly it replays onto each new upstream release.
+Two layers: an **identity layer**, so this build is its own add-on rather than a copy of somebody
+else's, and a **reading layer** — a style library and a themed UI that arrive already set up. Both
+are kept small and mostly additive, because the smaller the diff, the more cleanly it replays onto
+each new upstream release.
+
+### 📚 A reading library, preinstalled
+
+A fresh profile arrives with **23 styles already installed** — no import, no setup. Ten of them are
+a matrix: black background and yellow text, each split by selector group (`all`, `html/body`, `div`,
+block containers, text elements) so that turning the yellow off for `div` **on one site** does not
+lose it everywhere. They occupy popup positions 1–9 and 0, so tuning a site is a three-key gesture:
+hold `Enter`, tap the digit, press `Shift-1`.
+
+Alongside them: forced sans-serif and a tight line height, both with a carve-out that keeps icon
+fonts working; monospace and a readable grey for code; cyan links that stay distinct from body text;
+traced yellow pills for buttons and text fields; a visible focus ring; a grey ground behind
+transparent artwork so neither dark nor light ink can vanish on a black page.
+
+The library is **synced to every build**, matching by name and replacing only the CSS — your
+per-site exclusions, and which styles you have switched off, survive an update untouched.
+
+### 🖤 The extension's own windows, in the house palette
+
+The popup, the manager, the options page and the editor are black-and-yellow too, at a larger base
+font, with CodeMirror's syntax colours restated so they are legible on black.
 
 ### 🆔 Its own add-on identity
 

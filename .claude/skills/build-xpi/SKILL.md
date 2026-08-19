@@ -75,6 +75,18 @@ only from AMO or a custom AMO collection**, and an unlisted-signed build cannot 
 so the Android install path is still an open question; ask 白い熊 rather than assuming `adb push`
 will do anything useful.
 
+### Signed builds go to the phone; unsigned ones never do (hard rule)
+
+**Only a Mozilla-signed `.xpi` is ever delivered to the phone.** An unsigned build stays on the PC,
+for loading through `about:debugging` or installing into 白い熊 火狐 desktop, and is never pushed
+over adb or scp. Iteration builds are unsigned by definition, so in practice the phone only sees
+release builds.
+
+Whether Firefox **for Android** will install a signed `.xpi` from the filesystem at all is still the
+open question recorded in `CLAUDE.md` — stock Firefox for Android takes add-ons only from AMO or a
+custom collection, and an unlisted-signed build cannot go into a collection. Deliver the signed file
+when asked, but do not assert it will install; ask 白い熊 rather than assuming.
+
 ### ⚠ Never delete an older build (hard rule)
 
 Every `~/tmp/shiroikuma-kako-stylus_*.xpi` stays where it is. Do **not** remove, overwrite or tidy
