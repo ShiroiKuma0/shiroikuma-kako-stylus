@@ -5,6 +5,47 @@ for the upstream [Stylus](https://github.com/openstyles/stylus) release it is bu
 ships no changelog file of its own — its notes live only on GitHub Releases — so this file is
 entirely ours to maintain, newest first.
 
+## 白い熊 Stylus 2.4.10.29 — 2026-08-19
+
+Five builds on from 2.4.10.24, all of them driven by page archives rather than by reading CSS.
+
+### Colour paints behind an image — the fourth instalment
+
+vBulletin forums paint every `.thead`/`.tcat`/`.tfoot` bar with a tiled gradient strip, which is
+where `mobileread.com`'s light-blue bars and the white strips under yellow text came from. `bg
+blocks` already painted those same elements black; it now clears their background image too, so it
+stops leaving its own work half done.
+
+The rule was first put in `ui: strip-backdrops`, and that was a mistake worth recording. That style
+ships **enabled**, but the sync deliberately preserves each profile's own on/off state — so on a
+profile where it had been switched off, the fix could never run. The archive settled it: `:empty`
+appears zero times in the CSS Stylus injected into that page. The verification suite now runs twice,
+once as shipped and once with `strip-backdrops` removed, so no rule can silently become dependent on
+a style that a given profile has turned off.
+
+### `ui: full-width` is now an allowlist
+
+`width: auto` on every element is too invasive to inflict on every site, so the style is enabled
+with `overridden` set and inclusions limited to `substack.com` and `unherd.com`. Adding a site is
+one keystroke — the popup's ☰, then `+` on the domain row. The sync preserves `overridden` once a
+profile has an opinion about it, so an update cannot re-tick a box that was deliberately cleared.
+
+It also skips `[style*="width"]`. An `!important` author rule outranks a **non-important inline
+style**, so `width: auto !important` was beating `style="width: 41px"` and collapsing
+absolutely-positioned overlays to zero width — reported by the 白い熊 SurfingKeys session, whose
+in-page search marks had become 1px hairlines. Any extension that draws overlays into the page and
+sizes them inline was affected, and the failure looks like *that* extension is broken. Measured
+0px → 41px, with a permanent assertion against regression.
+
+### Delivery and documentation
+
+- Every Mozilla-signed `.xpi` now goes to the phone automatically; unsigned builds never leave the
+  PC and are named `…-unsigned.xpi` so the two can never be confused at the moment of installing.
+- The Android open question is dropped, and with it a genuinely dangerous piece of stale
+  documentation: `CLAUDE.md` still claimed nothing had ever been signed and that the add-on ID
+  becomes permanent at the first signing run, so signing should wait. A session reading that would
+  have refused to sign a release.
+
 ## 白い熊 Stylus 2.4.10.24 — 2026-08-19
 
 Thirteen builds of fixes to the preinstalled library, all of them found by measuring real pages
