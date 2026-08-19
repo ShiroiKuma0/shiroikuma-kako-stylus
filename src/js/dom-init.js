@@ -1,6 +1,7 @@
 // importing global CSS in stable order for mini-css-extract-plugin
 import '@/css/global.css';
 import '@/css/global-dark.css';
+import '@/css/fork-theme.css'; // shiroikuma fork: must follow both globals
 import '@/css/dom-error.css';
 import '@/css/scrollbar-chrome-dark.css';
 import '@/css/spinner.css';
