@@ -124,3 +124,15 @@
   &.CodeMirror-focused .CodeMirror-selected { background: hsla(60, 100%, 50%, 0.3); }
   .CodeMirror-matchingbracket { color: #000000; background: var(--fg); }
 }
+
+/* The running build, stamped at the foot of the popup — so any screenshot says which version
+   produced it, which is worth more than the two pixels it costs. Filled in by popup/index.js
+   from the manifest, never from a constant, so it cannot drift from what is installed. */
+#stylus #fork-version {
+  padding: 3px 8px 4px;
+  border-top: 1px solid var(--c90);
+  color: var(--c50);
+  font-size: .75em;
+  text-align: right;
+  letter-spacing: .03em;
+}

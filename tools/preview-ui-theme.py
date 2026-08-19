@@ -49,6 +49,7 @@ def popup():
       if (v.startsWith('+') || !v.includes(':')) el.textContent ||= v.replace(/^\\+/, '');
     });
     document.getElementById('write-style').textContent = 'Write style for: example.com';
+    document.getElementById('fork-version').textContent = '2.4.10.13';
     </script>
     """
     html = html.replace("</body>", BOOT + "</body>")

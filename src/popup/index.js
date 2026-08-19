@@ -15,6 +15,11 @@ import {initHotkeys} from './hotkeys';
 import {createWriterElement, showStyles, updateStateIcon} from './render';
 import './popup.css';
 
+// shiroikuma fork: stamp the running build into the popup. Read from the manifest rather
+// than a constant, so it can never drift from what was actually installed.
+const elForkVersion = $id('fork-version');
+if (elForkVersion) elForkVersion.textContent = chrome.runtime.getManifest().version;
+
 const WRITE_FRAME_SEL = '.match:not([data-frame-id="0"]):not(.dupe)';
 const UNREACHABLE = 'unreachable';
 const isFullscreenPopup = MOBILE
