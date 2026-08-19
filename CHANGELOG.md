@@ -42,9 +42,9 @@ sizes them inline was affected, and the failure looks like *that* extension is b
 - Every Mozilla-signed `.xpi` now goes to the phone automatically; unsigned builds never leave the
   PC and are named `…-unsigned.xpi` so the two can never be confused at the moment of installing.
 - The Android open question is dropped, and with it a genuinely dangerous piece of stale
-  documentation: `CLAUDE.md` still claimed nothing had ever been signed and that the add-on ID
-  becomes permanent at the first signing run, so signing should wait. A session reading that would
-  have refused to sign a release.
+  documentation: the fork's own guidance file still claimed nothing had ever been signed and that
+  the add-on ID becomes permanent at the first signing run, so signing should wait — advice that
+  would have stopped a release being cut at all.
 
 ## 白い熊 Stylus 2.4.10.24 — 2026-08-19
 
