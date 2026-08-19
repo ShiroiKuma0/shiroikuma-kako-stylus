@@ -42,7 +42,10 @@ const defaults = {
   [pPatchCsp]: false,              // add data: and popular image hosting sites to strict CSP
   [pPatchCsp + '.sites']: '',
   [pPatchCsp + '.sitesOnly']: false,
-  'show-badge': true,             // display text on popup menu icon
+  // shiroikuma fork: the applied-style count on the toolbar icon is noise once the library
+  // is global — every page shows the same number. Options → "Show number of styles"
+  // turns it back on; upstream already ships that checkbox, only the default moves.
+  'show-badge': false,            // display text on popup menu icon
   [pStyleViaASS]: false,           // document.adoptedStyleSheets
   [pStyleViaASS + '.sites']: '',
   [pStyleViaASS + '.sitesOnly']: false,
@@ -61,7 +64,9 @@ const defaults = {
   'schemeSwitcher.nightStart': '18:00',
   'schemeSwitcher.nightEnd': '06:00',
 
-  'popup.enabledFirst': true,     // display enabled styles before disabled styles
+  // shiroikuma fork: upstream defaults this on, which re-sorts the popup whenever a style is
+  // disabled and so moves the digit positions the preinstalled library relies on.
+  'popup.enabledFirst': false,    // display enabled styles before disabled styles
   'popup.stylesFirst': true,      // display enabled styles before disabled styles
   'popup.autoResort': false,      // auto re-sort styles after toggling
   'popup.borders': false,         // add white borders on the sides
