@@ -89,7 +89,11 @@ if (SIGN) {
 if (!packaged) die(`web-ext produced nothing in ${ARTIFACTS}`);
 
 fs.mkdirSync(OUT_DIR, {recursive: true});
-const out = path.join(OUT_DIR, `shiroikuma-kako-stylus_${version}.xpi`);
+// An unsigned build says so in its name. Only a signed .xpi may be delivered to the phone, and
+// only a signed one installs in a stock Firefox, so the two must never be confusable in ~/tmp —
+// the file name is the only thing visible at the moment of installing.
+const out = path.join(OUT_DIR,
+  `shiroikuma-kako-stylus_${version}${SIGN ? '' : '-unsigned'}.xpi`);
 fs.copyFileSync(path.join(ARTIFACTS, packaged), out);
 
 fs.writeFileSync(PROPS, props.replace(/^BUILD_NUMBER\s*=\s*\d+\s*$/m, `BUILD_NUMBER=${build + 1}`));

@@ -31,8 +31,17 @@ node tools/build-fork.mjs
 ```
 
 That runs `pnpm build-firefox` into `dist-firefox-mv2/`, packages it with `web-ext build`, copies the
-result to `~/tmp/shiroikuma-kako-stylus_<version>.xpi`, and **bumps `BUILD_NUMBER`** in
-`fork.properties` for the next build.
+result to `~/tmp/`, and **bumps `BUILD_NUMBER`** in `fork.properties` for the next build.
+
+### The file name says whether it is signed (hard rule)
+
+- unsigned: `shiroikuma-kako-stylus_<version>-unsigned.xpi`
+- signed:   `shiroikuma-kako-stylus_<version>.xpi`
+
+`build-fork.mjs` appends the suffix itself from the `--sign` flag, so the two can never be mixed up
+in `~/tmp` — the name is the only thing visible at the moment of installing, and the distinction
+matters twice over: only a signed build may go to the phone, and only a signed build installs in a
+stock Firefox.
 
 **Do not sign while iterating.** 白い熊 火狐 desktop is built with `MOZ_REQUIRE_SIGNING` unset and
 installs unsigned builds directly; loading `dist-firefox-mv2/` through `about:debugging` is faster
@@ -70,7 +79,7 @@ only 1–4 plain dot-separated integers with no zero padding, so this fork carri
 
 ## Delivery
 
-The `.xpi` goes to `~/tmp/`. Desktop installs it directly. **Firefox for Android installs add-ons
+The `.xpi` goes to `~/tmp/`, named per the rule above. Desktop installs it directly. **Firefox for Android installs add-ons
 only from AMO or a custom AMO collection**, and an unlisted-signed build cannot go into a collection —
 so the Android install path is still an open question; ask 白い熊 rather than assuming `adb push`
 will do anything useful.
