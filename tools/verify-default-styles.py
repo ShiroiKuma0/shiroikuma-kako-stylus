@@ -20,8 +20,9 @@ import html, json, os
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 lib_path = os.path.join(ROOT, "src", "background", "fork-default-styles.json")
 lib = json.load(open(lib_path, encoding="utf-8"))
-# Only the global styles apply on an arbitrary page.
-globals_ = [s for s in lib if not s["sections"][0]["domains"]]
+# Only the global styles apply on an arbitrary page — and only the ones shipped enabled.
+globals_ = [s for s in lib if not s["sections"][0]["domains"] and s["enabled"]]
+disabled = [s["name"] for s in lib if not s["enabled"]]
 
 sheets = "\n".join(
     '<style data-name="%s" data-rules="%d">%s</style>'
@@ -177,8 +178,8 @@ t('image ground is mid grey, so neither dark nor light ink can vanish',
   g('img').backgroundColor, g('img').backgroundColor === 'rgb(128, 128, 128)');
 t('inline svg gets no ground (it follows currentColor already)',
   g('inline-svg').backgroundColor, g('inline-svg').backgroundColor === BLACK);
-t('decorative background-image is removed', g('gradbar').backgroundImage,
-  g('gradbar').backgroundImage === 'none');
+t('a decorative background-image is LEFT ALONE by default (strip-backdrops ships off)',
+  g('gradbar').backgroundImage, g('gradbar').backgroundImage !== 'none');
 t('a sprite icon keeps its background-image', g('sprite').backgroundImage,
   g('sprite').backgroundImage !== 'none');
 t('a logo drawn as a background behind text SURVIVES (the jisho.org pattern)',
@@ -204,4 +205,5 @@ document.body.replaceChildren(out);
 out = os.path.join(ROOT, ".scratch", "verify.html")
 os.makedirs(os.path.dirname(out), exist_ok=True)
 open(out, "w", encoding="utf-8").write(PAGE.replace("__SHEETS__", sheets))
-print("%s  <-  %s (%d global styles)" % (out, os.path.basename(lib_path), len(globals_)))
+print("%s  <-  %s (%d enabled global styles; off by default: %s)"
+      % (out, os.path.basename(lib_path), len(globals_), ", ".join(disabled) or "none"))

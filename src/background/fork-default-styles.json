@@ -276,8 +276,8 @@
   "updateUrl": null
  },
  {
-  "name": "ui: no-backdrops",
-  "enabled": true,
+  "name": "ui: strip-backdrops",
+  "enabled": false,
   "sections": [
    {
     "code": "*:empty:not(#sk-never):not(i, svg, use, symbol, [class*=\"icon\" i], [class*=\"glyph\" i], [class*=\"symbol\" i], [class*=\"ico-\" i], .fa, [class*=\"fa-\"], [class*=\"material-icons\"], [class*=\"material-symbols\"], [class*=\"octicon\"], [class*=\"bi-\"], [class*=\"emoji\" i], [role=\"img\"], [aria-hidden=\"true\"]):not(img, picture, video, canvas, object, embed, iframe) {\n    background-image: none !important;\n}\n",

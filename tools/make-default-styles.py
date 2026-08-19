@@ -291,17 +291,20 @@ styles = [
     # background-color cannot remove a background *image*, so decorative gradients and banner
     # textures survive the blanket and keep painting pale bars across otherwise-black pages.
     #
-    # Restricted to `:empty`, and that restriction is the whole design. A great many sites draw
-    # their logo as a background image behind text that is then hidden — jisho.org is exactly
-    # this, `h1.logo a { background: url(…) }` around the word "Jisho" — and an unrestricted rule
-    # erases the logo along with the bars. An element with no children and no text has nothing to
-    # show *but* its background, so removing it there is safe; anything holding content keeps it.
+    # SHIPPED DISABLED, and renamed so the sync withdraws the enabled copy an earlier build
+    # installed — the sync deliberately preserves a style's on/off state, so shipping the same
+    # name disabled would have changed nothing on a profile that already had it on.
     #
-    # Pseudo-elements are deliberately not included: `.logo::before { background: url(…) }` is the
-    # same logo trick one level down, and there is no way to tell it from a decorative strip.
-    style("ui: no-backdrops",
+    # It is off because there is no way in CSS to tell a decorative gradient from a content
+    # image, and the attempts cost real content twice: unrestricted, it erased the jisho.org
+    # logo (`h1.logo a { background: url(…) }` behind hidden text); restricted to `:empty`, it
+    # erased every product thumbnail in alza.cz's carousels, which are empty elements carrying a
+    # background image. Enable it per site — tick "only apply to included sites" and add the
+    # domain — where a pale bar is worth more than whatever else it takes with it.
+    style("ui: strip-backdrops",
           rule("*:empty%s%s%s" % (NEVER, NOT_ICONS, NOT_MEDIA),
-               "background-image: none")),
+               "background-image: none"),
+          enabled=False),
 
     style("ui: focus",
           rule(":focus-visible" + NEVER,
