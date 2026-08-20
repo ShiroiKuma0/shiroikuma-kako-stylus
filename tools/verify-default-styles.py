@@ -76,6 +76,9 @@ PAGE = """<!doctype html><meta charset="utf-8"><title>verify</title>
   /* reCAPTCHA's footer controls: an empty <button> whose entire label is a background
      image, drawn as black ink on transparency */
   .rc-button { background: url("data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==") no-repeat center; width: 48px; height: 48px; }
+  /* reCAPTCHA's privacy badge: an empty div whose whole content is a logo, and nothing
+     in the icon vocabulary comes near the word "logo" */
+  .siteLogo { background-image: url("data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="); width: 44px; height: 44px; }
   .iconClass { background-image: url("data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="); width: 48px; height: 48px; }
   /* the floating-label field: an opaque label inset over the input, the Piano pattern */
   .fieldGroup { position: relative; display: block; width: 260px; }
@@ -125,6 +128,8 @@ __SHEETS__
   <!-- the other sense of the word: Material Components Web marks the button ITSELF, and that is
        a surface which must keep its ground rather than a layer to see through -->
   <button class="mdc-button mdc-ripple-upgraded" id="mdcBtn">Buy</button>
+  <!-- a picture drawn as an empty box: logo, badge, sprite, avatar, flag -->
+  <div class="siteLogo" id="logoDiv"></div>
   <!-- an icon control: empty, and its background image is the only label it has -->
   <button class="rc-button rc-button-reload" id="iconBtn" title="Get a new challenge"></button>
   <!-- the other kind of icon control: the glyph is drawn with `color`, so its ground
@@ -328,6 +333,9 @@ t('inline svg gets no ground (it follows currentColor already)',
   g('inline-svg').backgroundColor, g('inline-svg').backgroundColor === BLACK);
 t('a decorative background-image is removed (strip-backdrops now ships on)',
   g('gradbar').backgroundImage, g('gradbar').backgroundImage === 'none');
+t('an empty box named as a picture keeps it (logo, badge, sprite, avatar)',
+  g('logoDiv').backgroundImage === 'none' ? 'none' : 'kept',
+  g('logoDiv').backgroundImage !== 'none');
 t('a sprite icon keeps its background-image', g('sprite').backgroundImage,
   g('sprite').backgroundImage !== 'none');
 t('a table cell loses its gradient strip (from bg blocks, not strip-backdrops)',

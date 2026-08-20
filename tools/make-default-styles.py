@@ -63,6 +63,18 @@ CONTROLS = [
     '[role="switch"]', '[role="checkbox"]', '[role="radio"]',
 ]
 MEDIA = ["img", "picture", "video", "canvas", "object", "embed", "iframe"]
+# An icon is not the only thing a site draws as an empty box with a background image, and the
+# `:empty` sweep in `ui: strip-backdrops` cannot tell such a picture from a decorative strip. Same
+# heuristic as ICONS — match how the thing is NAMED — carrying the words that mean "this
+# background is a picture": reCAPTCHA's privacy badge is
+# `<div class="rc-anchor-logo-img rc-anchor-logo-img-large">` with `background: url(logo_48.png)`,
+# and nothing in ICONS comes close to it, so the sweep erased the logo and left an empty box.
+# The asymmetry that governs the whole file applies here too: guess wrong sparing something and a
+# decorative bar stays visible, which is cosmetic; guess wrong stripping something and content is
+# simply gone.
+ART = ['[class*="logo" i]', '[class*="brand" i]', '[class*="badge" i]', '[class*="avatar" i]',
+       '[class*="sprite" i]', '[class*="flag" i]', '[class*="thumb" i]', '[class*="img" i]',
+       '[class*="photo" i]', '[class*="picture" i]']
 # The things that look and behave like a button. Split from the void `input` forms because
 # `:empty` is always true of a void element and so can tell you nothing about it.
 BUTTONS = ["button", "select", '[role="button"]', '[role="tab"]', '[role="switch"]']
@@ -422,8 +434,9 @@ styles = [
     # `ui: controls` had decided. Which style is switched on is a per-profile matter, so the
     # carve-out has to hold in both.
     style("ui: strip-backdrops",
-          rule("*:empty%s%s%s%s" % (NEVER, NOT_ICONS, NOT_MEDIA,
-                                    ":not(%s)" % ", ".join(CONTROLS)),
+          rule("*:empty%s%s%s%s%s" % (NEVER, NOT_ICONS, NOT_MEDIA,
+                                      ":not(%s)" % ", ".join(CONTROLS),
+                                      ":not(%s)" % ", ".join(ART)),
                "background-image: none")
           ,
           [ALZA]),

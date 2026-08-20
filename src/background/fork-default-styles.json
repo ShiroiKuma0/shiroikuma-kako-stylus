@@ -296,7 +296,7 @@
   "enabled": true,
   "sections": [
    {
-    "code": "*:empty:not(#sk-never):not(i, svg, use, symbol, [class*=\"icon\" i], [class*=\"glyph\" i], [class*=\"symbol\" i], [class*=\"ico-\" i], .fa, [class*=\"fa-\"], [class*=\"material-icons\"], [class*=\"material-symbols\"], [class*=\"octicon\"], [class*=\"bi-\"], [class*=\"emoji\" i], [role=\"img\"], [aria-hidden=\"true\"]):not(img, picture, video, canvas, object, embed, iframe):not(button, input, select, textarea, option, optgroup, progress, meter, summary, [role=\"button\"], [role=\"tab\"], [role=\"menuitem\"], [role=\"switch\"], [role=\"checkbox\"], [role=\"radio\"]) {\n    background-image: none !important;\n}\n",
+    "code": "*:empty:not(#sk-never):not(i, svg, use, symbol, [class*=\"icon\" i], [class*=\"glyph\" i], [class*=\"symbol\" i], [class*=\"ico-\" i], .fa, [class*=\"fa-\"], [class*=\"material-icons\"], [class*=\"material-symbols\"], [class*=\"octicon\"], [class*=\"bi-\"], [class*=\"emoji\" i], [role=\"img\"], [aria-hidden=\"true\"]):not(img, picture, video, canvas, object, embed, iframe):not(button, input, select, textarea, option, optgroup, progress, meter, summary, [role=\"button\"], [role=\"tab\"], [role=\"menuitem\"], [role=\"switch\"], [role=\"checkbox\"], [role=\"radio\"]):not([class*=\"logo\" i], [class*=\"brand\" i], [class*=\"badge\" i], [class*=\"avatar\" i], [class*=\"sprite\" i], [class*=\"flag\" i], [class*=\"thumb\" i], [class*=\"img\" i], [class*=\"photo\" i], [class*=\"picture\" i]) {\n    background-image: none !important;\n}\n",
     "urls": [],
     "urlPrefixes": [],
     "domains": [],
