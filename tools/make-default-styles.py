@@ -2,7 +2,7 @@
 """Generate the fork's default style library for 白い熊 Stylus.
 
 A bg/fg matrix of ten global styles that occupy popup positions 1-9 and 0, three typography
-globals, five UI-affordance globals, and the site-specific leftovers from the old Stylish export.
+globals, nine UI-affordance globals, and the site-specific leftovers from the old Stylish export.
 Per-site tuning is Stylus' own per-style exclusions.
 
 Shipped preinstalled: src/background/fork-default-styles.json, imported by
@@ -83,6 +83,38 @@ LINK_BUTTONS = ['a[href^="javascript:" i]', 'a[class*="btn" i]', 'a[class*="butt
 TEXT_INPUTS = ('[type=text], [type=search], [type=email], [type=url], [type=tel],\n'
                '  [type=password], [type=number], [type=date], [type=datetime-local],\n'
                '  :not([type])')
+
+# A floating label or a fake placeholder is a span or a label that FOLLOWS its control, and that
+# order is not a coincidence: it is what makes `input:not(:placeholder-shown) + label` expressible,
+# so every implementation of the pattern puts it there. It is then laid back over the control's
+# own text line, which is why painting it matters so much more than painting anything else.
+#
+# Sibling-scoped, and that took a wrong turn to establish. The first version asked instead for
+# "anything inside an element that holds a control", which reads well and is far too greedy: a
+# page card that merely contains a search box is such an element, and in the fixture it unpainted
+# an <hr>, an inline <svg> and a cookie-accept link several rows away from the input.
+CONTROLS_OWNING = ["input", "textarea", "select"]
+ADORNMENTS = ["span", "label"]
+ADORNMENT_SEL = ":is(%s)%s ~ :is(%s)%s" % (", ".join(CONTROLS_OWNING), NEVER,
+                                           ", ".join(ADORNMENTS), NEVER)
+
+# --- design tokens ---------------------------------------------------------
+# The shadcn/ui vocabulary, which Tailwind v4 sites declare on :root.  Only the tokens that get
+# used ALONE are moved, and that restriction is the whole design.  `--foreground` and
+# `--muted-foreground` are ink applied to whatever ground happens to be there — a timestamp is
+# `text-muted-foreground` on nothing — so on our black they must move or go dark-on-dark.
+# `--primary`, `--secondary`, `--accent` and `--destructive` travel with their own `-foreground`
+# partner (`bg-primary text-primary-foreground`), a pair the site has already made legible and
+# that a black ground cannot disturb; moving half of one would be how you break a blue button.
+# `--accent` in particular is a hover band, and left alone it keeps the hover cue visible.
+#
+# The surfaces below are moved because their ink partners are: a card must be black if
+# `--card-foreground` is yellow.  The line colours have no partner at all, and match `ui: borders`
+# — inside a shadow root the token is the ONLY way to reach a border, since no rule of ours does.
+TOKENS_SURFACE = ["--background", "--card", "--popover", "--muted", "--sidebar"]
+TOKENS_INK = ["--foreground", "--card-foreground", "--popover-foreground", "--sidebar-foreground"]
+TOKENS_DIM = ["--muted-foreground"]
+TOKENS_LINE = ["--border", "--input", "--ring", "--sidebar-border", "--sidebar-ring"]
 
 # --- exclusion globs -------------------------------------------------------
 # The leading `*.` makes the subdomain optional, so one pattern covers both the
@@ -379,16 +411,67 @@ styles = [
     # (`v-ripple__container`) and Angular Material (`mat-ripple-element`) build theirs as spans too.
     # Kept to `span` on purpose: Material Components Web puts `mdc-ripple-upgraded` on the *button*,
     # which is a surface that should keep its ground, not a layer over one.
+    # The third kind of layer carries no telltale class name and is found by structure instead: a
+    # field's own floating label, absolutely positioned back across the input's text line. Painted
+    # black it is a bar over the field, and the box swallows every keystroke in silence — you
+    # type, and nothing appears. unherd.com's registration box is the case that named it, where
+    # Piano draws `<p class=input-group><input><span class=placeholder><i class=icon-email>`.
+    # Not one style's doing: `bg all` reaches that span at (1,0,0) and `bg text` at (1,0,1).
+    #
+    # Transparency is safe here in a way it is not elsewhere, and for a reason worth keeping hold
+    # of: the control underneath is itself painted by `ui: controls`, so an unpainted label reveals
+    # the field's own black, never the page behind it. The descendant term carries the leading
+    # icon, which lives one level inside the label rather than beside it.
     style("ui: overlays",
           rule(guarded(['[class*="overlay" i]', '[class*="backdrop" i]', '[class*="scrim" i]',
                         'span[class*="ripple" i]'],
                        NEVER + NEVER, per_line=1),
-               "background-color: transparent")),
+               "background-color: transparent")
+          + "\n/* a control's own floating label, and whatever it carries */\n"
+          + rule("%s,\n%s *%s" % (ADORNMENT_SEL, ADORNMENT_SEL, NEVER),
+                 "background-color: transparent")),
 
     style("ui: focus",
           rule(":focus-visible" + NEVER,
                "outline: 2px solid %s" % CYAN,
                "outline-offset: 0")),
+
+    # ⚠ The only style in the library that can reach inside a shadow root, and the reason it
+    # exists.  A widget in a shadow tree is sealed against every rule above: Stylus injects into
+    # the document, and document rules do not cross the boundary (it has no shadow-root injection
+    # — style-injector.js writes to the page or to document.adoptedStyleSheets, both of which stop
+    # at the host).  Two things do cross, because they are inherited: `color`, and custom
+    # properties.  So a widget's OWN colour classes keep their light-theme values on our black
+    # ground, and the text goes dark-on-dark.
+    #
+    # unherd.com's comment section is the case that named it — CoEditor mounts into
+    # `<div id=my-comments><template shadowrootmode=open>`, and inside it `.text-foreground`
+    # resolves to #0a0a0a on a host we have painted black.  Author names survived (no colour class
+    # of their own, so they inherit our yellow through the host) while every comment body and
+    # timestamp did not; measured at rgb(10,10,10) in 白い熊's screenshot.
+    #
+    # The repair is to move the tokens rather than the colours.  Tailwind v4 declares them on
+    # :root — and `:root` inside a shadow stylesheet matches nothing, since a shadow tree has no
+    # root element, so the values the widget reads are the DOCUMENT's, inherited in through the
+    # host.  Setting them on <html> therefore lands inside the sealed tree.  Verified against the
+    # saved page: overriding --foreground turns the shadow-DOM comment bodies yellow.
+    #
+    # What it cannot reach is a hard-coded arbitrary value — CoEditor's `Reply` is `#6a7282`
+    # written into the class name, not a token, and it stays grey.  Legible on black, and there is
+    # no route to it from outside the boundary.
+    #
+    # Excluded where the bg/fg blankets are already excluded: on those sites we are deliberately
+    # not repainting, and moving the tokens would repaint by the back door.
+    style("ui: design tokens",
+          "/* surfaces */\n"
+          + rule("html" + NEVER, *["%s: #000000" % t for t in TOKENS_SURFACE])
+          + "\n/* the ink on them */\n"
+          + rule("html" + NEVER, *["%s: %s" % (t, YELLOW) for t in TOKENS_INK])
+          + "\n/* secondary text keeps a rank of its own rather than flattening to body yellow */\n"
+          + rule("html" + NEVER, *["%s: %s" % (t, DIM_YELLOW) for t in TOKENS_DIM])
+          + "\n/* borders, focus rings and the input outline — line colours, not fills */\n"
+          + rule("html" + NEVER, *["%s: %s" % (t, YELLOW) for t in TOKENS_LINE]),
+          [SUMO, CLAUDE, OWNCLOUD]),
 
     # Sites constrain article text to a narrow column with max-width; this hands the window back.
     # Media keeps its own max-width, which is what stops an oversized image overflowing.

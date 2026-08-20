@@ -315,7 +315,7 @@
   "enabled": true,
   "sections": [
    {
-    "code": "[class*=\"overlay\" i]:not(#sk-never):not(#sk-never),\n[class*=\"backdrop\" i]:not(#sk-never):not(#sk-never),\n[class*=\"scrim\" i]:not(#sk-never):not(#sk-never),\nspan[class*=\"ripple\" i]:not(#sk-never):not(#sk-never) {\n    background-color: transparent !important;\n}\n",
+    "code": "[class*=\"overlay\" i]:not(#sk-never):not(#sk-never),\n[class*=\"backdrop\" i]:not(#sk-never):not(#sk-never),\n[class*=\"scrim\" i]:not(#sk-never):not(#sk-never),\nspan[class*=\"ripple\" i]:not(#sk-never):not(#sk-never) {\n    background-color: transparent !important;\n}\n\n/* a control's own floating label, and whatever it carries */\n:is(input, textarea, select):not(#sk-never) ~ :is(span, label):not(#sk-never),\n:is(input, textarea, select):not(#sk-never) ~ :is(span, label):not(#sk-never) *:not(#sk-never) {\n    background-color: transparent !important;\n}\n",
     "urls": [],
     "urlPrefixes": [],
     "domains": [],
@@ -340,6 +340,27 @@
    }
   ],
   "exclusions": [],
+  "inclusions": [],
+  "overridden": false,
+  "updateUrl": null
+ },
+ {
+  "name": "ui: design tokens",
+  "enabled": true,
+  "sections": [
+   {
+    "code": "/* surfaces */\nhtml:not(#sk-never) {\n    --background: #000000 !important;\n    --card: #000000 !important;\n    --popover: #000000 !important;\n    --muted: #000000 !important;\n    --sidebar: #000000 !important;\n}\n\n/* the ink on them */\nhtml:not(#sk-never) {\n    --foreground: #ffff00 !important;\n    --card-foreground: #ffff00 !important;\n    --popover-foreground: #ffff00 !important;\n    --sidebar-foreground: #ffff00 !important;\n}\n\n/* secondary text keeps a rank of its own rather than flattening to body yellow */\nhtml:not(#sk-never) {\n    --muted-foreground: #999900 !important;\n}\n\n/* borders, focus rings and the input outline — line colours, not fills */\nhtml:not(#sk-never) {\n    --border: #ffff00 !important;\n    --input: #ffff00 !important;\n    --ring: #ffff00 !important;\n    --sidebar-border: #ffff00 !important;\n    --sidebar-ring: #ffff00 !important;\n}\n",
+    "urls": [],
+    "urlPrefixes": [],
+    "domains": [],
+    "regexps": []
+   }
+  ],
+  "exclusions": [
+   "*://*.sumo.or.jp/*",
+   "*://*.claude.ai/*",
+   "*://*.owncloud.online/*"
+  ],
   "inclusions": [],
   "overridden": false,
   "updateUrl": null

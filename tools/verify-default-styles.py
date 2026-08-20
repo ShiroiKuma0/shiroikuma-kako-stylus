@@ -73,6 +73,14 @@ PAGE = """<!doctype html><meta charset="utf-8"><title>verify</title>
   /* the vBulletin pattern: a tiled gradient strip on a table cell that holds text */
   td.thead { background-image: linear-gradient(#6989b4, #4a6d99); }
   .brandLogo { background-image: url("data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="); display: block; width: 88px; height: 42px; text-indent: -9999px; }
+  /* the floating-label field: an opaque label inset over the input, the Piano pattern */
+  .fieldGroup { position: relative; display: block; width: 260px; }
+  .floatLabel { position: absolute; inset: 11px 0 0 3px; background: #ffffff; }
+  .plainSpan { background: #eeeeee; }
+  /* the design tokens a Tailwind v4 site declares, and a shadow-DOM widget then reads by
+     inheritance — `:root` inside a shadow stylesheet matches nothing, so the value it sees is
+     this one, which is why moving it here reaches inside the sealed tree */
+  :root { --foreground: #0a0a0a; --muted-foreground: #737373; }
 </style>
 __SHEETS__
 <body>
@@ -111,6 +119,16 @@ __SHEETS__
   <!-- the other sense of the word: Material Components Web marks the button ITSELF, and that is
        a surface which must keep its ground rather than a layer to see through -->
   <button class="mdc-button mdc-ripple-upgraded" id="mdcBtn">Buy</button>
+  <!-- a floating-label field: the label FOLLOWS its input, because that is what makes
+       `input:not(:placeholder-shown) + label` expressible, and is laid back over the input's own
+       text line. unherd.com's registration box, where painting it swallowed every keystroke. -->
+  <p class="fieldGroup" id="fieldGroup"><input id="flInput" type="text" value="typed text"
+    ><span class="floatLabel" id="flLabel"><i class="mailIcon" id="flIcon"></i>Email address</span></p>
+  <!-- ... while a span that follows no control is ordinary content and keeps its ground -->
+  <span class="plainSpan" id="plainSpan">not a field label</span>
+  <!-- a widget sealed in a shadow root: nothing we inject reaches inside it, so the only route
+       is what inherits through the host — which is what `ui: design tokens` exists for -->
+  <div id="shadowHost"></div>
   <!-- an extension's in-page overlay, positioned and sized with inline styles -->
   <div id="inlineMark" style="position:absolute;width:41px;height:12px;border:1px solid yellow"></div>
   <div class="gradientBar" id="gradbar"></div>
@@ -239,6 +257,40 @@ t('the label under the ripple still gets its own ground and colour',
   g('muiLabel').backgroundColor === 'rgb(0, 0, 0)' && g('muiLabel').color === 'rgb(0, 255, 255)');
 t('a button merely MARKED as a ripple surface keeps its ground',
   g('mdcBtn').backgroundColor, g('mdcBtn').backgroundColor === 'rgb(0, 0, 0)');
+
+// --- the field's own floating label ---------------------------------------
+t('a floating label is NOT painted (painted, the field eats every keystroke)',
+  g('flLabel').backgroundColor, g('flLabel').backgroundColor === 'rgba(0, 0, 0, 0)');
+t('nor is the leading icon it carries',
+  g('flIcon').backgroundColor, g('flIcon').backgroundColor === 'rgba(0, 0, 0, 0)');
+t('the field under it still shows what is typed',
+  g('flInput').backgroundColor + ' / ' + g('flInput').color,
+  g('flInput').backgroundColor === BLACK && g('flInput').color === YELLOW);
+t('a span that follows no control is content and keeps its ground',
+  g('plainSpan').backgroundColor, g('plainSpan').backgroundColor === BLACK);
+
+// --- design tokens, the only thing that crosses a shadow boundary ----------
+const tok = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+t('the page ink token is moved off the site value', tok('--foreground'),
+  tok('--foreground') === '#ffff00');
+{
+  // A CoEditor-shaped widget: its stylesheet lives inside the shadow root, where none of our
+  // rules apply and its own `:root` matches nothing. Only the inherited token reaches it.
+  const sr = document.getElementById('shadowHost').attachShadow({mode: 'open'});
+  sr.innerHTML = '<style>:root{--foreground:#0a0a0a;--muted-foreground:#737373}'
+    + '.text-foreground{color:var(--foreground)}'
+    + '.text-muted-foreground{color:var(--muted-foreground)}</style>'
+    + '<p class="text-foreground" id="sdBody">a comment body</p>'
+    + '<p class="text-muted-foreground" id="sdTime">3d ago</p>'
+    + '<p id="sdPlain">an author name, no colour class of its own</p>';
+  const sd = id => getComputedStyle(sr.getElementById(id));
+  t('shadow-DOM body text is reached through the token', sd('sdBody').color,
+    sd('sdBody').color === YELLOW);
+  t('shadow-DOM secondary text keeps a rank of its own', sd('sdTime').color,
+    sd('sdTime').color === 'rgb(153, 153, 0)');
+  t('shadow-DOM text with no colour class inherits through the host', sd('sdPlain').color,
+    sd('sdPlain').color === YELLOW);
+}
 
 // --- transparent artwork ---------------------------------------------------
 t('image ground is mid grey, so neither dark nor light ink can vanish',

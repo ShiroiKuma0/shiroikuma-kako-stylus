@@ -2,7 +2,7 @@
  * 白い熊 Stylus — the fork's preinstalled style library.
  *
  * A fresh install arrives with the reading setup already in place: a bg/fg matrix of ten global
- * styles that occupies popup positions 1-9 and 0, three typography globals, six UI-affordance
+ * styles that occupies popup positions 1-9 and 0, three typography globals, nine UI-affordance
  * globals, and the site-specific leftovers. Per-site tuning is then Stylus' own per-style
  * exclusions — popup, ☰, the "−" box on the domain row, or <Shift-1> from the keyboard.
  *
