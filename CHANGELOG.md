@@ -5,6 +5,129 @@ for the upstream [Stylus](https://github.com/openstyles/stylus) release it is bu
 ships no changelog file of its own — its notes live only on GitHub Releases — so this file is
 entirely ours to maintain, newest first.
 
+## 白い熊 Stylus 2.4.10.36 — 2026-08-20
+
+Built on upstream 2.4.10. Five builds on one theme in four disguises: our own paint landing on top
+of the very thing it was meant to make readable. Each was found from a saved page or from the
+site's own stylesheet rather than by reading ours, and the behavioural fixture grew from 53 checks
+to 68 in step.
+
+### A field's floating label is a bar across the field
+
+Type into unherd.com's registration box and nothing appears. Piano draws the field as
+`<p class=input-group><input><span class=placeholder><i class=icon-email>`, and that span is
+`position: absolute`, inset over the input's own text line and exactly as wide as it — 588px across
+a 588px field, measured in 白い熊's saved copy of the page. Painted black it is an opaque bar over
+the field, and the box swallows every keystroke in silence. Not one style's doing either: `bg all`
+reaches that span at (1,0,0) and `bg text` at (1,0,1).
+
+A floating label always *follows* its control — that is what makes `input:not(:placeholder-shown) +
+label` expressible, so every implementation of the pattern puts it there — and `ui: overlays` now
+leaves such a span or label, and whatever it carries, unpainted:
+
+    :is(input, textarea, select):not(#sk-never) ~ :is(span, label):not(#sk-never),
+    :is(input, textarea, select):not(#sk-never) ~ :is(span, label):not(#sk-never) *:not(#sk-never)
+      { background-color: transparent !important }
+
+Transparency is safe here in a way it is not elsewhere, and the reason is worth keeping hold of:
+the control underneath is itself painted by `ui: controls`, so an unpainted label reveals the
+field's own black, never the page behind it.
+
+Sibling-scoped, and that took a wrong turn to establish. The first attempt asked instead for
+"anything inside an element that holds a control", which reads well and is far too greedy — a page
+card that merely contains a search box is such an element, and the fixture caught it unpainting an
+`<hr>`, an inline `<svg>` and a cookie-accept link several rows away from the input.
+
+### A shadow root is sealed, and only its tokens get in
+
+Every comment on unherd.com was invisible: bodies and timestamps at rgb(10,10,10) on our black,
+while the author names were correctly yellow. CoEditor mounts into
+`<div id=my-comments><template shadowrootmode=open>`, and a widget in a shadow root is sealed
+against everything we inject — there is no shadow-root injection, and both of `style-injector`'s
+routes stop at the host. Two things still cross, because they inherit: `color`, and custom
+properties. That is exactly why the names survived — they carry no colour class of their own and
+inherit our yellow through the host — while anything with `.text-foreground` kept its light-theme
+`#0a0a0a`.
+
+`ui: design tokens` is the answer, and the only style in the library that can reach inside such a
+widget. Tailwind v4 declares its tokens on `:root`; `:root` inside a shadow stylesheet matches
+**nothing**, because a shadow tree has no root element, so the value the widget reads is the
+document's — set them on `<html>` and they land in the sealed tree. Verified against the archive:
+62 comment bodies and 266 timestamps, all reached.
+
+Only the tokens that get used **alone** are moved — `--foreground`, `--muted-foreground`, the
+surfaces their ink sits on, and the line colours. `--primary`, `--secondary`, `--accent` and
+`--destructive` travel with their own `-foreground` partner, a pair the site has already made
+legible and that a black ground cannot disturb; moving half of one is how you break a blue button.
+Secondary text goes to `#999900` rather than flattening to body yellow, so it keeps a rank of its
+own. What no token can reach is a hard-coded arbitrary value: CoEditor's `Reply` is `#6a7282`
+written into the class name, and it stays grey.
+
+### An empty control's background image is its label
+
+A control's background image is normally a gloss gradient, which a black `background-color` paints
+*behind* rather than over — hence the strip, which is what finally blackened the Search button on
+forum.mobilism.org. An **empty** control is the opposite case: the image is the only label it has.
+reCAPTCHA's reload, audio and info controls are 48×48 `<button>`s carrying
+`background: url(refresh_2x.png)` and nothing at all inside, so the strip left three blank rings and
+no way to ask for a new challenge or the audio version.
+
+Two rules were erasing it and the carve-out had to go in both — `ui: controls`, and
+`ui: strip-backdrops`, whose `*:empty` sweep an icon button matches by definition. Which of the two
+a profile has switched on is not ours to assume.
+
+Restoring the image was only half of it. That ink is black on transparency — reCAPTCHA's measures
+as pure `#000` — so on a black button it would have been exactly as gone as before, and an empty
+control now takes the same mid grey `ui: image-ground` uses, for the same reason: it is the one
+value where neither dark nor light ink can disappear. Classes that say `icon` are left out of the
+grey, since those draw their glyph with `color` and it is already yellow.
+
+`:empty` carries the whole distinction and is exact at both ends: an icon drawn as an inline `<svg>`
+child makes the button non-empty and needs none of this, while `input[type=submit|button|reset]` are
+void elements and therefore always empty, so they are split out and keep being stripped
+unconditionally.
+
+Still open at the time of this release: the three controls in reCAPTCHA's *image challenge* footer
+are unfixed, and not for this reason — the shipped build demonstrably keeps their picture, and the
+same mechanism visibly works on unherd.com's own dialog close button. That one needs the real DOM
+of the challenge frame, which is generated at runtime and cannot be read from the release's static
+files.
+
+### Never shrink the room a field made for its icon
+
+The pill's rounded ends want a little horizontal padding so the text does not sit against them, and
+forcing that was the mistake: a site that pads a field generously is nearly always making room for a
+leading icon. Piano pads its login field 16px for the envelope, `0.7em` cut it to 9.8px — less than
+the glyph is wide — and the first characters of what you type went behind it.
+
+CSS has no way to say "at least this much", since a property cannot read its own current value, so
+the only safe move is not to touch a field that has an adornment to make room for:
+
+    *:not(:has(> :is(span, label, i, svg, img))):not(#sk-never) > input:not(#sk-never):is(…)
+
+The test is on the parent's children rather than on the input's later siblings, which catches a
+leading icon written before the input as well as after it. Greedy on purpose, and here that costs
+nothing, unlike everywhere else in the library: over-matching only means a field keeps the padding
+the site chose, which is by definition what the site wanted.
+
+### An empty box IS its picture
+
+`ui: strip-backdrops` erases the background image of every `:empty` element, because an empty box
+carrying only a gradient is a decorative strip. An empty box carrying only a `url()` is the
+opposite — it *is* the picture — and CSS cannot tell the two apart, so the style leans on what the
+thing is named. Its carve-out knew only the word *icon*.
+
+reCAPTCHA's privacy badge is `<div class="rc-anchor-logo-img rc-anchor-logo-img-large">` with
+`background: url(logo_48.png)` and nothing else, so the sweep took the logo and left an empty box in
+the corner of the page. `ART` now carries the rest of the vocabulary — logo, brand, badge, avatar,
+sprite, flag, thumb, img, photo, picture — and the asymmetry that governs the whole library decides
+how generous to be: spare something wrongly and a decorative bar stays visible, which is cosmetic;
+strip something wrongly and content is simply gone.
+
+No mid-grey ground for this one, and the measurement is the reason: the badge's ink is `#b4b4b4` and
+`#4e8df5`, which is 10.1:1 against black and 1.9:1 against `#808080`. Which ground rescues artwork
+depends on its ink, so the grey is never a reflex.
+
 ## 白い熊 Stylus 2.4.10.31 — 2026-08-20
 
 Built on upstream 2.4.10. One fix, and one investigation that ended with nothing to change here.
