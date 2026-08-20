@@ -21,6 +21,9 @@ module.exports = [
       'dist*/',
       'src/vendor/',
       'src/vendor-overwrites/',
+      // the fork's gitignored working directory: page archives, generator output, throwaway
+      // browser profiles. Linting it fails the pre-push hook on files that are not the project's
+      '.scratch/',
     ],
   },
   //#endregion
