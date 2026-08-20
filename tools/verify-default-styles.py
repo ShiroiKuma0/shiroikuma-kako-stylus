@@ -73,6 +73,10 @@ PAGE = """<!doctype html><meta charset="utf-8"><title>verify</title>
   /* the vBulletin pattern: a tiled gradient strip on a table cell that holds text */
   td.thead { background-image: linear-gradient(#6989b4, #4a6d99); }
   .brandLogo { background-image: url("data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="); display: block; width: 88px; height: 42px; text-indent: -9999px; }
+  /* reCAPTCHA's footer controls: an empty <button> whose entire label is a background
+     image, drawn as black ink on transparency */
+  .rc-button { background: url("data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==") no-repeat center; width: 48px; height: 48px; }
+  .iconClass { background-image: url("data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="); width: 48px; height: 48px; }
   /* the floating-label field: an opaque label inset over the input, the Piano pattern */
   .fieldGroup { position: relative; display: block; width: 260px; }
   .floatLabel { position: absolute; inset: 11px 0 0 3px; background: #ffffff; }
@@ -119,6 +123,11 @@ __SHEETS__
   <!-- the other sense of the word: Material Components Web marks the button ITSELF, and that is
        a surface which must keep its ground rather than a layer to see through -->
   <button class="mdc-button mdc-ripple-upgraded" id="mdcBtn">Buy</button>
+  <!-- an icon control: empty, and its background image is the only label it has -->
+  <button class="rc-button rc-button-reload" id="iconBtn" title="Get a new challenge"></button>
+  <!-- the other kind of icon control: the glyph is drawn with `color`, so its ground
+       must stay black or a yellow glyph would land on mid grey -->
+  <button class="iconClass" id="iconClsBtn" title="Close"></button>
   <!-- a floating-label field: the label FOLLOWS its input, because that is what makes
        `input:not(:placeholder-shown) + label` expressible, and is laid back over the input's own
        text line. unherd.com's registration box, where painting it swallowed every keystroke. -->
@@ -257,6 +266,18 @@ t('the label under the ripple still gets its own ground and colour',
   g('muiLabel').backgroundColor === 'rgb(0, 0, 0)' && g('muiLabel').color === 'rgb(0, 255, 255)');
 t('a button merely MARKED as a ripple surface keeps its ground',
   g('mdcBtn').backgroundColor, g('mdcBtn').backgroundColor === 'rgb(0, 0, 0)');
+
+// --- icon controls: the image IS the label ---------------------------------
+t('an empty control keeps the background image that IS its label',
+  g('iconBtn').backgroundImage === 'none' ? 'none' : 'kept',
+  g('iconBtn').backgroundImage !== 'none');
+t('and gets a ground its ink can survive rather than black',
+  g('iconBtn').backgroundColor, g('iconBtn').backgroundColor === 'rgb(128, 128, 128)');
+t('a labelled control still loses its gloss gradient',
+  g('gloss').backgroundImage, g('gloss').backgroundImage === 'none');
+t('an empty control whose class says icon keeps the black ground (its glyph uses color)',
+  g('iconClsBtn').backgroundColor + ' / ' + g('iconClsBtn').color,
+  g('iconClsBtn').backgroundColor === BLACK && g('iconClsBtn').color === YELLOW);
 
 // --- the field's own floating label ---------------------------------------
 t('a floating label is NOT painted (painted, the field eats every keystroke)',

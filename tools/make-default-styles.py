@@ -63,6 +63,10 @@ CONTROLS = [
     '[role="switch"]', '[role="checkbox"]', '[role="radio"]',
 ]
 MEDIA = ["img", "picture", "video", "canvas", "object", "embed", "iframe"]
+# The things that look and behave like a button. Split from the void `input` forms because
+# `:empty` is always true of a void element and so can tell you nothing about it.
+BUTTONS = ["button", "select", '[role="button"]', '[role="tab"]', '[role="switch"]']
+BUTTON_INPUTS = ['input[type="submit"]', 'input[type="button"]', 'input[type="reset"]']
 # The pseudo-element variants: * never matches ::before/::after, so a glyph drawn
 # in a pseudo would otherwise inherit the parent's forced length.
 ICON_PSEUDOS = [
@@ -292,19 +296,32 @@ styles = [
           "/* buttons and selects: black ground, yellow trace, pill */\n"
           # input[type=submit|button|reset] are buttons too. Leaving them out is what left the
           # Search button unpainted on forum.mobilism.org.
-          + rule(guarded(["button", "select", '[role="button"]',
-                          '[role="tab"]', '[role="switch"]',
-                          'input[type="submit"]', 'input[type="button"]',
-                          'input[type="reset"]'], per_line=2),
+          + rule(guarded(BUTTONS + BUTTON_INPUTS, per_line=2),
                  "background-color: #000000",
-                 # a control's background image is a gloss gradient, never content — and colour
-                 # paints behind an image, so without this the button stays white. This is what
-                 # left forum.mobilism.org's Search button light even once it was being targeted.
-                 "background-image: none",
                  "color: %s" % YELLOW,
                  "outline: 1px solid %s" % YELLOW,
                  "outline-offset: -1px",
                  "border-radius: 999px")
+          + "\n/* A control's background image is a gloss gradient, and colour paints behind an\n"
+            "   image rather than over it, so without this the button stays white — that is what\n"
+            "   left the Search button light on forum.mobilism.org even once it was targeted.\n"
+            "   EXCEPT when the control is empty, and then the image is the only label it has:\n"
+            "   reCAPTCHA's reload, audio and info controls are 48x48 <button>s carrying\n"
+            "   `background: url(refresh_2x.png)` and nothing at all inside, so stripping it left\n"
+            "   three blank rings and no way to ask for a new challenge. An icon drawn as an\n"
+            "   inline <svg> child never enters into it: a child makes the button non-empty. */\n"
+          + rule(wrap([b + NEVER + ":not(:empty)" for b in BUTTONS], 2),
+                 "background-image: none")
+          + "\n/* the button-shaped inputs are void elements, so `:empty` is always true of them\n"
+            "   and can say nothing; their label is the `value`, never a picture */\n"
+          + rule(guarded(BUTTON_INPUTS, per_line=2), "background-image: none")
+          + "\n/* And such an icon is drawn on transparency — reCAPTCHA's is pure #000 — so on a\n"
+            "   black button it would be exactly as gone as when we were erasing it. Same answer\n"
+            "   as `ui: image-ground`, and the same mid grey, for the same reason: it is the one\n"
+            "   value where neither dark nor light ink can disappear. Elements whose class says\n"
+            "   `icon` are left out, because those draw the glyph with `color`, already yellow. */\n"
+          + rule(wrap([b + NEVER + ":empty" + NOT_ICONS for b in BUTTONS], 1),
+                 "background-color: #808080")
           + "\n/* the same treatment for links that act as buttons */\n"
           + rule(guarded(LINK_BUTTONS, NEVER + NEVER, per_line=1),
                  "background-color: #000000",
@@ -385,8 +402,14 @@ styles = [
     #
     # Earlier history, for the record: restricted to `:empty`, an unrestricted ancestor rule
     # also took pseudo-element overlays before `bg all` stopped painting those.
+    # Controls are excluded here as well as in `ui: controls`, and the second exclusion is not
+    # redundant: this style sweeps `:empty` elements, and an icon button is empty by definition,
+    # so on its own it would go on erasing reCAPTCHA's reload and audio controls no matter what
+    # `ui: controls` had decided. Which style is switched on is a per-profile matter, so the
+    # carve-out has to hold in both.
     style("ui: strip-backdrops",
-          rule("*:empty%s%s%s" % (NEVER, NOT_ICONS, NOT_MEDIA),
+          rule("*:empty%s%s%s%s" % (NEVER, NOT_ICONS, NOT_MEDIA,
+                                    ":not(%s)" % ", ".join(CONTROLS)),
                "background-image: none")
           ,
           [ALZA]),
