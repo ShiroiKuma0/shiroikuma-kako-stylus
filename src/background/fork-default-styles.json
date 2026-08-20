@@ -315,7 +315,7 @@
   "enabled": true,
   "sections": [
    {
-    "code": "[class*=\"overlay\" i]:not(#sk-never):not(#sk-never),\n[class*=\"backdrop\" i]:not(#sk-never):not(#sk-never),\n[class*=\"scrim\" i]:not(#sk-never):not(#sk-never) {\n    background-color: transparent !important;\n}\n",
+    "code": "[class*=\"overlay\" i]:not(#sk-never):not(#sk-never),\n[class*=\"backdrop\" i]:not(#sk-never):not(#sk-never),\n[class*=\"scrim\" i]:not(#sk-never):not(#sk-never),\nspan[class*=\"ripple\" i]:not(#sk-never):not(#sk-never) {\n    background-color: transparent !important;\n}\n",
     "urls": [],
     "urlPrefixes": [],
     "domains": [],

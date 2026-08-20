@@ -371,8 +371,17 @@ styles = [
     # would lift them from (1,0,0) to (1,1,0) and they would start outranking `ui: controls` at
     # (1,0,1). The doubled guard here puts this at (2,1,0), above every bg rule, and leaves the
     # ladder untouched.
+    # `span[class*="ripple" i]` is the same thing wearing a component library's name. Material UI
+    # ends every clickable with `<span class="MuiTouchRipple-root">` — absolutely positioned, inset
+    # 0, pointer-events none, and the LAST child, so it paints over the item's own text and icon.
+    # It blanked all 24 rows of alza.cz's category sidebar: `bg text` reaches it through `span` at
+    # (1,0,1), `bg all` at (1,0,0), while `bg div` never did, which is what named it. Vuetify
+    # (`v-ripple__container`) and Angular Material (`mat-ripple-element`) build theirs as spans too.
+    # Kept to `span` on purpose: Material Components Web puts `mdc-ripple-upgraded` on the *button*,
+    # which is a surface that should keep its ground, not a layer over one.
     style("ui: overlays",
-          rule(guarded(['[class*="overlay" i]', '[class*="backdrop" i]', '[class*="scrim" i]'],
+          rule(guarded(['[class*="overlay" i]', '[class*="backdrop" i]', '[class*="scrim" i]',
+                        'span[class*="ripple" i]'],
                        NEVER + NEVER, per_line=1),
                "background-color: transparent")),
 

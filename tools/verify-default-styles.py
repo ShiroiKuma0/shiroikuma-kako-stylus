@@ -63,6 +63,10 @@ PAGE = """<!doctype html><meta charset="utf-8"><title>verify</title>
   .tile::before { content: ""; position: absolute; inset: 0; background: transparent; }
   /* a transparent full-width host pinned to the bottom, the alza.cz #fixedBottom pattern */
   .pageOverlay { position: fixed; bottom: 0; width: 100%; height: 40px; pointer-events: none; }
+  /* Material UI's clickable: the ripple layer is the LAST child and covers the item's own
+     label, so painting it hides the label. alza.cz's category sidebar, all 24 rows of it. */
+  .MuiButtonBase-root { position: relative; display: block; width: 200px; }
+  .MuiTouchRipple-root { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
   .gradientBar { background-image: linear-gradient(#fff, #eee) !important; height: 8px; }
   .spriteIcon { background-image: url("data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="); }
   /* the jisho.org pattern: a logo drawn as a background behind text that is then hidden */
@@ -99,6 +103,14 @@ __SHEETS__
   <button class="glossBtn" id="gloss">Search</button>
   <div class="tile" id="tile"><img id="tileimg" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="></div>
   <div class="pageOverlay" id="overlay"></div>
+  <!-- a component library's clickable, ripple layer last: MUI, Vuetify and Angular Material all
+       build it as a transparent, pointer-events:none span laid over the item's own content -->
+  <a class="MuiButtonBase-root MuiListItemButton-root" id="muiItem" href="#"
+    ><span class="MuiListItemText-primary" id="muiLabel">Alza dny</span
+    ><span class="MuiTouchRipple-root" id="muiRipple"></span></a>
+  <!-- the other sense of the word: Material Components Web marks the button ITSELF, and that is
+       a surface which must keep its ground rather than a layer to see through -->
+  <button class="mdc-button mdc-ripple-upgraded" id="mdcBtn">Buy</button>
   <!-- an extension's in-page overlay, positioned and sized with inline styles -->
   <div id="inlineMark" style="position:absolute;width:41px;height:12px;border:1px solid yellow"></div>
   <div class="gradientBar" id="gradbar"></div>
@@ -219,6 +231,14 @@ t('images keep their max-width', g('img').maxWidth, g('img').maxWidth !== 'none'
 
 t('an element named as an overlay is left transparent, not painted into a sheet',
   g('overlay').backgroundColor, g('overlay').backgroundColor === 'rgba(0, 0, 0, 0)');
+
+t('a ripple layer stays transparent (painted, it hides the label underneath it)',
+  g('muiRipple').backgroundColor, g('muiRipple').backgroundColor === 'rgba(0, 0, 0, 0)');
+t('the label under the ripple still gets its own ground and colour',
+  g('muiLabel').backgroundColor + ' / ' + g('muiLabel').color,
+  g('muiLabel').backgroundColor === 'rgb(0, 0, 0)' && g('muiLabel').color === 'rgb(0, 255, 255)');
+t('a button merely MARKED as a ripple surface keeps its ground',
+  g('mdcBtn').backgroundColor, g('mdcBtn').backgroundColor === 'rgb(0, 0, 0)');
 
 // --- transparent artwork ---------------------------------------------------
 t('image ground is mid grey, so neither dark nor light ink can vanish',
