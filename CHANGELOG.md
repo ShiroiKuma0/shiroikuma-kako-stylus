@@ -5,6 +5,58 @@ for the upstream [Stylus](https://github.com/openstyles/stylus) release it is bu
 ships no changelog file of its own — its notes live only on GitHub Releases — so this file is
 entirely ours to maintain, newest first.
 
+## 白い熊 Stylus 2.4.10.31 — 2026-08-20
+
+Built on upstream 2.4.10. One fix, and one investigation that ended with nothing to change here.
+
+### A ripple layer is a sheet over the thing it decorates
+
+alza.cz's category sidebar — the whole left column of the home page, twenty-four rows — rendered as
+a solid black block: no label, no icon, nothing but the yellow trace around each row. The cause is a
+component library's decoration. Material UI ends every clickable with
+`<span class="MuiTouchRipple-root">`, absolutely positioned, `inset: 0`, `pointer-events: none`, and
+the **last child** of the item, so the moment it is given a background it becomes an opaque sheet
+over the item's own text and icon.
+
+`pointer-events: none` is also why it hides from investigation: it never answers a hit test, so
+probing the black pixels returns the label that is *underneath* it and everything looks correct.
+What named it was a bisect of the twenty style blocks 白い熊's saved copy of the page carried, each
+combination re-rendered in Gecko: `bg all` alone blanked the sidebar, `bg text` alone blanked it, and
+`bg div` never did. The one thing the first two share and the third lacks is `span`.
+
+The rule went to `ui: overlays`, which exists for precisely this class of element — one whose class
+name says it is a transparent layer over the page — and whose doubled guard puts it at (2,1,0),
+above every `bg` rule without lifting the blankets themselves:
+
+    span[class*="ripple" i]:not(#sk-never):not(#sk-never) { background-color: transparent !important }
+
+It is restricted to `span` deliberately. Vuetify (`v-ripple__container`) and Angular Material
+(`mat-ripple-element`) build their layer as a span as well, but Material Components Web puts
+`mdc-ripple-upgraded` on the **button itself** — a surface that has to keep its ground, not a layer
+to see through. Three assertions hold the distinction: the layer stays transparent, the label under
+it keeps its own ground and colour, and a button merely marked as a ripple surface is left alone.
+
+### Black boxes in 白い熊 SurfingKeys' URL prompt — diagnosed, and not ours to fix
+
+The 白い熊 SurfingKeys session reported black rectangles on the focused row of its search list,
+traced them to `bg all` and `ui: full-width`, and asked for the library to be excluded from
+`moz-extension://` documents. The exclusion would have changed nothing, because no add-on page is
+reachable from here in the first place: the single content script matches `<all_urls>`, and Gecko
+expands that to exactly `{http, https, ws, wss, file, ftp, data}` — `PermittedSchemes` in
+`toolkit/components/extensions/MatchPattern.cpp`. `moz-extension` is not in the set.
+
+What was on screen was not the omnibar in that add-on's iframe but its own URL prompt, which appends
+its `<style>` and its container to the **host page's** document with no shadow root, unlike the rest
+of its chrome — page content, indistinguishable from a card on a news site, and painted as designed.
+Its own reset, `#sk_shiroikuma_urlbar * { all: unset !important }`, is worth (1,0,0), which `bg text`
+and `bg div` outrank at (1,0,1); its `li.focused` at (1,1,0) outranks `bg all` and survived, which is
+why the row colours were right and only their children went black. This library injects author-origin
+`<style>` elements always — `styleViaAPI` is reached only for XML documents in Firefox and passes no
+`cssOrigin` — so a page can outrank it, and that session did, by doubling its widget's id.
+
+No carve-out was added here for it: naming one id in the generator protects that id only until it is
+renamed, whereas the doubled id travels with the widget that needs it.
+
 ## 白い熊 Stylus 2.4.10.29 — 2026-08-19
 
 Five builds on from 2.4.10.24, all of them driven by page archives rather than by reading CSS.
