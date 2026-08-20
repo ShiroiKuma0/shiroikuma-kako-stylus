@@ -342,7 +342,21 @@ styles = [
                  "border: none",
                  "border-radius: 999px",
                  "outline: 1px solid %s" % YELLOW,
-                 "outline-offset: -1px",
+                 "outline-offset: -1px")
+          + "\n/* ⚠ and the padding ONLY where the field has nothing else in it. A site that pads a\n"
+            "   field generously is usually making room for a leading icon, and overriding that\n"
+            "   with a smaller value walks the text straight underneath it: Piano pads its login\n"
+            "   field for the envelope, we cut it to 0.7em, and the first characters of what you\n"
+            "   type disappear behind the glyph. CSS cannot say \"at least this much\" — padding\n"
+            "   has no access to its own current value — so the only safe move is not to touch a\n"
+            "   field that has an adornment to make room for.\n"
+            "   The test is on the PARENT's children rather than on the input's later siblings,\n"
+            "   which catches a leading icon written before the input as well as after it. Being\n"
+            "   greedy costs nothing here, unlike everywhere else in this file: over-matching only\n"
+            "   means a field keeps the padding the site chose, which is by definition what the\n"
+            "   site wanted. */\n"
+          + rule("*:not(:has(> :is(span, label, i, svg, img)))%s > input%s:is(%s)"
+                 % (NEVER, NEVER, TEXT_INPUTS),
                  "padding-left: 0.7em",
                  "padding-right: 0.7em")
           + "\n"

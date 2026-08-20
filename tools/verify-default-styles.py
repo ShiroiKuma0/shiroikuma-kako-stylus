@@ -79,6 +79,8 @@ PAGE = """<!doctype html><meta charset="utf-8"><title>verify</title>
   .iconClass { background-image: url("data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="); width: 48px; height: 48px; }
   /* the floating-label field: an opaque label inset over the input, the Piano pattern */
   .fieldGroup { position: relative; display: block; width: 260px; }
+  /* the room the site made for its leading envelope — ours must not shrink it */
+  .fieldGroup input { padding-left: 34px; }
   .floatLabel { position: absolute; inset: 11px 0 0 3px; background: #ffffff; }
   .plainSpan { background: #eeeeee; }
   /* the design tokens a Tailwind v4 site declares, and a shadow-DOM widget then reads by
@@ -134,6 +136,7 @@ __SHEETS__
   <p class="fieldGroup" id="fieldGroup"><input id="flInput" type="text" value="typed text"
     ><span class="floatLabel" id="flLabel"><i class="mailIcon" id="flIcon"></i>Email address</span></p>
   <!-- ... while a span that follows no control is ordinary content and keeps its ground -->
+  <div id="plainWrap"><input id="plainInp" type="text" value="nothing beside me"></div>
   <span class="plainSpan" id="plainSpan">not a field label</span>
   <!-- a widget sealed in a shadow root: nothing we inject reaches inside it, so the only route
        is what inherits through the host — which is what `ui: design tokens` exists for -->
@@ -287,6 +290,11 @@ t('nor is the leading icon it carries',
 t('the field under it still shows what is typed',
   g('flInput').backgroundColor + ' / ' + g('flInput').color,
   g('flInput').backgroundColor === BLACK && g('flInput').color === YELLOW);
+t('a field with a leading adornment keeps the room the site made for it',
+  g('flInput').paddingLeft, g('flInput').paddingLeft === '34px');
+t('a field with nothing beside it still gets the pill padding',
+  g('plainInp').paddingLeft + ' vs 0.7em of ' + g('plainInp').fontSize,
+  Math.abs(parseFloat(g('plainInp').paddingLeft) - 0.7 * parseFloat(g('plainInp').fontSize)) < 0.5);
 t('a span that follows no control is content and keeps its ground',
   g('plainSpan').backgroundColor, g('plainSpan').backgroundColor === BLACK);
 
