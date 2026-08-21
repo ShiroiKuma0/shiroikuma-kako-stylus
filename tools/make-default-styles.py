@@ -72,9 +72,13 @@ MEDIA = ["img", "picture", "video", "canvas", "object", "embed", "iframe"]
 # The asymmetry that governs the whole file applies here too: guess wrong sparing something and a
 # decorative bar stays visible, which is cosmetic; guess wrong stripping something and content is
 # simply gone.
+# `poster`, `preview` and `cover` were added when the same heuristic had to serve a second
+# rule: a video player's poster frame is a background image on the <button> that covers the
+# player until you press it, and the class carrying it says so — `…placeholderWithPoster…`.
 ART = ['[class*="logo" i]', '[class*="brand" i]', '[class*="badge" i]', '[class*="avatar" i]',
        '[class*="sprite" i]', '[class*="flag" i]', '[class*="thumb" i]', '[class*="img" i]',
-       '[class*="photo" i]', '[class*="picture" i]']
+       '[class*="photo" i]', '[class*="picture" i]', '[class*="poster" i]',
+       '[class*="preview" i]', '[class*="cover" i]']
 # The things that look and behave like a button. Split from the void `input` forms because
 # `:empty` is always true of a void element and so can tell you nothing about it.
 BUTTONS = ["button", "select", '[role="button"]', '[role="tab"]', '[role="switch"]']
@@ -224,6 +228,26 @@ LINE_HEIGHT = (
 # exempt .fa keeps its icon font while an ordinary span inside it still gets Arial.
 NOT_ICONS = ":not(%s)" % ", ".join(ICONS)
 NOT_MEDIA = ":not(%s)" % ", ".join(MEDIA)
+NOT_CONTROLS = ":not(%s)" % ", ".join(CONTROLS)
+NOT_ART = ":not(%s)" % ", ".join(ART)
+# A link is interactive, so it is never one of the transparent layers the `:empty` sweep is after,
+# and its background image is its label exactly as a control's is.
+LINKS = ["a", '[role="link"]']
+NOT_LINKS = ":not(%s)" % ", ".join(LINKS)
+# A control that holds a picture is a media surface wearing a control's clothes, and no name says
+# so: a player is routinely `<div role="button">` wrapped around a <video>, under a hashed class
+# name that says nothing at all.  The child is the tell.
+NOT_MEDIA_HOST = ":not(:has(%s))" % ", ".join("> " + m for m in MEDIA)
+# ⚠ The CSS-triangle idiom: two transparent borders and one coloured, which is how a play arrow,
+# a select caret, a tooltip point and a speech-bubble tail are all drawn.  Recolouring every side
+# turns the triangle into a solid square — a white play arrow becomes a yellow block.  CSS
+# cannot ask whether a border is transparent (a property has no access to its own value), so the
+# only reachable discriminator is the name.  Greedy on purpose: `[class*="play" i]` also catches
+# `display`, `player` and `playlist`, and all that costs is those keeping the border colour the
+# site chose, which is the cosmetic side of the asymmetry.
+TRIANGLES = ['[class*="arrow" i]', '[class*="caret" i]', '[class*="triangle" i]',
+             '[class*="chevron" i]', '[class*="play" i]', '[class*="tooltip" i]']
+NOT_TRIANGLES = ":not(%s)" % ", ".join(TRIANGLES)
 CODE_TAGS = ["pre", "code", "kbd", "samp", "tt"]
 # These sit on the id ladder too, and have to: they carry a colour, so they compete with the
 # `fg all` blanket at (1,0,0), and the descendant form competes with `fg text` at (1,0,1) —
@@ -291,7 +315,7 @@ styles = [
     # border-style is none paints nothing, so this is inert everywhere a border was not already
     # drawn -- it recolours, it does not add.
     style("ui: borders",
-          rule(blanket(),
+          rule(blanket(NEVER + NOT_TRIANGLES),
                "border-color: %s" % YELLOW,
                "outline-color: %s" % YELLOW,
                "column-rule-color: %s" % YELLOW,
@@ -312,7 +336,16 @@ styles = [
                  "background-color: #000000",
                  "color: %s" % YELLOW,
                  "outline: 1px solid %s" % YELLOW,
-                 "outline-offset: -1px",
+                 "outline-offset: -1px")
+          + "\n/* ⚠ The pill is chrome, and only a chrome-sized control should wear it. A 624x351\n"
+            "   `<div role=\"button\">` wrapping a <video> is a control by ARIA and a picture by\n"
+            "   every other measure, and 999px turns it into an ellipse — the poster is clipped to\n"
+            "   an oval and the <video> inherits the radius with it, so the whole player goes.\n"
+            "   Spared by the same two tests the background image is spared by:\n"
+            "   a name that says picture, or a media child. The void input forms cannot hold a\n"
+            "   child at all, so they keep the pill unconditionally. */\n"
+          + rule(wrap([b + NEVER + NOT_ART + NOT_MEDIA_HOST for b in BUTTONS]
+                      + [b + NEVER for b in BUTTON_INPUTS], 1),
                  "border-radius: 999px")
           + "\n/* A control's background image is a gloss gradient, and colour paints behind an\n"
             "   image rather than over it, so without this the button stays white — that is what\n"
@@ -321,8 +354,11 @@ styles = [
             "   reCAPTCHA's reload, audio and info controls are 48x48 <button>s carrying\n"
             "   `background: url(refresh_2x.png)` and nothing at all inside, so stripping it left\n"
             "   three blank rings and no way to ask for a new challenge. An icon drawn as an\n"
-            "   inline <svg> child never enters into it: a child makes the button non-empty. */\n"
-          + rule(wrap([b + NEVER + ":not(:empty)" for b in BUTTONS], 2),
+            "   inline <svg> child never enters into it: a child makes the button non-empty.\n"
+            "   EXCEPT, again, when the class says the background is a picture: a player's poster\n"
+            "   frame is exactly that — a background image on a <button> that is not empty,\n"
+            "   because it holds the play arrow. `:empty` cannot see it; the name can. */\n"
+          + rule(wrap([b + NEVER + ":not(:empty)" + NOT_ART for b in BUTTONS], 1),
                  "background-image: none")
           + "\n/* the button-shaped inputs are void elements, so `:empty` is always true of them\n"
             "   and can say nothing; their label is the `value`, never a picture */\n"
@@ -404,9 +440,30 @@ styles = [
     #
     # Inline <svg> is deliberately absent: it follows currentColor and is already yellow, so a
     # grey box behind every icon would be pure noise.
+    # ⚠ `filter: none` belongs to the same promise, and without it the grey is worse than
+    # nothing.  `filter: brightness(0) invert(1)` is THE idiom for "make this icon white", and a
+    # filter is applied to the element's own background as well as to its picture: brightness(0)
+    # takes our grey to black, invert(1) takes it to white, and glyph and ground come out the
+    # same colour.  What you see is a solid white square where the icon was — measured at
+    # rgb(255,255,255), measured on a download button's icon.  CSS cannot select on a computed
+    # filter, so
+    # the answer is to make the ground's contract unconditional: every image sits on mid grey and
+    # shows its own ink.  The cost is a page's own blur-up placeholders and drop-shadows, which
+    # is cosmetic, against an icon that is simply gone, which is not.
     style("ui: image-ground",
           rule(guarded(["img", "picture", "object", "embed"], per_line=2),
-               "background-color: #808080")),
+               "background-color: #808080",
+               "filter: none")
+          + "\n/* An empty link is the other half of `an empty control's picture is its label`.\n"
+            "   A wordmark drawn as an empty <a> with the PNG as its background, under a\n"
+            "   CSS-in-JS hash for a class, gives ART no word to match at all: the name\n"
+            "   heuristic has run out. Being empty and interactive is the whole tell.\n"
+            "   And the grey has to come with it: that wordmark is dark navy, so handing the\n"
+            "   picture back on black would leave it just as invisible. An empty link that has no\n"
+            "   picture cannot show a grey box either — with no content it has no width to fill,\n"
+            "   unless the page sized it, and a page only sizes an empty link to hold a picture. */\n"
+          + rule(wrap([l + NEVER + ":empty" + NOT_ICONS for l in LINKS], 1),
+                 "background-color: #808080")),
 
     # background-color cannot remove a background *image*, so decorative gradients and banner
     # textures survive the blanket and keep painting pale bars across otherwise-black pages.
@@ -434,9 +491,8 @@ styles = [
     # `ui: controls` had decided. Which style is switched on is a per-profile matter, so the
     # carve-out has to hold in both.
     style("ui: strip-backdrops",
-          rule("*:empty%s%s%s%s%s" % (NEVER, NOT_ICONS, NOT_MEDIA,
-                                      ":not(%s)" % ", ".join(CONTROLS),
-                                      ":not(%s)" % ", ".join(ART)),
+          rule("*:empty%s%s%s%s%s%s" % (NEVER, NOT_ICONS, NOT_MEDIA, NOT_CONTROLS,
+                                        NOT_LINKS, NOT_ART),
                "background-image: none")
           ,
           [ALZA]),
@@ -479,10 +535,31 @@ styles = [
                "background-color: transparent")
           + "\n/* a control's own floating label, and whatever it carries */\n"
           + rule("%s,\n%s *%s" % (ADORNMENT_SEL, ADORNMENT_SEL, NEVER),
+                 "background-color: transparent")
+          + "\n/* ⚠ The fourth kind of layer, and the one that blanks a page outright: an EMPTY\n"
+            "   element left pinned over the viewport. Two sites went completely black on this,\n"
+            "   every pixel of them: a notification host (fixed, inset 0, z-index 1060,\n"
+            "   pointer-events none, no children) waiting for a toast that never comes, and a\n"
+            "   consent gate emptied on accept but never removed. Neither carries a word this\n"
+            "   style could match, and `pointer-events:none` hides such a layer from\n"
+            "   elementsFromPoint too, so they only surface in a paint diff.\n"
+            "   `:empty` is the discriminator, and it is the same one the rest of the file\n"
+            "   already trusts: an element with no content has nothing of its own to make\n"
+            "   legible, so painting it can only ever produce a sheet.\n"
+            "   Every exclusion is load-bearing. Controls: at (1,3,1) this would outrank the\n"
+            "   #808080 ground `ui: controls` gives an empty icon button. Media: <img>, <iframe>\n"
+            "   and <video> are :empty by definition and `ui: image-ground` must survive. Links:\n"
+            "   an empty link is a picture, treated just above. <hr>: void, so always :empty, and\n"
+            "   `ui: borders` fills it yellow to draw the line. */\n"
+          + rule("*:empty%s%s%s%s%s:not(hr)" % (NEVER, NOT_ICONS, NOT_MEDIA,
+                                                NOT_CONTROLS, NOT_LINKS),
                  "background-color: transparent")),
 
+    # The doubled guard is not decoration: `ui: borders` sits at (1,1,0) now that it carves
+    # the CSS triangles out, and a single guard here would tie with it and leave which of cyan
+    # and yellow wins to injection order. At (2,1,0) the focus ring is above every border rule.
     style("ui: focus",
-          rule(":focus-visible" + NEVER,
+          rule(":focus-visible" + NEVER + NEVER,
                "outline: 2px solid %s" % CYAN,
                "outline-offset: 0")),
 

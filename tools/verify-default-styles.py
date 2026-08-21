@@ -63,6 +63,24 @@ PAGE = """<!doctype html><meta charset="utf-8"><title>verify</title>
   .tile::before { content: ""; position: absolute; inset: 0; background: transparent; }
   /* a transparent full-width host pinned to the bottom, the alza.cz #fixedBottom pattern */
   .pageOverlay { position: fixed; bottom: 0; width: 100%; height: 40px; pointer-events: none; }
+  /* the layer that blanks a page outright: empty, click-through, the size of the viewport, and
+     left in the DOM for a toast that never comes or a gate already dismissed, and named
+     nothing a style could match */
+  .toastHost { position: fixed; inset: 0; z-index: 1060; pointer-events: none; }
+  /* a video player: role=button around the <video>, with the poster frame drawn as a background
+     image on the button that covers it until you press play */
+  .playerRoot { position: relative; width: 320px; height: 180px; border-radius: 8px; }
+  .videoPlaceholderWithPoster { width: 320px; height: 180px; border-radius: 8px;
+      background: url("data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==") center/cover; }
+  /* the CSS-triangle idiom: two transparent borders and one coloured */
+  .playArrow { width: 0; height: 0; border-top: 9px solid transparent;
+               border-bottom: 9px solid transparent; border-left: 15px solid #fff; }
+  /* an emotion-hashed wordmark: an empty link whose whole content is a background image, and
+     not one word in the class for the picture vocabulary to match */
+  .css-1qz4h9b { display: block; width: 150px; height: 32px;
+                 background: url("data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==") no-repeat; }
+  /* the standard "make this icon white": a filter repaints the element's own background too */
+  .dlGlyph { filter: brightness(0) invert(1); }
   /* Material UI's clickable: the ripple layer is the LAST child and covers the item's own
      label, so painting it hides the label. alza.cz's category sidebar, all 24 rows of it. */
   .MuiButtonBase-root { position: relative; display: block; width: 200px; }
@@ -154,6 +172,13 @@ __SHEETS__
   <table><tr><td class="thead" id="thead">Forum header cell</td></tr></table>
   <div class="gradientBar" id="gradbar-ws">   </div>
   <img id="img" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==">
+  <img id="filtIcon" class="dlGlyph" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==">
+  <div class="toastHost" id="toastHost"></div>
+  <div class="playerRoot" id="playerRoot" role="button" tabindex="0"
+    ><video id="playerVideo" width="320" height="180"></video
+    ><button class="videoPlaceholderWithPoster" id="posterBtn"
+      ><span class="playArrow" id="playArrow"></span></button></div>
+  <a class="css-1qz4h9b" id="wordmark" href="#"></a>
   <svg id="inline-svg" width="12" height="12"><rect width="12" height="12"/></svg>
 <script>
 const g = id => getComputedStyle(document.getElementById(id));
@@ -286,6 +311,34 @@ t('a labelled control still loses its gloss gradient',
 t('an empty control whose class says icon keeps the black ground (its glyph uses color)',
   g('iconClsBtn').backgroundColor + ' / ' + g('iconClsBtn').color,
   g('iconClsBtn').backgroundColor === BLACK && g('iconClsBtn').color === YELLOW);
+
+// --- the layer that blanks a page: empty, pinned, click-through ------------
+t('an EMPTY pinned layer stays transparent (painted, the whole page goes black)',
+  g('toastHost').backgroundColor, g('toastHost').backgroundColor === 'rgba(0, 0, 0, 0)');
+
+// --- a player is a picture wearing a control's clothes ---------------------
+t('a poster frame survives on the button that carries it',
+  g('posterBtn').backgroundImage === 'none' ? 'none' : 'kept',
+  g('posterBtn').backgroundImage !== 'none');
+t('and neither the poster nor the player it sits in is clipped to a pill',
+  g('posterBtn').borderRadius + ' / ' + g('playerRoot').borderRadius,
+  g('posterBtn').borderRadius === '8px' && g('playerRoot').borderRadius === '8px');
+t('a CSS triangle keeps its transparent sides (recoloured, it is a solid square)',
+  g('playArrow').borderTopColor + ' / ' + g('playArrow').borderLeftColor,
+  g('playArrow').borderTopColor === 'rgba(0, 0, 0, 0)'
+    && g('playArrow').borderLeftColor === 'rgb(255, 255, 255)');
+
+// --- an empty link is a picture, exactly as an empty control is ------------
+t('an empty link keeps the background image that IS its wordmark',
+  g('wordmark').backgroundImage === 'none' ? 'none' : 'kept',
+  g('wordmark').backgroundImage !== 'none');
+t('and gets the same ground, its ink being as likely to be dark',
+  g('wordmark').backgroundColor, g('wordmark').backgroundColor === 'rgb(128, 128, 128)');
+
+// --- a filter would repaint the ground along with the picture --------------
+t('an image the page monochromes keeps our ground (filtered, glyph and ground merge)',
+  g('filtIcon').filter + ' / ' + g('filtIcon').backgroundColor,
+  g('filtIcon').filter === 'none' && g('filtIcon').backgroundColor === 'rgb(128, 128, 128)');
 
 // --- the field's own floating label ---------------------------------------
 t('a floating label is NOT painted (painted, the field eats every keystroke)',
