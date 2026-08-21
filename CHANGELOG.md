@@ -5,6 +5,108 @@ for the upstream [Stylus](https://github.com/openstyles/stylus) release it is bu
 ships no changelog file of its own — its notes live only on GitHub Releases — so this file is
 entirely ours to maintain, newest first.
 
+## 白い熊 Stylus 2.4.10.38 — 2026-08-21
+
+Built on upstream 2.4.10. Five repairs, and the first is the worst failure this library can
+produce: two sites rendered **completely black** — every pixel `#000`, no text, no images, nothing
+at all. The other four came out of one saved page whose video preview and download icon had both
+vanished. The behavioural fixture grew from 68 checks to 75.
+
+### An empty layer pinned over the viewport blanks the page
+
+A site leaves a layer in the DOM and forgets it. One is a notification host — `position: fixed`,
+`inset: 0`, `z-index: 1060`, `pointer-events: none`, and no children — waiting for a toast that
+never comes. The other is a consent gate: emptied the moment you accept, given a class that makes
+it transparent and click-through, and never removed. Both are the size of the window. `bg all` at
+(1,0,0) paints one black, `bg div` at (1,0,1) paints the other, and either style **on its own**
+puts an opaque sheet over the entire site.
+
+`ui: overlays` could not see them. It matches the words *overlay*, *backdrop*, *scrim* and
+*ripple*, and neither element carries one — the same wall alza.cz's `#fixedBottom` and `.fabs-row`
+hit, and those had to be named per site. `pointer-events: none` also keeps such a layer out of
+every hit test, so `elementsFromPoint` walks straight past it; the only thing that finds it is a
+diff of every element's computed `background-color` before and after injection.
+
+The discriminator is `:empty`, and it is the one the rest of the library already trusts: an element
+with no content has nothing of its own to make legible, so painting it can only ever produce a
+sheet. `ui: overlays` now sweeps them:
+
+    *:empty:not(#sk-never):not(<icons>):not(<media>):not(<controls>):not(a, [role="link"]):not(hr)
+      { background-color: transparent !important }
+
+Every exclusion is load-bearing. Controls: at (1,3,1) this would outrank the `#808080` ground
+`ui: controls` gives an empty icon button. Media: `<img>`, `<iframe>` and `<video>` are `:empty` by
+definition and `ui: image-ground`'s grey has to survive. Links: an empty link is a picture, treated
+below. `<hr>`: void, so always `:empty`, and `ui: borders` fills it yellow to draw the line.
+
+And the asymmetry holds as it does everywhere in this library — spare a decorative bar wrongly and
+it stays visible, which is cosmetic; paint a layer wrongly and the page is simply gone.
+
+### An empty link's background image is its wordmark
+
+The same argument as the empty control, one element type further, and the case that shows where the
+name heuristic ends. A site draws its wordmark as an empty `<a>` with the PNG as a background —
+under a CSS-in-JS hash for a class, so `ART` has not one word to match, and the `:empty` sweep in
+`ui: strip-backdrops` erased the logo outright. Being **empty and interactive** is the whole tell: a
+page does not leave a transparent click-through layer on a link.
+
+Handing the picture back is only half of it, exactly as with an icon control. That wordmark is dark
+navy, so on black it would be as invisible as it was missing; an empty link therefore takes the same
+mid grey `ui: image-ground` uses. An empty link with *no* picture cannot show a grey box either — it
+has no content to give it width unless the page sized it, and a page only sizes an empty link to
+hold a picture.
+
+### A control that is a picture is not chrome
+
+`ui: controls` reads `[role="button"]` as a button, and a site will put that role on anything: a
+video player is routinely a `<div role="button">` wrapped around a `<video>`. At 624×351,
+`border-radius: 999px` clipped it to an **ellipse** — and the `<video>` inherited the radius with
+it, so the whole player went oval. The poster frame went too: it is a `background-image` on the
+`<button>` covering the player, and the `:empty` carve-out cannot save it, because that button holds
+the play arrow.
+
+Two tests now spare a control, and only from the pill and the image strip — the black ground, the
+yellow ink and the yellow trace still apply: a class that says its background is a picture (`ART`,
+which gained *poster*, *preview* and *cover* here), or a media child, `:not(:has(> img, > video, …))`.
+
+The media test is deliberately **not** applied to the image strip. `<button><img class=icon></button>`
+is an ordinary button and must still lose its gloss gradient, or yellow text lands on white; losing
+the pill instead is merely cosmetic.
+
+### A `filter` repaints our ground along with the picture
+
+`filter: brightness(0) invert(1)` is *the* idiom for "make this icon white", and a filter applies to
+the element's own background as well as to its content. `brightness(0)` takes `ui: image-ground`'s
+`#808080` to black; `invert(1)` takes it to white — and the glyph with it. What you see is a solid
+white block where the icon was, measured at `rgb(255, 255, 255)` on a download button's icon. That
+is worse than doing nothing: the white glyph would have been perfectly legible on our black.
+
+CSS cannot select on a computed filter, so the repair is to make the ground's contract
+unconditional. `ui: image-ground` now sets `filter: none` alongside the grey, and every image shows
+its own ink on a ground into which neither dark nor light can vanish. The cost is a page's own
+blur-up placeholders and drop-shadows on images — the cosmetic side of the asymmetry again.
+
+### Never recolour a CSS triangle's borders
+
+A play arrow, a select caret, a tooltip point and a speech-bubble tail are all one idiom: two
+transparent borders and one coloured. `ui: borders` recoloured **every** side, so the transparent
+ones turned yellow and the triangle became a solid square — a white play arrow, reduced to a yellow
+block in the middle of a video poster.
+
+CSS cannot ask whether a border is transparent — a property has no access to its own current value,
+the same limit that governs the field-padding rule — so the only reachable discriminator is the
+name: `TRIANGLES`, matching *arrow*, *caret*, *triangle*, *chevron*, *play* and *tooltip*. Greedy on
+purpose: `[class*="play" i]` also catches *display*, *player* and *playlist*, and all that costs is
+those keeping the border colour the site chose.
+
+One knock-on worth recording: the carve-out lifts the `ui: borders` blanket from (1,0,0) to (1,1,0),
+which would have tied with `ui: focus` and left the choice between cyan and yellow to injection
+order. The focus ring therefore carries a doubled guard now, at (2,1,0), above every border rule.
+
+### Upstream 2.4.10
+
+No upstream change in this release — 2.4.10 is the same base as 2.4.10.11 through 2.4.10.36.
+
 ## 白い熊 Stylus 2.4.10.36 — 2026-08-20
 
 Built on upstream 2.4.10. Five builds on one theme in four disguises: our own paint landing on top
