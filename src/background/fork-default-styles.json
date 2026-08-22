@@ -4,7 +4,7 @@
   "enabled": true,
   "sections": [
    {
-    "code": "*:not(#sk-never) {\n    background-color: black !important;\n}\n",
+    "code": "*:not(#sk-never) {\n    background-color: black !important;\n}\n\n/* a frame is a window onto another document; painting it can only board it up */\niframe:not(#sk-never) {\n    background-color: transparent !important;\n}\n",
     "urls": [],
     "urlPrefixes": [],
     "domains": [],

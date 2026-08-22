@@ -63,6 +63,12 @@ CONTROLS = [
     '[role="switch"]', '[role="checkbox"]', '[role="radio"]',
 ]
 MEDIA = ["img", "picture", "video", "canvas", "object", "embed", "iframe"]
+# The one element of MEDIA that is a window onto another document rather than a surface of this
+# one. `object` and `embed` are the same in kind, but they are NOT in this list: `ui: image-ground`
+# already hands them its mid grey at (1,0,1), the very weight this carve-out needs, and two rules
+# of equal weight are decided by whichever sheet was injected last. A transparent overlay is an
+# iframe in every case met; a plugin element is artwork, and artwork is what the grey is for.
+FRAMES = ["iframe"]
 # An icon is not the only thing a site draws as an empty box with a background image, and the
 # `:empty` sweep in `ui: strip-backdrops` cannot tell such a picture from a decorative strip. Same
 # heuristic as ICONS — match how the thing is NAMED — carrying the words that mean "this
@@ -303,7 +309,28 @@ styles = [
     #
     # Colour is different: `fg all` keeps the pseudo-elements, because text drawn in a pseudo has
     # to be yellow like any other text. Painting a pseudo can only hide; colouring one cannot.
-    style("bg all", rule(guarded(ALL), BG), [CLAUDE, OWNCLOUD]),
+    #
+    # ⚠ And it must not paint a frame. An <iframe> is a WINDOW, not a surface: what you see through
+    # it is the embedded document, and the element's own background shows only through the parts
+    # that document leaves transparent. So painting it is either invisible or catastrophic, never
+    # useful. Invisible, because a page that paints its own ground covers ours — and we cannot
+    # restyle a cross-origin document anyway, while a same-origin one gets our sheets injected into
+    # the frame itself, where `bg ground` blackens its html/body directly. Catastrophic, because
+    # the transparent frame is an idiom: a payment SDK parks a full-viewport `allowtransparency`
+    # frame in the DOM at `z-index: 2147483647` waiting for a card challenge that may never come,
+    # and an extension hangs its own UI in one the same way. Black, that frame is an opaque sheet
+    # over the entire viewport at the maximum z-index — nothing can be above it, and the page
+    # renders 100 % `#000`. It is the empty-pinned-layer failure again, but `ui: overlays` cannot
+    # reach it: its `:empty` sweep excludes media precisely because an iframe is always `:empty`.
+    # The repair is a rule rather than a `:not()` on the blanket, and that is load-bearing — a type
+    # selector inside `:not()` costs (0,0,1) and would lift `bg all` from (1,0,0) to (1,0,1), where
+    # it would tie with `ui: image-ground` and the grey behind every transparent PNG would come or
+    # go with the injection order — the same tie that keeps `object` and `embed` out of FRAMES.
+    style("bg all",
+          rule(guarded(ALL), BG)
+          + "\n/* a frame is a window onto another document; painting it can only board it up */\n"
+          + rule(guarded(FRAMES, per_line=3), "background-color: transparent"),
+          [CLAUDE, OWNCLOUD]),
     # The table rule lives HERE, not in ui: strip-backdrops, and that placement is the point.
     # A background image on a table cell or row is a tiled gradient strip in every case I have met
     # — vBulletin paints every .thead/.tcat/.tfoot bar that way, which is where mobileread.com's

@@ -75,6 +75,11 @@ PAGE = """<!doctype html><meta charset="utf-8"><title>verify</title>
   .tile::before { content: ""; position: absolute; inset: 0; background: transparent; }
   /* a transparent full-width host pinned to the bottom, the alza.cz #fixedBottom pattern */
   .pageOverlay { position: fixed; bottom: 0; width: 100%; height: 40px; pointer-events: none; }
+  /* the other layer that blanks a page outright, and the one ui: overlays cannot reach: a payment
+     SDK parks a transparent full-viewport iframe at the top of the stack, waiting for a card
+     challenge that may never come. Black, it is an opaque sheet nothing can be above. */
+  .payFrame { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 2147483647;
+              border: 0; }
   /* the layer that blanks a page outright: empty, click-through, the size of the viewport, and
      left in the DOM for a toast that never comes or a gate already dismissed, and named
      nothing a style could match */
@@ -186,6 +191,9 @@ __SHEETS__
   <img id="img" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==">
   <img id="filtIcon" class="dlGlyph" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==">
   <div class="toastHost" id="toastHost"></div>
+  <iframe class="payFrame" id="payFrame" title="3D Secure Flow Modal"
+    srcdoc="&lt;html&gt;&lt;/html&gt;" allowtransparency="true"></iframe>
+  <object id="objFrame" type="text/html"></object>
   <div class="playerRoot" id="playerRoot" role="button" tabindex="0"
     ><video id="playerVideo" width="320" height="180"></video
     ><button class="videoPlaceholderWithPoster" id="posterBtn"
@@ -352,6 +360,14 @@ t('an empty control whose class says icon keeps the black ground (its glyph uses
 // --- the layer that blanks a page: empty, pinned, click-through ------------
 t('an EMPTY pinned layer stays transparent (painted, the whole page goes black)',
   g('toastHost').backgroundColor, g('toastHost').backgroundColor === 'rgba(0, 0, 0, 0)');
+
+// --- a frame is a window onto another document, never a surface of this one ---
+t('a frame is never painted (a parked overlay frame would board up the whole page)',
+  g('payFrame').backgroundColor, g('payFrame').backgroundColor === 'rgba(0, 0, 0, 0)');
+t('but an <object> keeps image-ground grey — equal weight, so it must not be contested',
+  g('objFrame').backgroundColor, g('objFrame').backgroundColor === 'rgb(128, 128, 128)');
+t('and the blanket stays at (1,0,0), so an image keeps its grey rather than tying with it',
+  g('img').backgroundColor, g('img').backgroundColor === 'rgb(128, 128, 128)');
 
 // --- a player is a picture wearing a control's clothes ---------------------
 t('a poster frame survives on the button that carries it',
