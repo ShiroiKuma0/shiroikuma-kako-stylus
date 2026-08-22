@@ -42,6 +42,18 @@ PAGE = """<!doctype html><meta charset="utf-8"><title>verify</title>
   .fa { font-family: "Font Awesome 6 Free"; font-weight: 900; line-height: 1; }
   .material-icons { font-family: "Material Icons"; }
   .navIcon { font-family: "SiteIcons"; }
+  /* a video player's transport bar: the icon-font codepoint is drawn on the ::before of the
+     CONTROL itself, under class names that say nothing at all -- play-control, mute-control */
+  .pl-control { position: relative; width: 36px; height: 36px; display: inline-block; }
+  .pl-control.pl-button::before { position: absolute; top: 50%; left: 50%;
+      content: "\\e605"; font-family: "PlayerIcons", sans-serif; font-size: 24px; }
+  /* ...and the element side of it: the font is declared on the ELEMENT and the knob drawn in a
+     ::before that inherits it, which is why `vjs-` is on the sans blanket's exclusion list */
+  .vjs-volume-level { font-family: "VideoJS"; }
+  .vjs-volume-level::before { content: "\\f116"; }
+  /* ...while a pseudo the page gave no font of its own is prose decoration, and must still come
+     out Arial -- by inheritance from its originating element, not from a rule of ours */
+  .pullquote::before { content: "\\201C"; }
   .card { line-height: 1.6; background: #ffffff !important; border: 2px solid #d0d7de; }
   #sidebar { background: #ffffff !important; }
   .whiteBar { background: #ffffff !important; }
@@ -179,6 +191,10 @@ __SHEETS__
     ><button class="videoPlaceholderWithPoster" id="posterBtn"
       ><span class="playArrow" id="playArrow"></span></button></div>
   <a class="css-1qz4h9b" id="wordmark" href="#"></a>
+  <button class="pl-play-control pl-control pl-button" id="plPlay"
+    ><span class="pl-control-text" id="plText">Play</span></button>
+  <div class="vjs-volume-level" id="plKnob"><span class="vjs-control-text"></span></div>
+  <p class="pullquote" id="pullquote">a pulled quote</p>
   <svg id="inline-svg" width="12" height="12"><rect width="12" height="12"/></svg>
 <script>
 const g = id => getComputedStyle(document.getElementById(id));
@@ -224,6 +240,27 @@ t('FA icon line-height is normal', g('icon-fa').lineHeight, g('icon-fa').lineHei
 t('svg line-height is normal', g('icon-svg').lineHeight, g('icon-svg').lineHeight === 'normal');
 t('child of an icon still gets Arial (:not is per-element)',
   g('icon-child').fontFamily, /Arial/.test(g('icon-child').fontFamily));
+{
+  // The glyph a player draws on the control's OWN ::before. No name list can reach it, so the
+  // sans blanket simply stops at the element; forced to Arial the PUA codepoint maps nowhere
+  // and Gecko draws the .notdef hex box in place of play, mute, quality, PiP and fullscreen.
+  const b = getComputedStyle(document.getElementById('plPlay'), '::before');
+  t('an icon glyph drawn on the control itself keeps its font (no name says "icon")',
+    b.fontFamily, /PlayerIcons/.test(b.fontFamily));
+  t('the control around it still gets Arial', g('plPlay').fontFamily,
+    /Arial/.test(g('plPlay').fontFamily));
+  t('its text label gets Arial too', g('plText').fontFamily, /Arial/.test(g('plText').fontFamily));
+  const q = getComputedStyle(document.getElementById('pullquote'), '::before');
+  t('a pseudo with no font of its own still comes out Arial (by inheritance)',
+    q.fontFamily, /Arial/.test(q.fontFamily));
+  // The element side: no rule of ours can see that a class carries a webfont, so the one handle
+  // left is the library's own name.
+  t('a player element carrying an icon font keeps it', g('plKnob').fontFamily,
+    /VideoJS/.test(g('plKnob').fontFamily));
+  const k = getComputedStyle(document.getElementById('plKnob'), '::before');
+  t('so the knob drawn in its ::before inherits that font, not Arial', k.fontFamily,
+    /VideoJS/.test(k.fontFamily));
+}
 
 // --- links ----------------------------------------------------------------
 t('link is cyan', g('link').color, g('link').color === CYAN);

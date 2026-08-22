@@ -254,8 +254,36 @@ CODE_TAGS = ["pre", "code", "kbd", "samp", "tt"]
 # hence the doubled guard there rather than relying on which style happens to be injected last.
 CODE_SELF = ", ".join(t + NEVER for t in CODE_TAGS)
 CODE_KIDS = ", ".join(t + NEVER + " " + NEVER for t in ("pre", "code"))
+# The element side of the same failure, and the one place a name list is still the only handle.
+# Video.js declares `.video-js .vjs-play-progress, .video-js .vjs-volume-level { font-family:
+# VideoJS }` on the ELEMENT and draws the round scrubber and volume knobs in its ::before, which
+# inherits — so forcing Arial on the element hands the pseudo Arial too and both knobs come out as
+# hex boxes.  Dropping the pseudo form cannot help here and nothing structural can: which element
+# carries a webfont is a fact about the page's stylesheet, and CSS cannot ask.  `vjs-` earns a line
+# on the same terms as `.fa`, `octicon` and `bi-` in ICONS — it names a library, not a site, and it
+# is one of the two players most of the web embeds.  It is kept out of ICONS proper because that
+# list also drives the `:empty` background sweeps and `ui: full-width`, where exempting every
+# element of a player would have consequences worth arguing about; here the whole cost of a wrong
+# guess is that an element keeps the font the page chose.
+FONT_HOSTS = ['[class*="vjs-" i]']
+NOT_FONT_HOSTS = ":not(%s)" % ", ".join(FONT_HOSTS)
+# ⚠ The blanket stops at the element: it must never reach ::before/::after.  Work out what the
+# pseudo form could ever DO and it comes out a pure loss.  `font-family` inherits, and a pseudo
+# inherits from its originating element, so wherever the page declares no font on the pseudo it
+# already gets whatever we gave the element — Arial when the element is prose, the icon face when
+# the element is exempt (`*:not(ICONS)::before` skips an exempt element's pseudo too).  The rule
+# therefore changes exactly one thing: it overrides a font the page put ON the pseudo itself.  And
+# setting a font on a pseudo is one idiom and one only — an icon font, whose glyph lives in the
+# Private Use Area and exists in no other face.  Forced to Arial the codepoint maps nowhere and
+# Gecko draws the .notdef hex box: a video player's transport bar came out as five little boxes
+# reading `E605`, `E60B`, `E606`, `E603`, `E601` where play, mute, quality, picture-in-picture and
+# fullscreen should be.  Nothing in ICONS could have caught them — the glyph is drawn on the
+# ::before of the control itself and the class names say `vjs-play-control`, `vjs-mute-control`,
+# nothing about icons — and no name list ever will, since which element carries an icon font is a
+# fact about the page's stylesheet, not about its markup.  Dropping the pseudo form fixes every
+# such site at once and costs nothing anywhere, which is why there is no :not() list here.
 SANS_SERIF = (
-    rule("*%s,\n*%s::before,\n*%s::after" % (NOT_ICONS, NOT_ICONS, NOT_ICONS), SANS)
+    rule("*%s%s" % (NOT_ICONS, NOT_FONT_HOSTS), SANS)
     + "\n/* Code keeps a monospace face and a colour that is not body-yellow. #sk-never is an id\n"
       "   that matches nothing; it exists purely to put these rules on the same specificity\n"
       "   ladder as the bg/fg blankets, which would otherwise repaint the code yellow. */\n"
