@@ -5,6 +5,86 @@ for the upstream [Stylus](https://github.com/openstyles/stylus) release it is bu
 ships no changelog file of its own — its notes live only on GitHub Releases — so this file is
 entirely ours to maintain, newest first.
 
+## 白い熊 Stylus 2.4.10.41 — 2026-08-22
+
+Built on upstream 2.4.10. Two repairs, and both are the same kind of mistake: a blanket that
+claimed a property the page had already spent on something we cannot see. One hid an icon font, the
+other hid an entire site. The behavioural fixture grew from 77 checks to 84.
+
+### Never force a font on a pseudo-element
+
+A video player's transport bar rendered as five little boxes reading `E605`, `E60B`, `E606`, `E603`
+and `E601` where play, mute, quality, picture-in-picture and fullscreen belong. Those are Private
+Use Area codepoints: the glyphs of an icon font, drawn through `content` on the `::before` of each
+control. `sans-serif` forced Arial onto them, Arial has nothing at those codepoints, and Gecko drew
+the `.notdef` hex box.
+
+Nothing in `ICONS` could have caught it. The glyph is not on an element named *icon* — it is on the
+`::before` of the control itself, whose class says `play-control`, `mute-control`, `fullscreen-control`.
+And no name list ever will, because which element carries an icon font is a fact about the page's
+*stylesheet*, not about its markup.
+
+So the repair is not another exclusion. Work out what the pseudo form of that blanket could ever
+**do** and it comes out a pure loss:
+
+- `font-family` inherits, and a pseudo-element inherits from its originating element. Wherever the
+  page declares no font on the pseudo, it already has whatever we gave the element — Arial when
+  that element is prose, the icon face when the element is exempt, since `*:not(<icons>)::before`
+  skips an exempt element's pseudo too.
+- The rule therefore changes exactly one thing: it overrides a font the page put **on the pseudo
+  itself**. And setting a font on a pseudo-element is one idiom and one only — an icon font.
+
+A rule whose only reachable effect is to break icon fonts has no defence. The blanket now stops at
+the element, needs no `:not()` list, and costs nothing anywhere. The fixture proves the last part:
+a pseudo with no font of its own still comes out Arial, by inheritance.
+
+The **element** side of the same failure has no structural handle at all. Video.js declares
+`font-family: VideoJS` on `.vjs-play-progress` and `.vjs-volume-level` and draws the scrubber and
+volume knobs in a `::before` that inherits it, so forcing Arial on the element takes the pseudo with
+it. `vjs-` therefore earns a line on the sans blanket's own exclusion list, on the same terms as
+`.fa` and `octicon` already there — a library, not a site. It is kept out of `ICONS` proper because
+that list also drives the `:empty` background sweeps and `ui: full-width`, where exempting every
+element of a player would have consequences worth arguing about; here the whole cost of a wrong
+guess is that an element keeps the font the page chose.
+
+### Never paint a frame
+
+A page reported as showing nothing but its loading animation turned out to be rendering **100 %
+black** — measured, one colour, 378 000 pixels. The animation was painting correctly the whole
+time. What could not be seen was the entire site.
+
+The sheet was an `<iframe>`. A payment SDK parks a full-viewport `allowtransparency` frame in the
+DOM at `z-index: 2147483647`, waiting for a card challenge that may never come; `bg all` painted it
+black, and nothing can be above the maximum z-index. A hit-test at the animation's centre put that
+frame at the top of an eleven-deep stack, and removing `bg all` alone brought the page back. A
+browser extension hangs its own UI in a frame the same way — 白い熊's own SurfingKeys fork was
+being blackened by this rule too, and only escaped notice because its frame is `height: 0`.
+
+What you see through an iframe is the **embedded document**; the element's own background shows only
+through whatever that document leaves transparent. So painting it is either invisible or
+catastrophic, never useful:
+
+- Invisible, because a page that paints its own ground covers ours. A cross-origin document cannot
+  be restyled at all, and a same-origin one gets our sheets injected into the frame itself, where
+  `bg ground` blackens its `html`/`body` directly. Either way the element's background is dead
+  paint.
+- Catastrophic, in exactly the way above.
+
+It is the empty-pinned-layer failure of 2.4.10.38 again, and `ui: overlays` cannot reach it: that
+sweep excludes media **because** an iframe is always `:empty`. `bg all` now hands every `iframe`
+`background-color: transparent`.
+
+Two things about the shape of that repair are load-bearing:
+
+- It is a **separate rule**, not a `:not()` on the blanket. A type selector inside `:not()` costs
+  (0,0,1), which would lift `bg all` from (1,0,0) to (1,0,1) and tie it with `ui: image-ground` —
+  and the grey behind every transparent PNG would then come or go with the injection order. The
+  fixture now fails if the blanket ever leaves (1,0,0).
+- `object` and `embed` are the same in kind but stay **out** of it, for that very reason: they
+  already carry `ui: image-ground`'s grey at (1,0,1), and contesting it would be the same tie. A
+  transparent overlay is an `iframe` in every case met; a plugin element is artwork, and artwork is
+  what the grey is for.
+
 ## 白い熊 Stylus 2.4.10.38 — 2026-08-21
 
 Built on upstream 2.4.10. Five repairs, and the first is the worst failure this library can
