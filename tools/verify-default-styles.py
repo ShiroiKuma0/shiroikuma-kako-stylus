@@ -84,6 +84,14 @@ PAGE = """<!doctype html><meta charset="utf-8"><title>verify</title>
      left in the DOM for a toast that never comes or a gate already dismissed, and named
      nothing a style could match */
   .toastHost { position: fixed; inset: 0; z-index: 1060; pointer-events: none; }
+  /* a product tile, and the two ways it turns black. The whole-card click target is one <a>
+     laid over the tile showing nothing of its own -- and NOT :empty, because the accessible name
+     is a text node with a data element beside it. The cover under it is stacked behind the page
+     with z-index:-1, which works only while every ancestor is transparent. */
+  .tileCard { position: relative; display: block; width: 160px; }
+  .cardLink { position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+              font-size: 0; color: transparent; background-color: transparent; }
+  .cardCover { position: relative; z-index: -1; display: block; background: #ffffff; }
   /* a value bar: a track, and inside it an empty filled part whose width IS the reading.
      Substack's volume slider, hashed class and all, plus its seek bar */
   .volumeBar-N1rUCF { background-color: #d0d0d066; width: 0; height: 4px; position: relative;
@@ -199,6 +207,11 @@ __SHEETS__
   <img id="img" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==">
   <img id="filtIcon" class="dlGlyph" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==">
   <div class="toastHost" id="toastHost"></div>
+  <ul><li class="tileCard" id="tileCard"
+    ><a class="cardLink" id="cardLink" href="#">Bekenntnisse<card-data></card-data></a
+    ><picture class="cardCover" id="cardCover"><img id="cardImg"
+      src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="></picture
+    ><div id="cardDetails"><strong id="cardTitle">Card title</strong></div></li></ul>
   <div class="volRow hovered"><div class="volumeBar-N1rUCF" id="volTrack"
     ><div style="width:70%" class="volumeLevel-VDMLnw" id="volLevel"></div></div></div>
   <div class="timelineTrack" id="seekTrack"><div class="progress-K0IenH" id="seekPlayed"></div></div>
@@ -386,6 +399,10 @@ t('an empty layer that is NOT a value bar keeps the sweep, not the ink',
   g('toastHost').backgroundColor, g('toastHost').backgroundColor === 'rgba(0, 0, 0, 0)');
 
 // --- a frame is a window onto another document, never a surface of this one ---
+t('the whole-card click target is left transparent (painted it boards up the tile)',
+  g('cardLink').backgroundColor, g('cardLink').backgroundColor === 'rgba(0, 0, 0, 0)');
+t('a link with no picture beside it keeps its ground',
+  g('link').backgroundColor, g('link').backgroundColor === BLACK);
 t('a frame is never painted (a parked overlay frame would board up the whole page)',
   g('payFrame').backgroundColor, g('payFrame').backgroundColor === 'rgba(0, 0, 0, 0)');
 t('but an <object> keeps image-ground grey — equal weight, so it must not be contested',

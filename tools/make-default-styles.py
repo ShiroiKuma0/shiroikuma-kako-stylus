@@ -270,6 +270,38 @@ NOT_MEDIA_HOST = ":not(:has(%s))" % ", ".join("> " + m for m in MEDIA)
 FRAMED = ["video", "iframe", "canvas", "object", "embed"]
 NOT_FRAME_NEIGHBOUR = ":not(%s)" % ", ".join(
     ["*:has(%s) ~ *" % ", ".join(FRAMED)] + ["%s ~ *" % m for m in FRAMED])
+# ⚠ A stretched link is an invisible sheet over the card it belongs to.  The whole-card click
+# target is one <a> laid across the tile — `position: absolute; inset: 0; font-size: 0;
+# color: transparent; background-color: transparent` — and every clause of that says the same
+# thing: it is a hit area, and it draws nothing.  Painted, it is an opaque sheet at the top of the
+# card's stack, and a bookshop's search results came out as rows holding a heart and a star rating
+# and nothing else: cover, author, title, format and price all behind it.
+#
+# `ui: overlays` could not reach it, and neither of its two handles was ever going to.  The class
+# reads `element-link-toplevel`, which is a fact about the DOM rather than about painting, so no
+# name list touches it; and it is not `:empty`, since the accessible name is a text node with a
+# data element beside it — and links are excluded from that sweep anyway, deliberately, because an
+# empty link is a wordmark.  The structure is the only handle left, and it is a good one: the link
+# holds no picture of its own and lies BESIDE one, which is the card idiom wherever it appears —
+# a product grid, an article teaser, a video tile.  Both directions of the sibling axis, because
+# the overlay is written before the content as often as after it, and spelled out flat: `:has()`
+# may not be nested inside `:has()`.
+#
+# Greedy, and here that is very nearly free.  It also reaches the ordinary title link inside a
+# tile — 21 of them on the alza fixture — and unpainting a text link costs nothing, because
+# `bg all` has already painted every ancestor black and the link's own box was doing no more than
+# showing that black through.  What it would cost is a pill link carrying a light ground of its
+# own next to a picture; the ones that name themselves buttons are still painted by `ui: controls`
+# at (2,1,1), which is where most of that shape lives.
+IS_MEDIA = ":is(%s)" % ", ".join(MEDIA)
+NO_OWN_MEDIA = ":not(:has(%s))" % ", ".join(MEDIA)
+CARD_LINK = "a" + NEVER + NO_OWN_MEDIA
+CARD_LINK_SEL = ",\n".join([
+    "%s:has(~ %s)" % (CARD_LINK, IS_MEDIA),
+    "%s:has(~ * %s)" % (CARD_LINK, IS_MEDIA),
+    "%s ~ %s" % (IS_MEDIA, CARD_LINK),
+    "*:has(%s) ~ %s" % (IS_MEDIA, CARD_LINK),
+])
 # ⚠ The CSS-triangle idiom: two transparent borders and one coloured, which is how a play arrow,
 # a select caret, a tooltip point and a speech-bubble tail are all drawn.  Recolouring every side
 # turns the triangle into a solid square — a white play arrow becomes a yellow block.  CSS
@@ -672,7 +704,19 @@ styles = [
             "   `ui: borders` fills it yellow to draw the line. */\n"
           + rule("*:empty%s%s%s%s%s:not(hr)" % (NEVER, NOT_ICONS, NOT_MEDIA,
                                                 NOT_CONTROLS, NOT_LINKS),
-                 "background-color: transparent")),
+                 "background-color: transparent")
+          + "\n/* ⚠ The fifth kind of layer, and the one the sweep above is built to miss: the\n"
+            "   whole-card click target. One <a> laid across the tile at `position: absolute;\n"
+            "   inset: 0; font-size: 0; color: transparent`, holding the accessible name and\n"
+            "   nothing that draws. It is not :empty — that text node is the name — and links are\n"
+            "   out of the sweep anyway, because an empty link is a wordmark. Painted, it boards\n"
+            "   up the card: a bookshop's results kept a heart and a star rating and lost the\n"
+            "   cover, the author, the title, the format and the price behind one black sheet.\n"
+            "   The handle is that the link holds no picture of its own and lies beside one,\n"
+            "   which is the card idiom everywhere it appears. Flat on both sides of the sibling\n"
+            "   axis: the overlay is written before the content as often as after it, and `:has()`\n"
+            "   may not be nested inside `:has()`. */\n"
+          + rule(CARD_LINK_SEL, "background-color: transparent")),
 
     # The doubled guard is not decoration: `ui: borders` sits at (1,1,0) now that it carves
     # the CSS triangles out, and a single guard here would tie with it and leave which of cyan
