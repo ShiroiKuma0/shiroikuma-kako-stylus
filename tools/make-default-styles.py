@@ -280,6 +280,37 @@ NOT_FRAME_NEIGHBOUR = ":not(%s)" % ", ".join(
 TRIANGLES = ['[class*="arrow" i]', '[class*="caret" i]', '[class*="triangle" i]',
              '[class*="chevron" i]', '[class*="play" i]', '[class*="tooltip" i]']
 NOT_TRIANGLES = ":not(%s)" % ", ".join(TRIANGLES)
+# ⚠ A value bar's reading IS the boundary between two colours, and it is empty on purpose.
+# A volume slider, a scrubber, a progress bar and a level meter are all one idiom: a track, and
+# inside it a filled part whose width (or height, or scaleX) is the number.  The filled part holds
+# no text and no child, because it does not need any — its content is its geometry.  That is
+# exactly the shape the `:empty` sweep in `ui: overlays` was built to neutralise, on the premise
+# that "an element with no content has nothing of its own to make legible", and here the premise is
+# simply wrong: the sweep wiped the level's own white, `bg all` and `bg div` painted the track
+# black, and a volume bar that slides open on hover came out as a black rectangle with no reading
+# in it at all.  So the filled part is given ink of its own, and only the filled part — a yellow
+# level on the black track is the boundary back, and touching the track as well would risk a grey
+# box wherever a name matched something that is not a bar.
+# The name is the only handle, as with ICONS and ART: a hashed class keeps its readable prefix
+# (`volumeLevel-VDMLnw`, `progress-K0IenH`) and Video.js spells it out (`vjs-volume-level`,
+# `vjs-play-progress`).  Matched on the element or on its parent, since a generic `<div class=fill>`
+# inside `<div class=progress>` is just as common as a named level.  `range` and `track` are
+# deliberately absent — they would catch *orange*, *tracking* and *soundtrack* — and the same
+# media/control/icon guards the sweep uses are kept, so a void <input type=range> or an <img> never
+# takes the ink.
+VALUE_BARS = ['[class*="volume" i]', '[class*="progress" i]', '[class*="scrub" i]',
+              '[class*="seek" i]', '[class*="slider" i]', '[class*="played" i]',
+              '[class*="buffer" i]', '[class*="meter" i]', '[class*="gauge" i]',
+              '[class*="level" i]', '[role="progressbar"]', '[role="slider"]']
+IS_VALUE_BAR = ":is(%s)" % ", ".join(VALUE_BARS)
+NOT_VALUE_BAR = ":not(%s)" % ", ".join(VALUE_BARS)
+# The doubled guard is load-bearing: the `:empty` sweep it has to beat sits near (1,4,2), which no
+# amount of class terms would clear, and the same trick already puts the named-overlay rules above
+# every bg blanket.  Two ids make it (2,x,y) and the argument is over.
+VALUE_BAR_SELF = "*:empty%s%s%s%s%s%s" % (NEVER, NEVER, NOT_ICONS, NOT_MEDIA,
+                                          NOT_CONTROLS, IS_VALUE_BAR)
+VALUE_BAR_KID = "%s%s > *:empty%s%s%s%s%s" % (IS_VALUE_BAR, NEVER, NEVER, NEVER,
+                                              NOT_ICONS, NOT_MEDIA, NOT_CONTROLS)
 CODE_TAGS = ["pre", "code", "kbd", "samp", "tt"]
 # These sit on the id ladder too, and have to: they carry a colour, so they compete with the
 # `fg all` blanket at (1,0,0), and the descendant form competes with `fg text` at (1,0,1) —
@@ -508,7 +539,14 @@ styles = [
                        'input%s:is([type=submit], [type=button]):hover' % NEVER]
                       + [b + NEVER + NEVER + ":hover" for b in LINK_BUTTONS], 1),
                  "background-color: %s" % YELLOW,
-                 "color: #000000")),
+                 "color: #000000")
+          + "\n/* ⚠ The filled part of a value bar, which is empty because its content is its\n"
+            "   geometry — see VALUE_BARS. Left alone it is swept transparent by `ui: overlays`\n"
+            "   and sits on a track `bg all` painted black, so the number it carries is simply\n"
+            "   gone: a volume slider opened as a black rectangle. Only the level is coloured;\n"
+            "   the track stays black, and yellow on black is the boundary back. */\n"
+          + rule(wrap([VALUE_BAR_SELF, VALUE_BAR_KID], 1),
+                 "background-color: %s" % YELLOW)),
 
     # Artwork drawn on transparency expects a page of some colour; on our black ground whichever
     # ink it uses can vanish. A ground behind the replaced element restores it, and costs nothing
@@ -711,11 +749,15 @@ styles = [
           + "\n/* Split from the blanket above on purpose, and the asymmetry is the reason: lifting\n"
             "   an upper bound can only let a box grow, while `width` is the one that can shrink it\n"
             "   to nothing. So max-width is released everywhere and the width release stops beside a\n"
-            "   framed picture, where a shut drawer would otherwise open and take the whole row. */\n"
-          + rule("*%s%s%s%s%s%s" % (NEVER, NOT_MEDIA, NOT_ICONS,
-                                    ":not(%s)" % ", ".join(CONTROLS),
-                                    ':not([style*="width"])',
-                                    NOT_FRAME_NEIGHBOUR),
+            "   framed picture, where a shut drawer would otherwise open and take the whole row.\n"
+            "   It stops at a value bar for the same kind of reason and a stronger one: a volume\n"
+            "   slider's width IS its reading, and `!important` beats the page's non-important\n"
+            "   `:hover` rule asking for 100px however specific that rule is, so the bar could\n"
+            "   never open again: it sat pinned at the content width of an empty div, nothing. */\n"
+          + rule("*%s%s%s%s%s%s%s" % (NEVER, NOT_MEDIA, NOT_ICONS,
+                                      ":not(%s)" % ", ".join(CONTROLS),
+                                      ':not([style*="width"])',
+                                      NOT_FRAME_NEIGHBOUR, NOT_VALUE_BAR),
                "width: auto")
           + "\n/* A flex item pinned by flex-basis ignores width. Restricted to :only-child, which\n"
             "   is what makes it safe: a lone column growing to fill its row cannot disturb a\n"

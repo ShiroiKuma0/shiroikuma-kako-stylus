@@ -84,6 +84,14 @@ PAGE = """<!doctype html><meta charset="utf-8"><title>verify</title>
      left in the DOM for a toast that never comes or a gate already dismissed, and named
      nothing a style could match */
   .toastHost { position: fixed; inset: 0; z-index: 1060; pointer-events: none; }
+  /* a value bar: a track, and inside it an empty filled part whose width IS the reading.
+     Substack's volume slider, hashed class and all, plus its seek bar */
+  .volumeBar-N1rUCF { background-color: #d0d0d066; width: 0; height: 4px; position: relative;
+      overflow: hidden; transition: width .3s ease-in-out; }
+  .volRow.hovered .volumeBar-N1rUCF { width: 100px; }
+  .volumeLevel-VDMLnw { background-color: #fff; height: 4px; }
+  .timelineTrack { background-color: #d0d0d066; width: 300px; height: 4px; position: relative; }
+  .progress-K0IenH { background-color: #fff; position: absolute; inset: 0 auto 0 0; width: 40%; }
   /* a video player: role=button around the <video>, with the poster frame drawn as a background
      image on the button that covers it until you press play */
   .playerRoot { position: relative; width: 320px; height: 180px; border-radius: 8px; }
@@ -191,6 +199,9 @@ __SHEETS__
   <img id="img" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==">
   <img id="filtIcon" class="dlGlyph" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==">
   <div class="toastHost" id="toastHost"></div>
+  <div class="volRow hovered"><div class="volumeBar-N1rUCF" id="volTrack"
+    ><div style="width:70%" class="volumeLevel-VDMLnw" id="volLevel"></div></div></div>
+  <div class="timelineTrack" id="seekTrack"><div class="progress-K0IenH" id="seekPlayed"></div></div>
   <iframe class="payFrame" id="payFrame" title="3D Secure Flow Modal"
     srcdoc="&lt;html&gt;&lt;/html&gt;" allowtransparency="true"></iframe>
   <object id="objFrame" type="text/html"></object>
@@ -359,6 +370,19 @@ t('an empty control whose class says icon keeps the black ground (its glyph uses
 
 // --- the layer that blanks a page: empty, pinned, click-through ------------
 t('an EMPTY pinned layer stays transparent (painted, the whole page goes black)',
+  g('toastHost').backgroundColor, g('toastHost').backgroundColor === 'rgba(0, 0, 0, 0)');
+
+// --- a value bar: empty on purpose, because its content is its geometry ----
+t('the filled part of a value bar gets ink of its own (swept, it carries no reading)',
+  g('volLevel').backgroundColor, g('volLevel').backgroundColor === YELLOW);
+t('its track stays black, so the boundary between the two IS the number',
+  g('volTrack').backgroundColor, g('volTrack').backgroundColor === BLACK);
+t('and the bar can still open, `width: auto !important` having stopped short of it',
+  g('volTrack').width, g('volTrack').width === '100px');
+t('a seek bar is the same idiom and reads the same way',
+  g('seekPlayed').backgroundColor + ' / ' + g('seekTrack').backgroundColor,
+  g('seekPlayed').backgroundColor === YELLOW && g('seekTrack').backgroundColor === BLACK);
+t('an empty layer that is NOT a value bar keeps the sweep, not the ink',
   g('toastHost').backgroundColor, g('toastHost').backgroundColor === 'rgba(0, 0, 0, 0)');
 
 // --- a frame is a window onto another document, never a surface of this one ---
