@@ -244,6 +244,32 @@ NOT_LINKS = ":not(%s)" % ", ".join(LINKS)
 # so: a player is routinely `<div role="button">` wrapped around a <video>, under a hashed class
 # name that says nothing at all.  The child is the tell.
 NOT_MEDIA_HOST = ":not(:has(%s))" % ", ".join("> " + m for m in MEDIA)
+# ⚠ A shut drawer is `width: 0`, and `width: auto` re-opens it.  A page that keeps a panel in the
+# DOM at `width: 0` with `overflow: hidden` — the transcript drawer beside a podcast player, an
+# off-canvas menu, any panel that slides — is saying the panel is closed; releasing its width sizes
+# it to the content it was hiding.  On its own that would be only an odd wide box, but such a
+# drawer is nearly always `flex: none` beside a `flex: auto; min-width: 0` stage, and then the
+# space does not come out of the window: it comes out of the box next to it.  A stage frames a
+# picture with an absolutely-positioned child, so it has NO intrinsic width of its own to defend
+# with, and it gives up everything — the video collapsed to 0 px wide and what was left was the
+# player shell's own black 16:9 band, which is how every post on a whole domain came to render as
+# a black rectangle under the header.  So: never release the width of a box that follows a box
+# framing media.  The row that frames a picture is a geometry the page computed, and nothing in it
+# can be widened except by taking from the frame.
+#
+# Two deliberate limits.  Only DOM order after the frame, because that is where a drawer is
+# written — it is appended, not prepended — and the mirrored arm would spare every element that
+# merely precedes a player, which on a flat page is most of them; the fixture's own column pinned
+# by `width: 300px` is one.  And `img`/`picture` stay out: an image carries its own intrinsic
+# width and cannot collapse to nothing, so its neighbours are not part of this.
+#
+# `:has()` may not be nested inside `:has()`, and `:not()` takes a NON-forgiving list, so one
+# invalid arm silently drops the whole rule — the first draft wrote `:has(~ *:has(video))` and the
+# engine kept 3 of this style's 4 rules.  Hence the flat form: framed media as the sibling itself,
+# and framed media inside the sibling, spelled out separately.
+FRAMED = ["video", "iframe", "canvas", "object", "embed"]
+NOT_FRAME_NEIGHBOUR = ":not(%s)" % ", ".join(
+    ["*:has(%s) ~ *" % ", ".join(FRAMED)] + ["%s ~ *" % m for m in FRAMED])
 # ⚠ The CSS-triangle idiom: two transparent borders and one coloured, which is how a play arrow,
 # a select caret, a tooltip point and a speech-bubble tail are all drawn.  Recolouring every side
 # turns the triangle into a solid square — a white play arrow becomes a yellow block.  CSS
@@ -681,7 +707,15 @@ styles = [
           rule("*%s%s%s%s%s" % (NEVER, NOT_MEDIA, NOT_ICONS,
                                 ":not(%s)" % ", ".join(CONTROLS),
                                 ':not([style*="width"])'),
-               "max-width: none",
+               "max-width: none")
+          + "\n/* Split from the blanket above on purpose, and the asymmetry is the reason: lifting\n"
+            "   an upper bound can only let a box grow, while `width` is the one that can shrink it\n"
+            "   to nothing. So max-width is released everywhere and the width release stops beside a\n"
+            "   framed picture, where a shut drawer would otherwise open and take the whole row. */\n"
+          + rule("*%s%s%s%s%s%s" % (NEVER, NOT_MEDIA, NOT_ICONS,
+                                    ":not(%s)" % ", ".join(CONTROLS),
+                                    ':not([style*="width"])',
+                                    NOT_FRAME_NEIGHBOUR),
                "width: auto")
           + "\n/* A flex item pinned by flex-basis ignores width. Restricted to :only-child, which\n"
             "   is what makes it safe: a lone column growing to fill its row cannot disturb a\n"
