@@ -302,6 +302,32 @@ CARD_LINK_SEL = ",\n".join([
     "%s ~ %s" % (IS_MEDIA, CARD_LINK),
     "*:has(%s) ~ %s" % (IS_MEDIA, CARD_LINK),
 ])
+# ⚠ A picture stacked behind the page is a picture we bury ourselves.  `z-index: -1` on an in-flow
+# image wrapper is an ordinary idiom — it is how a card puts its cover under the layer that has to
+# stay clickable — and it works only because everything above it is transparent.  Painting order
+# is what makes that fragile: a negative-z child is drawn at step 2 of its nearest ancestor
+# STACKING CONTEXT, while the backgrounds of ordinary block descendants are drawn at step 3, above
+# it.  When that context is <html>, as it is whenever no ancestor is positioned with a z-index of
+# its own, the picture ends up beneath the ground of every box between it and the root — <body>
+# alone is enough, so even `bg ground` on its own buries it.  On the bookshop's grid it left a
+# blank band where every cover had been, with the tile's text back in place around it.
+#
+# The repair goes on the PARENT, not on the picture.  Lifting the picture's own z-index would fix
+# this case and break the other one: a full-bleed backdrop is `position: absolute; inset: 0;
+# z-index: -1` behind its section's text, and raising it paints it OVER the words.  Making the
+# parent a stacking context asks for exactly what is wanted and nothing more — the picture is
+# trapped inside its own card, painted above that card's ground and still below its siblings, and
+# no ancestor can bury it any more.  `isolation` was chosen over `position: relative; z-index: 0`
+# because it creates the context without touching the containing block a descendant may be
+# positioned against; it does not affect `position: fixed` either, which only transform, filter
+# and will-change do.
+#
+# The cost is a stacking context around every box holding a picture directly: a positioned
+# descendant with a large z-index can no longer escape it, so a dropdown hanging out of a card
+# that has a direct media child could fall behind the next card.  Cosmetic, and narrow — the
+# direct-child test keeps it off the deep wrappers where those layers usually live — against a
+# cover that is simply gone.
+MEDIA_PARENT = "*%s:has(> %s)" % (NEVER, IS_MEDIA)
 # ⚠ The CSS-triangle idiom: two transparent borders and one coloured, which is how a play arrow,
 # a select caret, a tooltip point and a speech-bubble tail are all drawn.  Recolouring every side
 # turns the triangle into a solid square — a white play arrow becomes a yellow block.  CSS
@@ -614,7 +640,21 @@ styles = [
             "   picture cannot show a grey box either — with no content it has no width to fill,\n"
             "   unless the page sized it, and a page only sizes an empty link to hold a picture. */\n"
           + rule(wrap([l + NEVER + ":empty" + NOT_ICONS for l in LINKS], 1),
-                 "background-color: #808080")),
+                 "background-color: #808080")
+          + "\n/* ⚠ And the picture has to be somewhere we can still see it. A card that stacks its\n"
+            "   cover behind the layer over it — `position: relative; z-index: -1`, an everyday\n"
+            "   idiom — is drawn at step 2 of its nearest ancestor stacking context, which is\n"
+            "   <html> unless something between is positioned with a z-index of its own. The\n"
+            "   grounds of ordinary blocks are drawn at step 3, above that: so every box we paint\n"
+            "   between the picture and the root buries it, and <body> alone is enough. A\n"
+            "   bookshop's search grid lost every cover to this and kept the text around them.\n"
+            "   Isolating the PARENT is the whole repair, and the choice of element is the\n"
+            "   argument: raising the picture's own z-index would lift a full-bleed backdrop over\n"
+            "   the text it belongs behind, where a stacking context around its card traps it\n"
+            "   there — above that card's ground, still below its siblings, and out of reach of\n"
+            "   every ancestor. `isolation` rather than a z-index because it makes the context\n"
+            "   without becoming a containing block for anything positioned inside it. */\n"
+          + rule(MEDIA_PARENT, "isolation: isolate")),
 
     # background-color cannot remove a background *image*, so decorative gradients and banner
     # textures survive the blanket and keep painting pale bars across otherwise-black pages.

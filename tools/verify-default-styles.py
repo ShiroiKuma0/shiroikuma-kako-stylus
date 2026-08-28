@@ -403,6 +403,10 @@ t('the whole-card click target is left transparent (painted it boards up the til
   g('cardLink').backgroundColor, g('cardLink').backgroundColor === 'rgba(0, 0, 0, 0)');
 t('a link with no picture beside it keeps its ground',
   g('link').backgroundColor, g('link').backgroundColor === BLACK);
+t('the box around a cover is isolated, so a z-index:-1 picture is not buried by our own ground',
+  g('tileCard').isolation, g('tileCard').isolation === 'isolate');
+t('and the cover still gets the image ground under it',
+  g('cardCover').backgroundColor, g('cardCover').backgroundColor === 'rgb(128, 128, 128)');
 t('a frame is never painted (a parked overlay frame would board up the whole page)',
   g('payFrame').backgroundColor, g('payFrame').backgroundColor === 'rgba(0, 0, 0, 0)');
 t('but an <object> keeps image-ground grey — equal weight, so it must not be contested',
