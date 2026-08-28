@@ -5,6 +5,74 @@ for the upstream [Stylus](https://github.com/openstyles/stylus) release it is bu
 ships no changelog file of its own — its notes live only on GitHub Releases — so this file is
 entirely ours to maintain, newest first.
 
+## 白い熊 Stylus 2.4.10.46 — 2026-08-28
+
+Built on upstream 2.4.10. One page, two failures, and each was hiding the other. A bookshop's
+search results came back as rows holding a heart and a star rating and nothing else — cover,
+author, title, format and price all missing — and repairing the first fault only uncovered the
+second. Neither is about colour, and neither was reachable by any rule the library had. The
+behavioural fixture grew from 89 checks to 93.
+
+### Never board up a card with its own click target
+
+Every result tile opens with the whole-card click target: one `<a>` laid across the tile at
+`position: absolute; inset: 0; font-size: 0; color: transparent; background-color: transparent`,
+carrying the accessible name and drawing nothing at all. Every clause of that declaration says the
+same thing — it is a hit area. Being absolutely positioned, it paints above every static sibling in
+the card, so `bg all` painting it at (1,0,0) turns it into an opaque sheet at the top of the tile's
+stack. It is the card idiom every product grid, article teaser and video tile is built from.
+
+Neither handle `ui: overlays` had was ever going to reach it. The class reads
+`element-link-toplevel`, which is a fact about the DOM rather than about painting, so no name list
+touches it; and it is **not** `:empty`, the accessible name being a text node with a data element
+beside it. Links are excluded from that sweep anyway, deliberately, because an empty link is a
+wordmark.
+
+The structure is the handle that is left, and it is a good one: **a link that holds no picture of
+its own and lies beside one**. Both directions of the sibling axis, because the overlay is written
+before the content as often as after it, and spelled out flat — `:has()` may not be nested inside
+`:has()`.
+
+Greedy, and here very nearly free. It also reaches the ordinary title link inside a tile, 21 of
+them on the alza fixture, and unpainting a text link costs nothing: `bg all` has already blackened
+every ancestor, and the link's own box was doing no more than showing that black through. What it
+would cost is a pill link carrying a light ground of its own next to a picture — and the ones that
+name themselves buttons are still painted by `ui: controls` at (2,1,1), which is where most of that
+shape lives.
+
+### Stop burying a picture the page stacked behind itself
+
+With the click target unpainted the tiles got their text back and still showed a blank band where
+every cover had been. The second half of the same failure, and this one is ours outright: we bury
+the picture.
+
+`z-index: -1` on an in-flow image wrapper is an everyday idiom — it is how a card puts its cover
+under the layer that has to stay clickable — and it works only because everything above it is
+transparent. Painting order is what makes that fragile. A negative-z child is drawn at step 2 of
+its nearest ancestor **stacking context**, while the grounds of ordinary block descendants are
+drawn at step 3, above it. That context is `<html>` whenever nothing in between is positioned with
+a z-index of its own, so every box we paint between the picture and the root buries it. `<body>`
+alone is enough, which means even `bg ground` on its own does it.
+
+The repair goes on the **parent**, and the choice of element is the whole argument. Raising the
+picture's own z-index would fix this case and break its mirror: a full-bleed backdrop is
+`position: absolute; inset: 0; z-index: -1` behind its section's text, and lifting it paints it
+*over* the words. A stacking context around the card asks for exactly what is wanted and nothing
+more — the picture is trapped inside its own card, above that card's ground, still below its
+siblings, and out of reach of every ancestor. `isolation` rather than `position: relative;
+z-index: 0`, because it creates the context without becoming a containing block for anything
+positioned inside it, and it leaves `position: fixed` alone, which only transform, filter and
+will-change disturb.
+
+The cost is a stacking context around every box that holds a picture directly: a positioned
+descendant with a large z-index can no longer escape it, so a dropdown hanging out of such a card
+could fall behind the next one. Cosmetic, and narrow — the direct-child test keeps it off the deep
+wrappers where those layers usually live — against a cover that is simply gone.
+
+*Measured, Gecko, on the saved page: ink in the results row 5 394 px → 213 211 px of 415 950, and
+the page's black falls from 97.8 % to 71.6 %. Every cover, author, title, format, price and rating
+is back.*
+
 ## 白い熊 Stylus 2.4.10.44 — 2026-08-28
 
 Built on upstream 2.4.10. Two repairs from one page, and neither is about colour: the first is a
