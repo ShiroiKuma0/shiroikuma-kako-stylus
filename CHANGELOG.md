@@ -5,6 +5,98 @@ for the upstream [Stylus](https://github.com/openstyles/stylus) release it is bu
 ships no changelog file of its own — its notes live only on GitHub Releases — so this file is
 entirely ours to maintain, newest first.
 
+## 白い熊 Stylus 2.4.10.44 — 2026-08-28
+
+Built on upstream 2.4.10. Two repairs from one page, and neither is about colour: the first is a
+layout collapse that rendered a whole domain as a black rectangle, the second an empty box whose
+emptiness was the point. The behavioural fixture grew from 84 checks to 89.
+
+### Stop a shut drawer from taking the picture beside it
+
+Every post on an allowlisted newsletter host rendered as a black band under the header — the
+viewport, in practice, since header plus band is the whole of it. Switching every colour style off
+changed nothing, which is what named the culprit: this was never paint.
+
+`ui: full-width` is the most invasive rule in the library. It fires `width: auto !important` at
+every element so a narrow reading column can use the window, and it ships as an allowlist for
+exactly that reason. Here it met the idiom that punishes it. A page that keeps a panel in the DOM
+at `width: 0` with `overflow: hidden` — a transcript drawer beside a podcast player, an off-canvas
+menu, anything that slides — is saying the panel is **closed**. Releasing its width sizes it to the
+content it was hiding.
+
+On its own that would be an odd wide box. But such a drawer is nearly always `flex: none` beside a
+`flex: auto; min-width: 0` stage, so the space does not come out of the window — it comes out of the
+box next to it. And a stage frames its picture with an absolutely-positioned child, so it has **no
+intrinsic width of its own to defend with**, and it gives up everything. Measured on a saved post:
+the `<video>` collapsed to 0 px wide and what stayed on screen was the player shell's own black 16:9
+band.
+
+The repair splits the rule, and the split is the whole argument:
+
+- lifting a **`max-width`** can only ever let a box grow, so that half stays global;
+- **`width`** is the half that can shrink a box to nothing, so it now stops at a box that *follows*
+  a box framing media.
+
+The row that frames a picture is a geometry the page computed, and nothing in it can be widened
+except by taking from the frame.
+
+Two limits are deliberate. Only DOM order **after** the frame, because that is where a drawer is
+written — it is appended, not prepended — and the mirrored arm would spare every element that
+merely precedes a player, which on a flat page is most of them; the fixture's own column pinned by
+`width: 300px` is one, and it caught the greedier draft immediately. And `img`/`picture` stay out:
+an image carries its own intrinsic width and cannot collapse, so its neighbours are not part of
+this.
+
+One syntax trap cost a draft and is worth recording. `:has()` may not be nested inside `:has()`, and
+`:not()` takes a **non-forgiving** selector list — so a single invalid arm silently drops the entire
+rule. The first attempt wrote `:has(~ *:has(video))`, the engine kept three of the style's four
+rules, and the page appeared fixed precisely because nothing applied at all. The fixture's "every
+rule accepted by the engine" check is what caught it.
+
+*Measured, Gecko, on the saved post: hero ink 0 → 58 574, black pixels 93.5 % → 54.5 %, and the
+article column keeps exactly the width it had.*
+
+### Give a value bar back the reading it carries
+
+Hovering the volume button slid the time counter aside and opened a volume bar that was entirely
+black — no level, no reading, nothing.
+
+A volume slider, a scrubber, a progress bar and a level meter are one idiom: a track, and inside it
+a filled part whose width — or height, or `scaleX` — **is** the number. That part holds no text and
+no child, because it needs none: its content is its geometry.
+
+Which is exactly the shape the `:empty` sweep in `ui: overlays` exists to neutralise, on the premise
+that *an element with no content has nothing of its own to make legible, so painting it can only
+produce a sheet*. That premise is what stops an empty pinned layer blanking a page, and here it is
+simply wrong. The sweep wiped the level's own white; `bg all` and `bg div` painted the track black;
+and the bar opened carrying nothing at all.
+
+So the filled part is given yellow ink of its own — and **only** the filled part. The track stays
+black, and the boundary between the two is the number back; colouring the track as well would risk a
+grey box wherever a name matched something that is not a bar.
+
+The name is the only handle, as with the icon and artwork lists before it: a hashed class keeps its
+readable prefix (`volumeLevel-…`, `progress-…`) and Video.js spells it out (`vjs-volume-level`,
+`vjs-play-progress`). It matches on the element **or on its parent**, since a generic
+`<div class=fill>` inside `<div class=progress>` is as common as a named level. `range` and `track`
+are deliberately absent — they would catch *orange*, *tracking* and *soundtrack* — and the same
+media, control and icon guards the sweep uses are kept, so a void `<input type=range>` never takes
+the ink. The doubled `#sk-never` guard is load-bearing: the sweep sits near (1,4,2), and no number
+of class terms would have cleared it.
+
+The same list had to go on `ui: full-width`'s width release too, for a second and sharper reason: a
+bar's width **is** its reading, and our `!important` beats the page's non-important `:hover` rule
+however specific that rule is. The slider could never have opened again — it sat pinned at the
+content width of an empty div, which is nothing.
+
+*Five new fixture assertions cover it, including that an empty layer which is NOT a value bar still
+keeps the sweep rather than the ink. On the saved post both the volume level and the seek progress
+compute `rgb(255,255,0)` on a black track, and the slider opens to its full width again.*
+
+### Upstream
+
+No upstream change: still built on Stylus 2.4.10, the same release 2.4.10.41 was built on.
+
 ## 白い熊 Stylus 2.4.10.41 — 2026-08-22
 
 Built on upstream 2.4.10. Two repairs, and both are the same kind of mistake: a blanket that
