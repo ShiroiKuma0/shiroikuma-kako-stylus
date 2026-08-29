@@ -5,6 +5,54 @@ for the upstream [Stylus](https://github.com/openstyles/stylus) release it is bu
 ships no changelog file of its own — its notes live only on GitHub Releases — so this file is
 entirely ours to maintain, newest first.
 
+## 白い熊 Stylus 2.4.10.48 — 2026-08-29
+
+Built on upstream 2.4.10. A sports-equipment shop's product page came back with every picture on
+it gone: the main product photo, the thumbnail row under it, and two whole recommendation
+carousels, five black rectangles where the pictures had been. One element does all five, and it is
+the sixth kind of layer this style has had to learn. The behavioural fixture grew from 93 checks
+to 98.
+
+### Never board up a picture with the strip of chrome that drives it
+
+A carousel's nav is one `<div>` stretched over the entire viewport of the carousel —
+`position: absolute; inset: 0; z-index: 9; pointer-events: none` — holding the previous and next
+buttons and nothing else. Every clause of that says the same thing: it is chrome *for* the picture
+underneath, and it is click-through precisely so the picture stays reachable. Painted at (1,0,0),
+it is an opaque sheet across the whole photo. `pointer-events: none` also hides it from
+`elementsFromPoint`, so a hit test at the centre of the photo reports the `<img>` on top and
+nothing above it; only a paint diff of every element's `background-color` names the culprit.
+
+Neither handle `ui: overlays` had could reach it. It is not `:empty` — it holds the two buttons —
+and it is not named anything a list could match: the classes read `carousel-navs carousel-def
+car-load-hide abs`, which describe the widget, not the painting. `pointer-events: none` is the
+honest tell and CSS cannot select on it, a property having no access to its own computed value —
+the same wall the padding rule and the CSS triangle already hit.
+
+So the structure carries it: **it holds a control, holds nothing but controls, holds no picture,
+and lies beside one**. The sibling test is the one the whole-card click target already uses, and it
+applies for the same reason — a strip of chrome and the picture it drives are siblings by
+construction. A box whose whole content is chrome has nothing of its own to make legible, which is
+the `:empty` argument one step up.
+
+Two clauses are load-bearing in ways worth naming. `:has(> control)` is not redundant beside
+`:not(:has(> :not(control)))`: the second is vacuously true of an element with no element children
+at all, so without the first every `:empty` layer on the page would match. And "children" there
+means **element** children — `:has(> :not(…))` cannot see a text node, so a row of prose with a
+button in it is matched as well as a bare strip. That is the rule's real boundary and a mild one:
+such a row loses a ground of its own, its ancestors are already black, and its words are already
+yellow. A `<span>` around the words puts it back.
+
+Links stay out of the control list, and that was measured rather than assumed. Widening it to the
+`LINK_BUTTONS` forms stopped the rule being about chrome: on the video fixture it took a
+`bottombar` the page had grounded at `#1a1a1a` and a pagination row — real surfaces of the page's
+own making. The met case is `[role="button"]`, and a box holding only links is a menu.
+
+*Measured, Gecko, full page: ink 507 253 px → 1 278 002 px of 9 300 000, and the page's black falls
+from 94.5 % to 86.3 %. Across the three older fixtures the new rule reaches 8 elements and moves no
+content at all — the bookshop and the newsletter host differ by antialiasing alone, and a second
+shop page gains 16 px of a divider that now draws its full width.*
+
 ## 白い熊 Stylus 2.4.10.46 — 2026-08-28
 
 Built on upstream 2.4.10. One page, two failures, and each was hiding the other. A bookshop's
