@@ -194,9 +194,6 @@ an enumeration here goes stale on the next publish. Every signed build is also d
 phone at `/sdcard/tmp/` as a matter of course; see `.claude/skills/build-xpi` and
 `.claude/skills/publish-version`.
 
-The "First signed" column in `~/〇/[666] 私資料/[666][27] 暗号/firefox-amo-api-keys.org` may still
-read `pending` — that file is outside this repo and has not been updated.
-
 ## HARD RULES
 
 - **Never `git push` without 白い熊's explicit go-ahead.** Build, let them test, and push only on
