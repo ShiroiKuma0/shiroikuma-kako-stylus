@@ -185,10 +185,14 @@ cp .scratch/wiki/*.md /tmp/skwiki/ && cd /tmp/skwiki && git add -A && git commit
 
 ### Signed and released
 
-`stylus@shiroikuma` went through AMO on **2026-08-19** and the ID is now permanent. Two releases are
-published — `2.4.10.11` and `2.4.10.24` — each a Mozilla-signed unlisted `.xpi` attached to a GitHub
-release, with the repo's default branch on `custom`. Every signed build is delivered to the phone at
-`/sdcard/tmp/` as a matter of course; see `.claude/skills/build-xpi`.
+`stylus@shiroikuma` went through AMO on **2026-08-19** and the ID is now permanent. Every signed
+build since has been published as a GitHub release — the Mozilla-signed unlisted `.xpi` attached to
+a tag named exactly `<upstream version>.<our build>`, no leading `v`, with the repo's default branch
+on `custom`. `2.4.10.11` was the first and `2.4.10.48` (2026-08-29) is the current latest; ten are
+published in all. **Do not maintain that count by hand** — `gh release list` is the authority, and
+an enumeration here goes stale on the next publish. Every signed build is also delivered to the
+phone at `/sdcard/tmp/` as a matter of course; see `.claude/skills/build-xpi` and
+`.claude/skills/publish-version`.
 
 The "First signed" column in `~/〇/[666] 私資料/[666][27] 暗号/firefox-amo-api-keys.org` may still
 read `pending` — that file is outside this repo and has not been updated.
