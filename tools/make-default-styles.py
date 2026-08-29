@@ -295,13 +295,65 @@ NOT_FRAME_NEIGHBOUR = ":not(%s)" % ", ".join(
 # at (2,1,1), which is where most of that shape lives.
 IS_MEDIA = ":is(%s)" % ", ".join(MEDIA)
 NO_OWN_MEDIA = ":not(:has(%s))" % ", ".join(MEDIA)
+
+
+def beside_media(sel):
+    """The four arms of "this box lies beside a picture", written flat.
+
+    Both directions of the sibling axis, because a layer is written before the content as often as
+    after it, and the media may be the sibling itself or anywhere inside it. Flat because `:has()`
+    may not be nested inside `:has()` — and `:not()` takes a NON-forgiving list, so one invalid arm
+    would silently drop the whole rule.
+    """
+    return ",\n".join([
+        "%s:has(~ %s)" % (sel, IS_MEDIA),
+        "%s:has(~ * %s)" % (sel, IS_MEDIA),
+        "%s ~ %s" % (IS_MEDIA, sel),
+        "*:has(%s) ~ %s" % (IS_MEDIA, sel),
+    ])
+
+
 CARD_LINK = "a" + NEVER + NO_OWN_MEDIA
-CARD_LINK_SEL = ",\n".join([
-    "%s:has(~ %s)" % (CARD_LINK, IS_MEDIA),
-    "%s:has(~ * %s)" % (CARD_LINK, IS_MEDIA),
-    "%s ~ %s" % (IS_MEDIA, CARD_LINK),
-    "*:has(%s) ~ %s" % (IS_MEDIA, CARD_LINK),
-])
+CARD_LINK_SEL = beside_media(CARD_LINK)
+# ⚠ A box whose whole content is controls has nothing of its own to make legible.  The carousel
+# nav strip is the shape that says it plainly: one absolutely-positioned layer stretched over the
+# entire carousel viewport, `pointer-events: none` so the picture underneath stays clickable, and
+# inside it nothing but the prev and next buttons, which take their own pointer events back.  It
+# is chrome FOR the picture, and painting it boards the picture up — a shop's product page came
+# back with the main photo, the thumbnail row and two whole recommendation carousels gone, five
+# black rectangles where every picture on the page had been.
+#
+# Neither handle `ui: overlays` had could reach it.  Not `:empty` — it holds the two buttons — and
+# not a name: the classes read `carousel-navs carousel-def car-load-hide abs`, which describe the
+# widget, not the painting.  `pointer-events: none` is the honest tell and CSS cannot select on it
+# (a property has no access to its own computed value, the same wall the padding and the CSS
+# triangle hit), so the structure has to carry it: holds a control, holds NOTHING but controls,
+# holds no picture, and lies beside one — the same sibling test the card click target uses, since
+# a strip of chrome and the picture it drives are siblings by construction.
+#
+# `:has(> control)` is not redundant beside `:not(:has(> :not(control)))`: the second is vacuously
+# true of an element with no element children at all, and every `:empty` layer on the page would
+# match it.  Between them they say "its children are controls, and it has some".
+#
+# And "children" there means ELEMENT children — `:has(> :not(...))` cannot see a text node, so a
+# row of prose with a button in it is matched as well as a bare strip of chrome.  That is the
+# rule's real boundary and it is a mild one: what such a row loses is a ground of its own, and its
+# ancestors are already black; its words are already yellow.  A `<span>` around those words puts
+# it back, since a span is an element and not a control.
+#
+# LINK_BUTTONS is deliberately NOT in the list.  Widening it to links was tried and it stopped
+# being a strip of chrome: on the video fixture it took a `bottombar` the page had grounded at
+# `#1a1a1a` and a pagination row — real surfaces, of the page's own making.  The met case is
+# `[role="button"]`, and a box holding only links is a menu.
+#
+# Greedy in the same nearly-free way the card link is: it also reaches an in-flow row of buttons
+# sitting beside a picture, and all that costs is the row showing the black of its ancestors
+# instead of its own.  The controls inside keep the black ground and yellow trace `ui: controls`
+# gives them at (2,1,1), so a button never goes missing with the strip.
+CONTROL_KINDS = ":is(%s)" % ", ".join(BUTTONS + BUTTON_INPUTS)
+CONTROL_STRIP = "*%s:not(:has(> :not(%s))):has(> %s)%s" % (
+    NEVER, CONTROL_KINDS, CONTROL_KINDS, NO_OWN_MEDIA)
+CONTROL_STRIP_SEL = beside_media(CONTROL_STRIP)
 # ⚠ A picture stacked behind the page is a picture we bury ourselves.  `z-index: -1` on an in-flow
 # image wrapper is an ordinary idiom — it is how a card puts its cover under the layer that has to
 # stay clickable — and it works only because everything above it is transparent.  Painting order
@@ -756,7 +808,19 @@ styles = [
             "   which is the card idiom everywhere it appears. Flat on both sides of the sibling\n"
             "   axis: the overlay is written before the content as often as after it, and `:has()`\n"
             "   may not be nested inside `:has()`. */\n"
-          + rule(CARD_LINK_SEL, "background-color: transparent")),
+          + rule(CARD_LINK_SEL, "background-color: transparent")
+          + "\n/* ⚠ The sixth kind of layer: a strip of chrome pinned over the picture it drives.\n"
+            "   A carousel's nav is one absolutely-positioned layer stretched over the whole\n"
+            "   viewport of the carousel, `pointer-events: none` so the photo underneath stays\n"
+            "   clickable, holding the prev and next buttons and nothing else. Painted, it boards\n"
+            "   the photo up: a shop's product page came back with the main image, the thumbnail\n"
+            "   row and two recommendation carousels gone — five black rectangles, every picture\n"
+            "   on the page. Not :empty (it holds the two buttons) and named nothing a list could\n"
+            "   match (`carousel-navs carousel-def car-load-hide abs`), so the structure is the\n"
+            "   handle: it holds a control, holds nothing but controls, holds no picture, and lies\n"
+            "   beside one. A box whose whole content is chrome has nothing of its own to make\n"
+            "   legible — and the controls inside keep their own ground at (2,1,1) regardless. */\n"
+          + rule(CONTROL_STRIP_SEL, "background-color: transparent")),
 
     # The doubled guard is not decoration: `ui: borders` sits at (1,1,0) now that it carves
     # the CSS triangles out, and a single guard here would tie with it and leave which of cyan

@@ -92,6 +92,15 @@ PAGE = """<!doctype html><meta charset="utf-8"><title>verify</title>
   .cardLink { position: absolute; top: 0; left: 0; width: 100%; height: 100%;
               font-size: 0; color: transparent; background-color: transparent; }
   .cardCover { position: relative; z-index: -1; display: block; background: #ffffff; }
+  /* a carousel's nav: one absolutely-positioned strip stretched over the whole viewport of the
+     carousel, click-through so the photo underneath stays reachable, holding the prev and next
+     buttons and nothing else. Painted, it boards the photo up. */
+  .carShell { position: relative; width: 160px; height: 90px; }
+  .carNavs { position: absolute; inset: 0; z-index: 9; pointer-events: none; }
+  .carNav { pointer-events: auto; }
+  /* the same shape with something of its own to say — a row that is not only chrome — and the
+     same shape with no picture beside it. Both must keep their ground. */
+  .actionRow { display: flex; }
   /* a value bar: a track, and inside it an empty filled part whose width IS the reading.
      Substack's volume slider, hashed class and all, plus its seek bar */
   .volumeBar-N1rUCF { background-color: #d0d0d066; width: 0; height: 4px; position: relative;
@@ -212,6 +221,16 @@ __SHEETS__
     ><picture class="cardCover" id="cardCover"><img id="cardImg"
       src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="></picture
     ><div id="cardDetails"><strong id="cardTitle">Card title</strong></div></li></ul>
+  <div class="carShell" id="carShell"
+    ><div class="carInner" id="carInner"><img id="carPhoto"
+      src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="></div
+    ><div class="carNavs" id="carNavs"
+      ><div class="carNav" id="carPrev" role="button">&#8249;</div
+      ><div class="carNav" id="carNext" role="button">&#8250;</div></div
+    ><div class="actionRow" id="actionRow"><span id="rowLabel">Sdílet</span
+      ><button id="rowBtn">Buy</button></div
+    ><div class="actionRow" id="textRow">Sdílet<button id="textBtn">Buy</button></div></div>
+  <div id="loneWrap"><div class="actionRow" id="loneRow"><button id="loneBtn">Buy</button></div></div>
   <div class="volRow hovered"><div class="volumeBar-N1rUCF" id="volTrack"
     ><div style="width:70%" class="volumeLevel-VDMLnw" id="volLevel"></div></div></div>
   <div class="timelineTrack" id="seekTrack"><div class="progress-K0IenH" id="seekPlayed"></div></div>
@@ -401,6 +420,17 @@ t('an empty layer that is NOT a value bar keeps the sweep, not the ink',
 // --- a frame is a window onto another document, never a surface of this one ---
 t('the whole-card click target is left transparent (painted it boards up the tile)',
   g('cardLink').backgroundColor, g('cardLink').backgroundColor === 'rgba(0, 0, 0, 0)');
+t('a carousel nav strip is left transparent (painted it boards up the photo it drives)',
+  g('carNavs').backgroundColor, g('carNavs').backgroundColor === 'rgba(0, 0, 0, 0)');
+t('and its buttons still carry their own ground, so the strip never takes one with it',
+  g('carPrev').backgroundColor, g('carPrev').backgroundColor === BLACK);
+t('a row beside a picture holding anything but controls keeps its ground',
+  g('actionRow').backgroundColor, g('actionRow').backgroundColor === BLACK);
+checks.push({name: 'NOTE :has(> :not(control)) sees ELEMENTS, so a bare text node does not count',
+             ok: true, got: g('textRow').backgroundColor === BLACK
+               ? 'text counts, row keeps its ground' : 'text ignored, row unpainted'});
+t('and a strip of chrome with no picture beside it keeps its ground too',
+  g('loneRow').backgroundColor, g('loneRow').backgroundColor === BLACK);
 t('a link with no picture beside it keeps its ground',
   g('link').backgroundColor, g('link').backgroundColor === BLACK);
 t('the box around a cover is isolated, so a z-index:-1 picture is not buried by our own ground',
