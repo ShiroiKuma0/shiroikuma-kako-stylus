@@ -5,6 +5,56 @@ for the upstream [Stylus](https://github.com/openstyles/stylus) release it is bu
 ships no changelog file of its own — its notes live only on GitHub Releases — so this file is
 entirely ours to maintain, newest first.
 
+## 白い熊 Stylus 2.4.10.50 — 2026-09-10
+
+Built on upstream 2.4.10. A daily's article page showed its opener photo at rest and lost it the
+moment the mouse crossed it: the whole picture went to a single flat sheet, cyan, which on a photo
+reads as white. The library already knew the shape that was doing it; what it had never considered
+is that a hover is a state, and a fill applied in that state is a painter. The behavioural fixture
+now tests hover, and grew from 98 checks to 108.
+
+### Never let a hover fill paint what the overlays leave transparent
+
+The click target laid across the photo is one `<a>` at `position: absolute; width: 100%;
+height: 100%; z-index: 2`, its own background a transparent 1×1 GIF, holding nothing but the
+gallery badge in its corner. That is the whole-card click target `ui: overlays` learned in
+2.4.10.46, and at rest it was handled: the card-link rule unpainted it at (1,0,3), enough to beat
+the bg blankets, and the photo showed. But `ui: links` fills a hovered link cyan at (1,2,1), which
+outranks (1,0,3) — so under the mouse the link became an opaque cyan sheet over the whole picture.
+Nothing about hover had been thought about at all.
+
+The general statement is that **a hover fill paints exactly as `bg all` does, and nothing
+`ui: overlays` leaves transparent may take it**. Running the whole fixture in a hovered state found
+a second victim of the same thing: the descendant form `a:hover *` had carried a mechanically
+doubled guard at (2,2,1) since the first version — above the named-overlay rule at (2,1,0), so a
+hovered Material UI row filled its own ripple span and the label under it went behind a cyan sheet,
+and above every other repair in that style too. Nothing ever needed that weight.
+
+Two edits follow. The descendant hover and focus forms in `ui: links` drop to one guard, (1,2,1):
+what they have to beat is the text blankets at (1,0,1) and their own rest form, which they do by
+being later in the sheet, and at a painter's weight every repair in `ui: overlays` now sits above
+them — the ladder reads as it was always meant to, painters at (1,x,y) and repairs above. And the
+card link goes to a doubled guard, (2,2,4), so it holds in every state. That makes explicit the two
+things the old weight had been losing to on purpose: `:not(:empty)`, since an empty link is a
+wordmark and keeps `ui: image-ground`'s grey at (1,1,1), and `:not(LINK_BUTTONS)`, since a link
+naming itself a button keeps its `ui: controls` pill at (2,1,1) and its yellow hover at (2,2,1).
+
+The ink has to come back with the ground. The fill also turns the link's text black, which on a
+cyan ground is the point and on a now-transparent one, over the black of every ancestor, is black
+on black: the ordinary title link beside a picture — the greedy case the card link has always
+reached — would vanish while hovered. So a hovered twin restores cyan. Hover only, so `:visited`
+keeps its magenta at rest; and the link alone, since `a:hover *` still fills a span or a badge
+inside it, and that is the hover cue — the gallery badge comes up black on cyan while the photo
+under it stays a photo. The one trade-off: a bare-text title link beside a picture now shows no
+visible change under the mouse, cyan on black in both states — legible, and cue-less.
+
+The fixture tests hover from here on. A headless run cannot move a mouse, so every `:hover` in the
+injected sheets is rewritten to a class of the same weight, (0,1,0), which makes the cascade
+byte-for-byte the one a real hover resolves, and the elements meant to be under the mouse carry the
+class. Ten assertions: the sheet, the badge it holds, a hovered title link beside a picture, an
+ordinary hovered link and the span the site wrapped its text in, the pill link in both states, the
+wordmark's grey, and the hovered ripple. ALL 108 PASSED in both engines.
+
 ## 白い熊 Stylus 2.4.10.48 — 2026-08-29
 
 Built on upstream 2.4.10. A sports-equipment shop's product page came back with every picture on
