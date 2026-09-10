@@ -14,6 +14,11 @@ Run the page in both engines:
     --screenshot "$PWD/.scratch/verify-gecko.png" "file://$PWD/.scratch/verify.html"
 
 Gecko is the engine that ships, so its answer is the one that counts.
+
+Hover is tested too.  A headless run cannot move a mouse, so every `:hover` in the injected sheets
+is rewritten to the class `.sk-hover` — a pseudo-class and a class weigh the same, (0,1,0), so the
+cascade is byte-for-byte the one a real hover resolves — and the elements meant to be under the
+mouse carry that class in the markup.  Nothing else in the fixture is touched by the rewrite.
 """
 import html, json, os
 
@@ -29,7 +34,8 @@ allowlisted = [s["name"] for s in lib if s.get("overridden")]
 
 sheets = "\n".join(
     '<style data-name="%s" data-rules="%d">%s</style>'
-    % (html.escape(s["name"]), s["sections"][0]["code"].count("{"), s["sections"][0]["code"])
+    % (html.escape(s["name"]), s["sections"][0]["code"].count("{"),
+       s["sections"][0]["code"].replace(":hover", ".sk-hover"))
     for s in globals_
 )
 
@@ -92,6 +98,17 @@ PAGE = """<!doctype html><meta charset="utf-8"><title>verify</title>
   .cardLink { position: absolute; top: 0; left: 0; width: 100%; height: 100%;
               font-size: 0; color: transparent; background-color: transparent; }
   .cardCover { position: relative; z-index: -1; display: block; background: #ffffff; }
+  /* a daily's opener photo: the click target is one <a> laid across the picture, its own
+     background a transparent 1x1 GIF, holding nothing but the gallery badge in its corner. It
+     shows the photo at rest and must go on showing it with the mouse over it. */
+  .openerFoto { position: relative; width: 320px; height: 180px; }
+  .openerFoto .overlap { position: absolute; top: 0; left: 0; z-index: 2; width: 100%;
+      height: 100%; background: url("data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7") repeat; text-decoration: none; }
+  .moreGallery { position: absolute; bottom: 1rem; right: 1rem; z-index: 10; display: flex; }
+  .moreGallery u { background: #122E5Be5; color: #fff; padding: .5rem; }
+  /* the same tile, hovered, with a title link beside the cover; and the two shapes the card
+     link deliberately leaves alone: a pill link and a wordmark, each beside a picture */
+  .pillLink { background: #00cfff !important; }
   /* a carousel's nav: one absolutely-positioned strip stretched over the whole viewport of the
      carousel, click-through so the photo underneath stays reachable, holding the prev and next
      buttons and nothing else. Painted, it boards the photo up. */
@@ -221,6 +238,31 @@ __SHEETS__
     ><picture class="cardCover" id="cardCover"><img id="cardImg"
       src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="></picture
     ><div id="cardDetails"><strong id="cardTitle">Card title</strong></div></li></ul>
+  <!-- the opener photo under the mouse: the sheet laid over it, and the badge it holds -->
+  <figure class="openerFoto" id="openerFoto"><div id="openerWrap"
+    ><img id="openerImg" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="
+    ><a class="overlap sk-hover" id="overlapHov" href="/foto"
+      ><span class="moreGallery" id="galleryBadge"><u id="galleryWord">Fotogalerie</u><b>13</b></span
+    ></a></div></figure>
+  <!-- a title link beside a cover, hovered: unpainted, its ink must not go black on black -->
+  <div class="tileCard" id="tileHov"><img id="tileHovImg"
+      src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="
+    ><a class="sk-hover" id="titleHov" href="/x">Title beside a picture</a></div>
+  <!-- an ordinary link under the mouse, nowhere near a picture: the fill must still happen,
+       on the link and on the span the site wrapped its text in. Wrapped, because at body level
+       the sibling test would find the tile above it: that is the rule's stated greed. -->
+  <p><a class="sk-hover" id="linkHov" href="/y"><span id="linkHovSpan">hovered link</span></a></p>
+  <!-- the two shapes the card link leaves alone: a link that names itself a button keeps its
+       pill in both states, and an empty wordmark keeps its grey -->
+  <div class="tileCard" id="pillTile"><img id="pillImg"
+      src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="
+    ><a class="pillLink btn-buy" id="pillLink" href="/buy">Buy</a
+    ><a class="pillLink btn-buy sk-hover" id="pillLinkHov" href="/buy">Buy</a
+    ><a class="css-1qz4h9b" id="wordmarkBeside" href="#"></a></div>
+  <!-- the Material UI row hovered: the ripple span is still a layer, the label still under it -->
+  <a class="MuiButtonBase-root MuiListItemButton-root sk-hover" id="muiItemHov" href="#"
+    ><span class="MuiListItemText-primary" id="muiLabelHov">Alza dny</span
+    ><span class="MuiTouchRipple-root" id="muiRippleHov"></span></a>
   <div class="carShell" id="carShell"
     ><div class="carInner" id="carInner"><img id="carPhoto"
       src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="></div
@@ -420,6 +462,33 @@ t('an empty layer that is NOT a value bar keeps the sweep, not the ink',
 // --- a frame is a window onto another document, never a surface of this one ---
 t('the whole-card click target is left transparent (painted it boards up the tile)',
   g('cardLink').backgroundColor, g('cardLink').backgroundColor === 'rgba(0, 0, 0, 0)');
+
+// --- ...and hovered: a hover fill is a painter, and no layer may take it -----
+t('the click target over a photo stays transparent UNDER THE MOUSE (filled, the photo is a cyan sheet)',
+  g('overlapHov').backgroundColor, g('overlapHov').backgroundColor === 'rgba(0, 0, 0, 0)');
+t('while the badge it holds takes the fill, so the hover still shows',
+  g('galleryWord').backgroundColor + ' / ' + g('galleryWord').color,
+  g('galleryWord').backgroundColor === CYAN && g('galleryWord').color === BLACK);
+t('a hovered title link beside a picture is unpainted AND keeps cyan ink (black would vanish)',
+  g('titleHov').backgroundColor + ' / ' + g('titleHov').color,
+  g('titleHov').backgroundColor === 'rgba(0, 0, 0, 0)' && g('titleHov').color === CYAN);
+t('an ordinary hovered link is still filled cyan with black ink',
+  g('linkHov').backgroundColor + ' / ' + g('linkHov').color,
+  g('linkHov').backgroundColor === CYAN && g('linkHov').color === BLACK);
+t('and so is the span the site wrapped its text in (one guard is enough for that)',
+  g('linkHovSpan').backgroundColor + ' / ' + g('linkHovSpan').color,
+  g('linkHovSpan').backgroundColor === CYAN && g('linkHovSpan').color === BLACK);
+t('a link naming itself a button keeps its pill beside a picture (excluded by name, not weight)',
+  g('pillLink').backgroundColor + ' / ' + g('pillLink').borderRadius,
+  g('pillLink').backgroundColor === BLACK && g('pillLink').borderRadius === '999px');
+t('and its yellow hover', g('pillLinkHov').backgroundColor + ' / ' + g('pillLinkHov').color,
+  g('pillLinkHov').backgroundColor === YELLOW && g('pillLinkHov').color === BLACK);
+t('an empty wordmark beside a picture keeps its grey (an empty link is a picture, not a sheet)',
+  g('wordmarkBeside').backgroundColor, g('wordmarkBeside').backgroundColor === 'rgb(128, 128, 128)');
+t('a ripple layer inside a HOVERED row stays transparent (filled, it hides the label)',
+  g('muiRippleHov').backgroundColor, g('muiRippleHov').backgroundColor === 'rgba(0, 0, 0, 0)');
+t('and the label under it takes the fill', g('muiLabelHov').backgroundColor + ' / ' + g('muiLabelHov').color,
+  g('muiLabelHov').backgroundColor === CYAN && g('muiLabelHov').color === BLACK);
 t('a carousel nav strip is left transparent (painted it boards up the photo it drives)',
   g('carNavs').backgroundColor, g('carNavs').backgroundColor === 'rgba(0, 0, 0, 0)');
 t('and its buttons still carry their own ground, so the strip never takes one with it',

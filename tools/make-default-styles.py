@@ -291,10 +291,32 @@ NOT_FRAME_NEIGHBOUR = ":not(%s)" % ", ".join(
 # tile — 21 of them on the alza fixture — and unpainting a text link costs nothing, because
 # `bg all` has already painted every ancestor black and the link's own box was doing no more than
 # showing that black through.  What it would cost is a pill link carrying a light ground of its
-# own next to a picture; the ones that name themselves buttons are still painted by `ui: controls`
-# at (2,1,1), which is where most of that shape lives.
+# own next to a picture; the ones that name themselves buttons are excluded by name below and
+# stay painted by `ui: controls`, which is where most of that shape lives.
+#
+# ⚠ And it must hold HOVERED.  The first version was a single guard, (1,0,3): enough to beat the
+# bg blankets, and nothing else was thought about.  But `ui: links` fills a hovered link cyan at
+# (1,2,1), and a hover fill is a painter exactly as `bg all` is — so a daily's article page showed
+# its opener photo at rest and lost it the moment the mouse crossed it: the click target laid
+# across it (`position: absolute; width: 100%; height: 100%; z-index: 2`, its own background a
+# transparent 1x1 GIF, holding nothing but a gallery badge) became an opaque cyan sheet over the
+# whole picture, and cyan on a photo reads as white.  The doubled guard puts the rule above the
+# fill in every state, and two exclusions then have to be written out that the single guard had
+# been losing to on purpose: an EMPTY link is a wordmark and keeps `ui: image-ground`'s grey at
+# (1,1,1), and a link that names itself a button keeps its `ui: controls` ground at (2,1,1) and
+# its yellow hover at (2,2,1).  Both were implicit in the old weight; at (2,2,4) they must be said.
+#
+# The ink has to come back with it.  The hover fill also turns the link's text black, which on a
+# cyan ground is the point and on a now-transparent one, over the black of every ancestor, is
+# black on black: the ordinary title link beside a picture — the greedy case just above — would
+# vanish while hovered.  So the hovered twin restores cyan.  Only on hover, so that `:visited`
+# keeps its magenta at rest; and only the ink, since the background is already settled in both
+# states by the rule above.  The descendants are untouched on purpose: `a:hover *` still fills a
+# span or a badge inside the link, and that is the hover cue — the daily's gallery badge comes up
+# black on cyan while the photo under it stays a photo.
 IS_MEDIA = ":is(%s)" % ", ".join(MEDIA)
 NO_OWN_MEDIA = ":not(:has(%s))" % ", ".join(MEDIA)
+NOT_LINK_BUTTONS = ":not(%s)" % ", ".join(LINK_BUTTONS)
 
 
 def beside_media(sel):
@@ -313,8 +335,14 @@ def beside_media(sel):
     ])
 
 
-CARD_LINK = "a" + NEVER + NO_OWN_MEDIA
-CARD_LINK_SEL = beside_media(CARD_LINK)
+def card_link(state=""):
+    """A link holding no picture of its own, beside one — in the given state, e.g. `:hover`."""
+    return beside_media("a%s%s%s:not(:empty)%s%s" % (NEVER, NEVER, state, NOT_LINK_BUTTONS,
+                                                     NO_OWN_MEDIA))
+
+
+CARD_LINK_SEL = card_link()
+CARD_LINK_HOVER_SEL = card_link(":hover")
 # ⚠ A box whose whole content is controls has nothing of its own to make legible.  The carousel
 # nav strip is the shape that says it plainly: one absolutely-positioned layer stretched over the
 # entire carousel viewport, `pointer-events: none` so the picture underneath stays clickable, and
@@ -807,8 +835,20 @@ styles = [
             "   The handle is that the link holds no picture of its own and lies beside one,\n"
             "   which is the card idiom everywhere it appears. Flat on both sides of the sibling\n"
             "   axis: the overlay is written before the content as often as after it, and `:has()`\n"
-            "   may not be nested inside `:has()`. */\n"
+            "   may not be nested inside `:has()`.\n"
+            "   ⚠ Doubled guard, because it has to hold HOVERED: a hover fill is a painter exactly\n"
+            "   as `bg all` is, and `ui: links` fills a hovered link cyan at (1,2,1). A daily's\n"
+            "   opener photo showed at rest and went to a cyan sheet — white, on a photo — the\n"
+            "   moment the mouse crossed the click target laid over it. The two exclusions are\n"
+            "   what the old single guard was losing to on purpose: an empty link is a wordmark\n"
+            "   and keeps its grey, and a link that names itself a button keeps its pill. */\n"
           + rule(CARD_LINK_SEL, "background-color: transparent")
+          + "\n/* ...and hovered, the ink comes back with it. The fill also turns the link's text\n"
+            "   black, which is right on cyan and, over the black of every ancestor, is black on\n"
+            "   black: a title link beside a picture would vanish while hovered. Hover only, so\n"
+            "   :visited keeps its magenta at rest. The descendants are untouched: `a:hover *`\n"
+            "   still fills a span or a badge inside, and that is the hover cue. */\n"
+          + rule(CARD_LINK_HOVER_SEL, "color: %s" % CYAN)
           + "\n/* ⚠ The sixth kind of layer: a strip of chrome pinned over the picture it drives.\n"
             "   A carousel's nav is one absolutely-positioned layer stretched over the whole\n"
             "   viewport of the carousel, `pointer-events: none` so the photo underneath stays\n"
@@ -927,6 +967,16 @@ styles = [
     # icon sitting inside a link turns cyan instead of staying yellow.
     # :visited is listed after :any-link so the tie resolves to it. Firefox restricts :visited to
     # colour properties on the <a> itself and never on descendants — a privacy rule, not a bug.
+    #
+    # ⚠ The hover fill is a painter, exactly as `bg all` is, and it has to sit BELOW `ui: overlays`
+    # — every layer that style leaves transparent must stay transparent with the mouse over it.
+    # The first version guarded every compound of the descendant form mechanically, which put
+    # `a:hover *` at (2,2,1): above the named-overlay rule at (2,1,0), so a hovered Material UI
+    # row painted its own ripple span cyan and the label under it went behind a cyan sheet, and
+    # above every other repair in that style too.  Nothing ever needed that weight.  What the
+    # descendant fill has to beat is the text blankets at (1,0,1) and its own rest form at (1,2,1),
+    # which it does by being later in the sheet.  One guard, on the link, gives (1,2,1) for both
+    # forms, and the ladder reads as it was always meant to: painters at (1,x,y), repairs above.
     style("ui: links",
           rule("a:any-link%s,\n[role=\"link\"]%s,\n"
                "a:any-link *%s%s,\n[role=\"link\"] *%s%s" % (
@@ -935,10 +985,12 @@ styles = [
           + "\n"
           + rule("a:visited" + NEVER, "color: %s" % MAGENTA)
           + "\n"
-          + rule("a:any-link%s:hover, a:any-link%s:hover *%s,\n"
-                 "a:any-link%s:focus-visible, a:any-link%s:focus-visible *%s,\n"
-                 '[role="link"]%s:hover, [role="link"]%s:hover *%s' % (
-                     NEVER, NEVER, NEVER, NEVER, NEVER, NEVER, NEVER, NEVER, NEVER),
+          + "\n/* one guard, on the link, for the descendant forms too: (1,2,1), a painter's weight,\n"
+            "   so that a layer `ui: overlays` leaves transparent stays so under the mouse */\n"
+          + rule("a:any-link%s:hover, a:any-link%s:hover *,\n"
+                 "a:any-link%s:focus-visible, a:any-link%s:focus-visible *,\n"
+                 '[role="link"]%s:hover, [role="link"]%s:hover *' % (
+                     NEVER, NEVER, NEVER, NEVER, NEVER, NEVER),
                  "color: #000000",
                  "background-color: %s" % CYAN)),
 
