@@ -5,6 +5,67 @@ for the upstream [Stylus](https://github.com/openstyles/stylus) release it is bu
 ships no changelog file of its own — its notes live only on GitHub Releases — so this file is
 entirely ours to maintain, newest first.
 
+## 白い熊 Stylus 2.4.10.52 — 2026-09-12
+
+Built on upstream 2.4.10. An encyclopaedia's election article shows three maps, each with a key
+beneath it, and every key came out black: five swatches with their labels beside them and no
+colour in any of them, so the maps could not be read against their legend. The repair is the
+smallest mechanism the library has yet had to reach for — nothing is painted or recoloured; the
+painters are taught what not to touch — and it rests on a fact about the cascade that had not been
+established before. The behavioural fixture grew from 108 checks to 119.
+
+### Leave a colour sample alone: its colour is its content
+
+Each key is a blank `<span style="background-color:#94C5DE; color:#94C5DE">` holding four
+non-breaking spaces. `bg all` at (1,0,0) and `bg text` at (1,0,1) both beat that inline
+declaration, which is not `!important`, and nothing in the library could see the element: no class,
+so no name list — the same site's other legend templates say `legend-color`, this one says nothing
+— and not `:empty`, since the spaces are text nodes and one of the site's two parsers wraps each in
+a child span besides.
+
+The finding underneath is that **no repair of ours can hand an inline value back once a rule has
+matched**. Nothing declared `!important` can defer to a page's *normal* declaration: `revert-layer`
+was measured in both engines and rolls back to the UA origin, past the style attribute, never into
+it. So the only mechanism is for the painters not to match, and `:where()` is what makes that
+affordable — it contributes zero specificity, so the blanket stays at (1,0,0) and the ladder above
+it is untouched. A `:not()` in the blanket itself would lift it to (1,1,0) and over `ui: controls`,
+which is why the file has always refused one.
+
+What counts as a colour sample is the idiom, spelled structurally, and each clause was chosen
+against a neighbour that must stay painted:
+
+- a `span`, `td` or `th` — never a `div`. A framework writes its containers with inline style
+  objects, and sparing those would leave whole white panels on the page; a span is inline
+  content, and a cell is one cell.
+- a ground written inline **as a number** — `#…`, `rgb(`, `hsl(` — and not with alpha zero.
+  `transparent` is the one that bites: a Google-Docs paste puts
+  `color:#000000;background-color:transparent` on every span, and sparing that pair would be black
+  ink on our black ground. Named colours (`background:yellow`) are not matched, and that is the safe
+  direction — a sample missed is painted as it is today.
+- and **either** the ink is written inline too — the pair the page already made legible: a legend
+  key, a colour-coded results cell, a chip — **or** the element is `:empty`, a stripe cell with no
+  ink to worry about. A ground with text and no inline ink stays painted: on a kept light ground our
+  yellow would vanish, and black would be a guess that goes wrong on every dark site.
+
+Descendants stop with it. The child spans one parser writes cover the swatch, and a link in a
+colour-coded cell must show the page's own blue on the page's own pale rather than our cyan, which
+on that pale measures 1.3:1. So every rule that sets a ground or an ink carries the exclusion — the
+ten bg/fg painters, both `:empty` sweeps, `ui: links` in every state, and the code inks, which are
+split from the monospace face so the face still applies. Chrome and typography do not: a button in
+a coloured cell is still a button, and the text in it is still Arial.
+
+The visible consequence beyond the legend is that the article's colour-coded result cells —
+`td style="color:black;background-color:#B0CEFF"`, a thousand of them on that page — come back pale
+with black ink, the page's own pair, so which party leads each poll is readable at a glance again.
+Known limit: a sample drawn with `color` alone — a party stripe is
+`<span style="color:#E81B23">▌</span>` — cannot be told from a newsletter's `<span style="color:#333">`
+paragraph, and sparing the latter is dark ink on black. The stripe stays yellow.
+
+Eleven new assertions in the fixture: the key in both parser shapes and the named form, the coded
+cell and the link inside it at rest and hovered, the empty stripe cell, and the three neighbours — a
+`div` pair, the Google-Docs paste and a ground-only highlight — all still painted. ALL 119 PASSED in
+both engines.
+
 ## 白い熊 Stylus 2.4.10.50 — 2026-09-10
 
 Built on upstream 2.4.10. A daily's article page showed its opener photo at rest and lost it the
