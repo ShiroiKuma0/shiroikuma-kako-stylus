@@ -449,12 +449,72 @@ VALUE_BAR_SELF = "*:empty%s%s%s%s%s%s" % (NEVER, NEVER, NOT_ICONS, NOT_MEDIA,
                                           NOT_CONTROLS, IS_VALUE_BAR)
 VALUE_BAR_KID = "%s%s > *:empty%s%s%s%s%s" % (IS_VALUE_BAR, NEVER, NEVER, NEVER,
                                               NOT_ICONS, NOT_MEDIA, NOT_CONTROLS)
+# ⚠ A colour sample is an element whose colour IS its content, and the only way to keep it is to
+# leave it alone.  A map's legend is the shape that named it: each key is a blank <span> carrying
+# `style="background-color:#94C5DE; color:#94C5DE"` and four non-breaking spaces, and the map is
+# unreadable without it.  `bg all` at (1,0,0) and `bg text` at (1,0,1) both beat the inline
+# declaration, which is not `!important`, and every key in the legend came out black.
+#
+# Nothing in the library could see it.  No class, so no name list (the same site's other legend
+# templates do say `legend-color`; this one says nothing).  Not `:empty`: the spaces are text
+# nodes, and one parser wraps each in a child <span> besides.  And no repair of ours can hand the
+# value back once a rule has matched — nothing declared `!important` can defer to a page's
+# NORMAL declaration; `revert-layer` was measured in both engines and rolls back to the UA origin,
+# past the style attribute, never into it.  So the only mechanism is for the painters not to
+# match, and `:where()` is what makes that affordable: it contributes zero specificity, so the
+# blanket stays at (1,0,0) and the ladder above it is untouched.  A `:not()` in the blanket itself
+# would lift it to (1,1,0) and over `ui: controls` — the reason the file has always refused one.
+#
+# What counts as a sample is the idiom, spelled structurally, and each clause is a lesson:
+#   - the element is a <span>, <td> or <th>.  Never a <div>: a framework writes its containers
+#     with inline style objects, and sparing those would leave whole white panels on the page;
+#     a span is inline content, and a cell is one cell.
+#   - the ground is written inline AS A NUMBER — `#…`, `rgb(`, `hsl(` — and not with alpha zero.
+#     `transparent` is the one that bites: a Google-Docs paste puts
+#     `color:#000000;background-color:transparent` on every span, and sparing that pair would be
+#     black ink on our black ground, content gone.  Named colours (`background:yellow`) are not
+#     matched, and that is the safe direction — a sample missed is painted as it is today.
+#   - and EITHER the ink is written inline too (the pair the page already made legible — a
+#     legend key, a colour-coded results cell, a chip) OR the element is `:empty` (a stripe cell
+#     with no ink to worry about).  A ground with text and no inline ink stays painted: on a
+#     kept light ground our yellow would vanish, and black would be a guess that goes wrong on
+#     every dark site.
+#
+# Descendants stop with it: the spaces one parser wraps in child spans cover the swatch, and a
+# link in a colour-coded cell must show the page's own blue on the page's own pale, not our cyan
+# — cyan on that pale measures 1.3:1.  So every rule that sets a ground or an ink carries the
+# exclusion, links and code included; chrome (`ui: controls`, `ui: borders`, the image ground)
+# and typography do not, since a button in a coloured cell is still a button.
+#
+# Known limit: a sample drawn with `color` alone — a party stripe is `<span style="color:#E81B23">
+# ▌</span>` — cannot be told from a newsletter's `<span style="color:#333">` paragraph, and
+# sparing the latter is dark ink on our black.  The stripe stays yellow.
+SAMPLE_KINDS = ["span", "td", "th"]
+INLINE_GROUND = ":is(%s)" % ", ".join(
+    '[style*="%s%s%s" i]' % (prop, sep, val)
+    for prop in ("background-color", "background")
+    for sep in (":", ": ")
+    for val in ("#", "rgb", "hsl"))
+# `rgba(0, 0, 0, 0)` is `transparent` spelled by a script; `rgb(0, 0, 0)` is caught with it, and
+# that only costs a black-grounded sample the treatment it gets today.
+NOT_CLEAR = ':not([style*=",0)"], [style*=", 0)"])'
+INLINE_INK = ':is([style^="color:" i], [style*=";color:" i], [style*="; color:" i])'
+SAMPLE = ":is(%s)%s%s:is(%s, :empty)" % (", ".join(SAMPLE_KINDS), INLINE_GROUND, NOT_CLEAR,
+                                          INLINE_INK)
+NOT_SAMPLE = ":where(:not(%s, %s *))" % (SAMPLE, SAMPLE)
+# The guard for anything that paints a ground or sets an ink: id-level weight, stopping at a
+# colour sample.  `:where()` keeps it at exactly NEVER's weight.
+PAINT = NEVER + NOT_SAMPLE
 CODE_TAGS = ["pre", "code", "kbd", "samp", "tt"]
 # These sit on the id ladder too, and have to: they carry a colour, so they compete with the
 # `fg all` blanket at (1,0,0), and the descendant form competes with `fg text` at (1,0,1) —
 # hence the doubled guard there rather than relying on which style happens to be injected last.
 CODE_SELF = ", ".join(t + NEVER for t in CODE_TAGS)
 CODE_KIDS = ", ".join(t + NEVER + " " + NEVER for t in ("pre", "code"))
+# The ink halves stop at a colour sample; the face does not.  Hence two rules where there was
+# one: a sample inside <pre> keeps its own colours and still gets the monospace face.
+CODE_SELF_INK = ", ".join(t + PAINT for t in CODE_TAGS)
+CODE_KIDS_INK = ", ".join(t + NEVER + " " + PAINT for t in ("pre", "code"))
 # The element side of the same failure, and the one place a name list is still the only handle.
 # Video.js declares `.video-js .vjs-play-progress, .video-js .vjs-volume-level { font-family:
 # VideoJS }` on the ELEMENT and draws the round scrubber and volume knobs in its ::before, which
@@ -488,9 +548,13 @@ SANS_SERIF = (
     + "\n/* Code keeps a monospace face and a colour that is not body-yellow. #sk-never is an id\n"
       "   that matches nothing; it exists purely to put these rules on the same specificity\n"
       "   ladder as the bg/fg blankets, which would otherwise repaint the code yellow. */\n"
-    + rule(CODE_SELF, MONO, "color: %s" % CODE_GREY)
+    + rule(CODE_SELF, MONO)
     + "\n"
-    + rule(CODE_KIDS, MONO, "color: inherit")
+    + rule(CODE_SELF_INK, "color: %s" % CODE_GREY)
+    + "\n"
+    + rule(CODE_KIDS, MONO)
+    + "\n"
+    + rule(CODE_KIDS_INK, "color: inherit")
 )
 
 styles = [
@@ -522,7 +586,7 @@ styles = [
     # it would tie with `ui: image-ground` and the grey behind every transparent PNG would come or
     # go with the injection order — the same tie that keeps `object` and `embed` out of FRAMES.
     style("bg all",
-          rule(guarded(ALL), BG)
+          rule(guarded(ALL, PAINT), BG)
           + "\n/* a frame is a window onto another document; painting it can only board it up */\n"
           + rule(guarded(FRAMES, per_line=3), "background-color: transparent"),
           [CLAUDE, OWNCLOUD]),
@@ -534,26 +598,26 @@ styles = [
     # first was a mistake: that style ships enabled but the sync preserves each profile's own
     # on/off state, so on a profile where it had been switched off the fix could never run.
     style("bg blocks",
-          rule(guarded(BLOCKS), BG)
+          rule(guarded(BLOCKS, PAINT), BG)
           + "\n"
-          + rule(guarded(["table", "thead", "tbody", "tfoot", "tr", "td", "th"], NEVER, per_line=4),
+          + rule(guarded(["table", "thead", "tbody", "tfoot", "tr", "td", "th"], PAINT, per_line=4),
                  "background-image: none")),
-    style("bg div", rule(guarded(DIV), BG), [CLAUDE]),
+    style("bg div", rule(guarded(DIV, PAINT), BG), [CLAUDE]),
     # The page ground also drops its background *image*. background-color paints behind an image,
     # never over it, so a body wallpaper keeps showing through wherever the content wrapper does
     # not cover it — the light bands down both margins on forum.mobilism.org are a
     # `linear-gradient(#ccc, #e8e8e8)` on <body>. Safe to generalise, unlike the same fix
     # elsewhere: a background image on <html> or <body> is page decoration by definition, and it
     # is precisely the thing a black ground is meant to replace.
-    style("bg ground", rule(guarded(GROUND), BG, "background-image: none"), [CLAUDE]),
-    style("bg text", rule(guarded(TEXT), BG)),
+    style("bg ground", rule(guarded(GROUND, PAINT), BG, "background-image: none"), [CLAUDE]),
+    style("bg text", rule(guarded(TEXT, PAINT), BG)),
 
     # --- colour: yellow, global with exceptions ----------------------------
-    style("fg all", rule(blanket(), FG), [SUMO, CLAUDE]),
-    style("fg blocks", rule(guarded(BLOCKS), FG), [SUMO, CLAUDE]),
-    style("fg div", rule(guarded(DIV), FG), [SUMO, CLAUDE]),
-    style("fg ground", rule(guarded(GROUND), FG), [SUMO]),
-    style("fg text", rule(guarded(TEXT), FG), [SUMO]),
+    style("fg all", rule(blanket(PAINT), FG), [SUMO, CLAUDE]),
+    style("fg blocks", rule(guarded(BLOCKS, PAINT), FG), [SUMO, CLAUDE]),
+    style("fg div", rule(guarded(DIV, PAINT), FG), [SUMO, CLAUDE]),
+    style("fg ground", rule(guarded(GROUND, PAINT), FG), [SUMO]),
+    style("fg text", rule(guarded(TEXT, PAINT), FG), [SUMO]),
 
     # --- typography --------------------------------------------------------
     style("line-height", LINE_HEIGHT),
@@ -762,7 +826,7 @@ styles = [
     # `ui: controls` had decided. Which style is switched on is a per-profile matter, so the
     # carve-out has to hold in both.
     style("ui: strip-backdrops",
-          rule("*:empty%s%s%s%s%s%s" % (NEVER, NOT_ICONS, NOT_MEDIA, NOT_CONTROLS,
+          rule("*:empty%s%s%s%s%s%s" % (PAINT, NOT_ICONS, NOT_MEDIA, NOT_CONTROLS,
                                         NOT_LINKS, NOT_ART),
                "background-image: none")
           ,
@@ -822,7 +886,7 @@ styles = [
             "   and <video> are :empty by definition and `ui: image-ground` must survive. Links:\n"
             "   an empty link is a picture, treated just above. <hr>: void, so always :empty, and\n"
             "   `ui: borders` fills it yellow to draw the line. */\n"
-          + rule("*:empty%s%s%s%s%s:not(hr)" % (NEVER, NOT_ICONS, NOT_MEDIA,
+          + rule("*:empty%s%s%s%s%s:not(hr)" % (PAINT, NOT_ICONS, NOT_MEDIA,
                                                 NOT_CONTROLS, NOT_LINKS),
                  "background-color: transparent")
           + "\n/* ⚠ The fifth kind of layer, and the one the sweep above is built to miss: the\n"
@@ -980,17 +1044,18 @@ styles = [
     style("ui: links",
           rule("a:any-link%s,\n[role=\"link\"]%s,\n"
                "a:any-link *%s%s,\n[role=\"link\"] *%s%s" % (
-                   NEVER, NEVER, NEVER, NOT_ICONS, NEVER, NOT_ICONS),
+                   PAINT, PAINT, PAINT, NOT_ICONS, PAINT, NOT_ICONS),
                "color: %s" % CYAN)
           + "\n"
-          + rule("a:visited" + NEVER, "color: %s" % MAGENTA)
+          + rule("a:visited" + PAINT, "color: %s" % MAGENTA)
           + "\n"
           + "\n/* one guard, on the link, for the descendant forms too: (1,2,1), a painter's weight,\n"
             "   so that a layer `ui: overlays` leaves transparent stays so under the mouse */\n"
-          + rule("a:any-link%s:hover, a:any-link%s:hover *,\n"
-                 "a:any-link%s:focus-visible, a:any-link%s:focus-visible *,\n"
-                 '[role="link"]%s:hover, [role="link"]%s:hover *' % (
-                     NEVER, NEVER, NEVER, NEVER, NEVER, NEVER),
+          + rule("a:any-link%s:hover, a:any-link%s:hover *%s,\n"
+                 "a:any-link%s:focus-visible, a:any-link%s:focus-visible *%s,\n"
+                 '[role="link"]%s:hover, [role="link"]%s:hover *%s' % (
+                     PAINT, NEVER, NOT_SAMPLE, PAINT, NEVER, NOT_SAMPLE,
+                     PAINT, NEVER, NOT_SAMPLE),
                  "color: #000000",
                  "background-color: %s" % CYAN)),
 

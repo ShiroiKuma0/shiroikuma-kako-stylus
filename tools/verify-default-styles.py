@@ -220,6 +220,23 @@ __SHEETS__
   <!-- ... while a span that follows no control is ordinary content and keeps its ground -->
   <div id="plainWrap"><input id="plainInp" type="text" value="nothing beside me"></div>
   <span class="plainSpan" id="plainSpan">not a field label</span>
+  <!-- a map's legend: each key is a blank span whose inline colour IS the content. Both parser
+       shapes -- bare non-breaking spaces, and each space wrapped in a child span -- and the
+       named form the same site's other legend template writes -->
+  <p><span id="keyLegacy" style="border:none; background-color:#94C5DE; color:#94C5DE;">&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;Democratic
+     <span id="keyParsoid" style="border:none; background-color:#CA0020; color:#CA0020;"><span id="keyEntity">&nbsp;</span><span>&nbsp;</span></span>&nbsp;Republican
+     <span class="legend-color mw-no-invert" id="keyNamed" style="background-color:#D3D3D3; color:black; print-color-adjust: exact;">&nbsp;</span>&nbsp;No election</p>
+  <!-- a colour-coded results cell, with the candidate's name a link, and a party stripe cell
+       beside it that is empty by construction -->
+  <table><tr><td id="cellPair" style="color:black;background-color:#B0CEFF"><a id="cellLink" href="/c">Candidate</a> 45.9%</td
+    ><td id="cellPairHov" style="color:black;background-color:#FFB6B6"><a class="sk-hover" id="cellLinkHov" href="/d">Hovered</a></td
+    ><td id="stripeCell" style="background-color:#0671B0; width:5px"></td></tr></table>
+  <!-- ...and the three neighbours that must stay painted: a framework container written with an
+       inline style object, a Google-Docs paste (`background-color:transparent` on every span, and
+       the ink black), and a highlight that wrote a ground and no ink -->
+  <div id="divPair" style="background-color:#ffffff; color:#333333"><p id="divPairText">a whole panel</p></div>
+  <p><span id="gdocs" style="font-size:11pt;font-family:Arial;color:#000000;background-color:transparent;font-weight:400;">pasted from a document</span>
+     <span id="hilite" style="background-color:#ffff00">highlighted words</span></p>
   <!-- a widget sealed in a shadow root: nothing we inject reaches inside it, so the only route
        is what inherits through the host — which is what `ui: design tokens` exists for -->
   <div id="shadowHost"></div>
@@ -575,6 +592,39 @@ t('the page ink token is moved off the site value', tok('--foreground'),
   t('shadow-DOM text with no colour class inherits through the host', sd('sdPlain').color,
     sd('sdPlain').color === YELLOW);
 }
+
+// --- colour samples --------------------------------------------------------
+// A legend key is a blank span whose inline colour is the content, and nothing of ours may match
+// it -- no `!important` of ours can defer to the page's normal inline value, so the painters
+// stop at it with a `:where()` that costs no specificity.
+t('a legend key keeps its inline colour (bare non-breaking spaces)',
+  g('keyLegacy').backgroundColor, g('keyLegacy').backgroundColor === 'rgb(148, 197, 222)');
+t('...and when the parser wraps each space in a child span', g('keyParsoid').backgroundColor,
+  g('keyParsoid').backgroundColor === 'rgb(202, 0, 32)');
+t('the child spans inside it are not painted either (they cover the swatch)',
+  g('keyEntity').backgroundColor, g('keyEntity').backgroundColor === 'rgba(0, 0, 0, 0)');
+t('the named form keeps its colour too', g('keyNamed').backgroundColor,
+  g('keyNamed').backgroundColor === 'rgb(211, 211, 211)');
+t('a colour-coded cell keeps the pair the page made legible',
+  g('cellPair').backgroundColor + ' / ' + g('cellPair').color,
+  g('cellPair').backgroundColor === 'rgb(176, 206, 255)' && g('cellPair').color === BLACK);
+t('a link in it shows the colour the page gave links, not cyan on pale',
+  g('cellLink').color + ' / ' + g('cellLink').backgroundColor,
+  g('cellLink').color === 'rgb(0, 102, 204)' && g('cellLink').backgroundColor === 'rgba(0, 0, 0, 0)');
+t('...and hovered it takes no fill (a hover fill paints too)',
+  g('cellLinkHov').backgroundColor + ' / ' + g('cellLinkHov').color,
+  g('cellLinkHov').backgroundColor === 'rgba(0, 0, 0, 0)' && g('cellLinkHov').color === 'rgb(0, 102, 204)');
+t('an empty stripe cell keeps its ground (no ink to worry about)',
+  g('stripeCell').backgroundColor, g('stripeCell').backgroundColor === 'rgb(6, 113, 176)');
+t('a <div> with an inline pair is still painted (a framework container is not a sample)',
+  g('divPair').backgroundColor + ' / ' + g('divPairText').color,
+  g('divPair').backgroundColor === BLACK && g('divPairText').color === YELLOW);
+t('a Google-Docs paste (transparent ground, black ink) is still painted, ink yellow',
+  g('gdocs').backgroundColor + ' / ' + g('gdocs').color,
+  g('gdocs').backgroundColor === BLACK && g('gdocs').color === YELLOW);
+t('a ground with text and no inline ink is still painted',
+  g('hilite').backgroundColor + ' / ' + g('hilite').color,
+  g('hilite').backgroundColor === BLACK && g('hilite').color === YELLOW);
 
 // --- transparent artwork ---------------------------------------------------
 t('image ground is mid grey, so neither dark nor light ink can vanish',
