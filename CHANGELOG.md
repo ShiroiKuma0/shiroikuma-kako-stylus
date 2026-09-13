@@ -5,6 +5,72 @@ for the upstream [Stylus](https://github.com/openstyles/stylus) release it is bu
 ships no changelog file of its own — its notes live only on GitHub Releases — so this file is
 entirely ours to maintain, newest first.
 
+## 白い熊 Stylus 2.4.10.54 — 2026-09-13
+
+Built on upstream 2.4.10. A sports federation's site — the one that carries the results of every
+tournament — came out black on black on every page: profile cards, the bout results, the schedule.
+The cause was not a rule but a **seed**, and the repair is mostly to the sync that had made the seed
+permanent. The behavioural fixture grew from 119 checks to 127. Note the version jump: 2.4.10.53
+was the unsigned iteration build.
+
+### Take back an ink-only exclusion
+
+The first library carried the old Stylish export's per-site tuning as its seed, and one entry was an
+exclusion of the five `fg` styles alone from that site — with the `bg` blankets left on. Every card
+there was painted black at (1,0,0) and the site's own `#2c2c2c` ink stayed put. An ink exclusion
+without its ground exclusion is never what a reader wants, and the glob is withdrawn from those five
+styles and from `ui: design tokens`, whose own rule is to follow the blankets.
+
+Withdrawing it in the generator alone would have changed nothing on any existing profile, and that
+is the finding. The sync kept a profile's `exclusions` and `inclusions` **wholesale** whenever it had
+any, on the reasoning that they are 白い熊's tuning — which they are, except for the ones the build
+put there itself, and nothing told the two apart. So the sync now **stamps what it seeded**
+(`_forkSeed`) and merges each list three ways against that stamp: a glob the profile has is kept if
+this build still ships it or no build ever did; one the previous build shipped and this one does
+not is withdrawn; one this build ships for the first time arrives, unless it was seeded before and
+removed by hand. A profile older than the stamp has no seed to compare against, so the generator
+carries `withdrawn` per style — what earlier builds shipped and this one does not — read for that
+bootstrap only and never stored.
+
+Verified in a stock Firefox rather than in a unit test alone: a profile seeded by the signed
+2.4.10.52, hand tuning added the way the popup would add it, then this build loaded over it. The
+site glob was gone from all six styles, the hand-added glob was kept beside the seed, a seed removed
+by hand stayed removed, and every style carried its stamp.
+
+### A mark is an empty span in a table cell, and its colour is the result
+
+With the ink back the results board was still unreadable. The winner of each bout is
+`<td><span></span></td>` carrying a red gradient, and the head-to-head record is a row of
+`span.siro` / `span.kuro` circles, hollow for a win and filled for a loss — empty spans in table
+cells whose whole content is their colour, the colour sample's cousin with no inline style to give
+it away. `bg text` painted them, `ui: strip-backdrops` took the gradient and `ui: overlays` the
+fill, and the board showed every name and no result.
+
+Nothing could see them: no class on the bar at all, `siro`/`kuro` name nothing a list would carry,
+no inline style for `SAMPLE`, and no ink. The structure is the handle. A span is inline, so an empty
+one has no size unless the page gave it some, and a page sizes an empty span in a cell to draw
+something. It cannot be a sheet — a sheet is a block pinned over the viewport — and it is not a
+cell: `<td></td>` keeps the sweep, or its empty white would be a hole in the row. So `MARK` joins
+`SAMPLE` in the `:where()` on the **ground** painters and both `:empty` sweeps, at no cost to the
+specificity ladder; the ink painters are left alone, since a glyph drawn in the span's `::before`
+must still come out yellow.
+
+The limit is a fill the site chose dark for a white page: `kuro` is `#2c2c2c`, 1.3:1 against black,
+and no rule can know a fill is dark without knowing it is a fill. That one is named on the site, in
+a one-line `site: sumo.or.jp` — the one place that knows — so a loss now reads as a filled yellow
+disc and a win as a hollow ring.
+
+Eight new assertions in the fixture: the bar keeps its picture and takes no ground, the filled
+circle keeps its fill, the hollow one stays hollow, the ring is yellow on both, and the three
+neighbours — an empty cell, an empty `div` in a cell, an empty span outside one — keep the sweep.
+ALL 127 PASSED in both engines, and the real extension on the real site in Gecko measured the bar's
+gradient intact, text `rgb(255,255,0)` on `rgb(0,0,0)`, the loss mark yellow, the win mark hollow.
+
+Two things on that site are left as they are, for want of a handle: the ticket pages' banner
+picture, whose text wrapper is a transparent `div` laid over a `background-image` on its parent,
+and the side buttons' background icons, which sit on links that name themselves buttons and so take
+the pill and lose the picture — the label survives.
+
 ## 白い熊 Stylus 2.4.10.52 — 2026-09-12
 
 Built on upstream 2.4.10. An encyclopaedia's election article shows three maps, each with a key
