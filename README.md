@@ -32,7 +32,7 @@ each new upstream release.
 
 ### 📚 A reading library, preinstalled
 
-A fresh profile arrives with **26 styles already installed** — no import, no setup. Ten of them are
+A fresh profile arrives with **28 styles already installed** — no import, no setup. Ten of them are
 a matrix: black background and yellow text, each split by selector group (`all`, `html/body`, `div`,
 block containers, text elements) so that turning the yellow off for `div` **on one site** does not
 lose it everywhere. They occupy popup positions 1–9 and 0, so tuning a site is a three-key gesture:
@@ -47,8 +47,10 @@ Where no selector can generalise — a section texture, a transparent container 
 black band, an article column pinned by a flex basis — the fix lives in a small **per-site style**
 instead of being forced on every page.
 
-The library is **synced to every build**, matching by name and replacing only the CSS — your
-per-site exclusions, and which styles you have switched off, survive an update untouched.
+The library is **synced to every build**, matching by name and replacing the CSS. Which styles
+you have switched off survives an update untouched, and so does your per-site tuning: the sync
+remembers what it seeded, so a site you excluded by hand stays excluded, and a seed the build has
+since withdrawn is taken back rather than left behind.
 
 ### 🖤 The extension's own windows, in the house palette
 

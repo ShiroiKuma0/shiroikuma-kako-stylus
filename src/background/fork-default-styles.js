@@ -21,12 +21,66 @@ import DEFAULT_STYLES from './fork-default-styles.json';
 const HASH_KEY = 'fork.defaultStylesHash';
 /** Stamped on every style we install, so a later sync knows which ones are ours to touch. */
 const MARK = '_forkDefault';
+/** Stamped beside it: the per-site lists the build that last synced this style SEEDED into it.
+ * Without this record a shipped exclusion and one 白い熊 added by hand look the same, and the
+ * build can never take back a seed it got wrong — see mergeSeeded(). */
+const SEED = '_forkSeed';
 
 /** djb2 over the shipped JSON. Not a security hash — it only has to change when the library does. */
 function hashOf(str) {
   let h = 5381;
   for (let i = 0; i < str.length; i++) h = (h * 33 ^ str.charCodeAt(i)) >>> 0;
   return h.toString(36) + '.' + str.length.toString(36);
+}
+
+/**
+ * Three-way merge of one per-site list — `exclusions` or `inclusions` — between what the profile
+ * has, what the previous build seeded into it, and what this build seeds.
+ *
+ * The shipped lists are 白い熊's own decisions, recorded in the generator, so they must reach every
+ * profile; and the popup is where the same decisions are made day to day, so nothing the profile
+ * added or removed by hand may be undone. Both hold at once only with the seed remembered:
+ *
+ * - a glob the profile has is kept if this build still ships it, or if no build ever did (it is
+ *   白い熊's own);
+ * - a glob the previous build shipped and this one does not is withdrawn — the case this exists
+ *   for: an ink-only exclusion that left a whole site black on black;
+ * - a glob this build ships and the previous one did not is added, unless it was seeded before
+ *   and removed by hand (then it is absent from the profile but present in `prev`, and stays out).
+ *
+ * @param {string[]} [profile] - the list as the profile has it
+ * @param {string[]} [prev] - the list the previous sync seeded
+ * @param {string[]} [next] - the list this build ships
+ * @returns {string[]}
+ */
+function mergeSeeded(profile = [], prev = [], next = []) {
+  const kept = profile.filter(x => next.includes(x) || !prev.includes(x));
+  const fresh = next.filter(x => !prev.includes(x) && !kept.includes(x));
+  return kept.concat(fresh);
+}
+
+/**
+ * What the previous sync seeded into a style, for mergeSeeded().
+ *
+ * Bootstrap for a profile synced by a build older than the stamp: the seed is taken to be what
+ * this build ships plus what the generator says it has withdrawn. That reproduces the old rule —
+ * a profile's lists win wholesale — with exactly one exception, the withdrawal, which is the
+ * one thing the old rule could never express. (One shade of difference: a glob this build ships
+ * for the first time counts as already seeded and does not arrive on that first sync. It arrives
+ * on the next library change, the stamp being in place by then.)
+ *
+ * @param {StyleObj} old - the style as the profile has it
+ * @param {StyleObj} src - the style as this build ships it
+ * @returns {{exclusions: string[], inclusions: string[]}}
+ */
+function seedOf(old, src) {
+  const seed = old[SEED];
+  if (seed) return {exclusions: seed.exclusions || [], inclusions: seed.inclusions || []};
+  const withdrawn = src.withdrawn || [];
+  return {
+    exclusions: (src.exclusions || []).concat(withdrawn),
+    inclusions: (src.inclusions || []).concat(withdrawn),
+  };
 }
 
 /**
@@ -46,6 +100,11 @@ function hashOf(str) {
  *   state, and above all the per-site `exclusions` and `inclusions`, which are the whole point of
  *   the library — and replaces only the CSS. Hand-edited CSS in one of these styles is therefore
  *   overwritten on the next library change; the generator is the source of truth.
+ * - The per-site lists are merged three ways rather than kept wholesale, against the seed the
+ *   previous sync stamped on the style: what 白い熊 added or removed by hand stays as it is, what
+ *   this build newly ships arrives, and what it has withdrawn goes — see mergeSeeded(). The
+ *   first library shipped an ink-only exclusion for one site, and for weeks no build could take
+ *   it back: the profile's list won, every time.
  * - Styles carrying our mark that the build no longer ships are removed, so a rename cannot leave
  *   the superseded copy behind, still applying its old rules.
  * - Anything without our mark and without a matching name is never touched.
@@ -76,13 +135,18 @@ export default async function syncDefaultStyles() {
       // imported JSON is a live module object, so it must not be handed over directly.
       const item = deepCopy(src);
       item[MARK] = 1;
+      // The generator's record of what earlier builds shipped and this one does not; read by
+      // seedOf() for a profile that predates the seed stamp, and never stored.
+      delete item.withdrawn;
+      item[SEED] = {exclusions: src.exclusions || [], inclusions: src.inclusions || []};
       const old = byName.get(src.name);
       if (old) {
         item.id = old.id;
         if (old._id) item._id = old._id;
         item.enabled = old.enabled;
-        if (old.exclusions?.length) item.exclusions = old.exclusions;
-        if (old.inclusions?.length) item.inclusions = old.inclusions;
+        const seed = seedOf(old, src);
+        item.exclusions = mergeSeeded(old.exclusions, seed.exclusions, src.exclusions);
+        item.inclusions = mergeSeeded(old.inclusions, seed.inclusions, src.inclusions);
         // `overridden` is the "only apply to included sites" switch. Once a profile has an opinion
         // about it, keep that opinion — otherwise every library update would re-tick a box the
         // user deliberately cleared.

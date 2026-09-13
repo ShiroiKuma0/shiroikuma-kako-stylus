@@ -163,6 +163,16 @@ PAGE = """<!doctype html><meta charset="utf-8"><title>verify</title>
   .fieldGroup input { padding-left: 34px; }
   .floatLabel { position: absolute; inset: 11px 0 0 3px; background: #ffffff; }
   .plainSpan { background: #eeeeee; }
+  /* a sports federation's results board: the winner of each bout is an empty span in a cell
+     carrying a red gradient, and the head-to-head record is a row of circles, hollow for a win
+     and filled for a loss. No class on the bar at all, and the circles' classes name nothing. */
+  .boutWin span { display: block; height: 26px;
+      background: linear-gradient(0deg, #94080d 0%, #f00621 50%, #94080d 100%); }
+  .siro, .kuro { display: block; width: 18px; height: 18px; border-radius: 9px;
+      border: 1px solid #2c2c2c; margin: 0 auto; }
+  .kuro { background: #2c2c2c; }
+  /* ...and the empty boxes around them, white on the page, whose sweep must stay */
+  .boardCell { background: #ffffff; }
   /* the design tokens a Tailwind v4 site declares, and a shadow-DOM widget then reads by
      inheritance — `:root` inside a shadow stylesheet matches nothing, so the value it sees is
      this one, which is why moving it here reaches inside the sealed tree */
@@ -220,6 +230,14 @@ __SHEETS__
   <!-- ... while a span that follows no control is ordinary content and keeps its ground -->
   <div id="plainWrap"><input id="plainInp" type="text" value="nothing beside me"></div>
   <span class="plainSpan" id="plainSpan">not a field label</span>
+  <!-- a results board: the marks are empty spans in cells, and their colour is the result -->
+  <table class="board"><tr class="boutWin"><td id="winCell"><span id="winBar"></span></td
+    ><td class="boardCell" id="lossCell"></td></tr>
+    <tr><th id="recCell"><span class="siro" id="siroMark"></span></th
+    ><td><span class="kuro" id="kuroMark"></span></td
+    ><td><div class="boardCell" id="cellDiv"></div></td></tr></table>
+  <!-- an empty span outside a cell is not a mark, and keeps the sweep -->
+  <p><span class="boardCell" id="looseSpan"></span></p>
   <!-- a map's legend: each key is a blank span whose inline colour IS the content. Both parser
        shapes -- bare non-breaking spaces, and each space wrapped in a child span -- and the
        named form the same site's other legend template writes -->
@@ -625,6 +643,25 @@ t('a Google-Docs paste (transparent ground, black ink) is still painted, ink yel
 t('a ground with text and no inline ink is still painted',
   g('hilite').backgroundColor + ' / ' + g('hilite').color,
   g('hilite').backgroundColor === BLACK && g('hilite').color === YELLOW);
+
+// --- marks: an empty span in a table cell, whose colour IS the result ------
+t('a win bar (an empty span in a cell carrying a red gradient) keeps its picture',
+  g('winBar').backgroundImage === 'none' ? 'none' : 'kept', g('winBar').backgroundImage !== 'none');
+t('and is not painted under it either', g('winBar').backgroundColor,
+  g('winBar').backgroundColor === 'rgba(0, 0, 0, 0)');
+t('a filled circle keeps its fill', g('kuroMark').backgroundColor,
+  g('kuroMark').backgroundColor === 'rgb(44, 44, 44)');
+t('a hollow one stays hollow', g('siroMark').backgroundColor,
+  g('siroMark').backgroundColor === 'rgba(0, 0, 0, 0)');
+t('and the ring around both is yellow (a border is chrome, and chrome is recoloured)',
+  g('siroMark').borderTopColor + ' / ' + g('kuroMark').borderTopColor,
+  g('siroMark').borderTopColor === YELLOW && g('kuroMark').borderTopColor === YELLOW);
+t('an empty CELL beside them keeps the sweep (its white would be a hole in the row)',
+  g('lossCell').backgroundColor, g('lossCell').backgroundColor === 'rgba(0, 0, 0, 0)');
+t('so does an empty div in a cell (a mark is a span)',
+  g('cellDiv').backgroundColor, g('cellDiv').backgroundColor === 'rgba(0, 0, 0, 0)');
+t('and an empty span outside a cell',
+  g('looseSpan').backgroundColor, g('looseSpan').backgroundColor === 'rgba(0, 0, 0, 0)');
 
 // --- transparent artwork ---------------------------------------------------
 t('image ground is mid grey, so neither dark nor light ink can vanish',

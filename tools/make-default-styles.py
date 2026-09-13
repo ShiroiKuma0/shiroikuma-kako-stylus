@@ -146,6 +146,9 @@ TOKENS_LINE = ["--border", "--input", "--ring", "--sidebar-border", "--sidebar-r
 # The leading `*.` makes the subdomain optional, so one pattern covers both the
 # bare host and any subdomain.  See buildOverrideRe() in
 # src/background/style-manager/matcher.js.
+# Withdrawn: shipped as an exclusion on the ink styles alone by the first library and every build
+# after it, which left the site black on black. Kept only so the sync can take it back out of the
+# profiles those builds seeded — see `withdrawn` in style().
 SUMO = "*://*.sumo.or.jp/*"
 SUBSTACK = "*://*.substack.com/*"
 UNHERD = "*://*.unherd.com/*"
@@ -188,11 +191,17 @@ def rule(selectors, *decls):
     return "%s {\n%s}\n" % (selectors, body)
 
 
-def style(name, code, exclusions=(), domains=(), enabled=True, only_on=()):
+def style(name, code, exclusions=(), domains=(), enabled=True, only_on=(), withdrawn=()):
     """`only_on` turns the style into an allowlist: Stylus applies it to those sites and nowhere
     else. That is `inclusions` plus the `overridden` flag — the "only apply to included sites"
     checkbox — see cache.js:41. Adding a site later is one keystroke in the popup: the menu's
-    `+` on the domain row."""
+    `+` on the domain row.
+
+    `withdrawn` lists the globs an EARLIER build shipped in this style's `exclusions` or
+    `inclusions` and this one no longer does.  The sync keeps every profile's own per-site
+    tuning, and the lists it seeded are indistinguishable from that tuning until it has stamped
+    what it seeded (`_forkSeed` in fork-default-styles.js); a profile last synced by a build older
+    than the stamp needs telling.  Consulted for exactly those profiles, and for nothing else."""
     return {
         "name": name,
         "enabled": enabled,
@@ -206,6 +215,7 @@ def style(name, code, exclusions=(), domains=(), enabled=True, only_on=()):
         "exclusions": list(exclusions),
         "inclusions": list(only_on),
         "overridden": bool(only_on),
+        "withdrawn": list(withdrawn),
         "updateUrl": None,
     }
 
@@ -505,6 +515,34 @@ NOT_SAMPLE = ":where(:not(%s, %s *))" % (SAMPLE, SAMPLE)
 # The guard for anything that paints a ground or sets an ink: id-level weight, stopping at a
 # colour sample.  `:where()` keeps it at exactly NEVER's weight.
 PAINT = NEVER + NOT_SAMPLE
+# ⚠ A mark is the colour sample's cousin with no inline style to give it away: an EMPTY <span>
+# the page put in a table cell, sized and coloured by its stylesheet, whose whole content is its
+# colour.  A sports federation's results board is built of them — the winner of each bout is
+# `<td><span></span></td>` carrying a red gradient, and a head-to-head record is a row of
+# `span.siro` / `span.kuro` circles, hollow for a win and filled for a loss.  Both `:empty`
+# sweeps erased them (`ui: strip-backdrops` the gradient, `ui: overlays` the fill) and `bg text`
+# painted them black first, so the board showed every name and no result.
+#
+# Nothing else could see them: no class on the bar at all, and `siro`/`kuro` name nothing a list
+# would carry; no inline style, so SAMPLE cannot match; and no ink, since a mark has none.  The
+# structure is the only handle and it is a clean one: a span is inline, so an empty one has no
+# size unless the page gave it some, and a page sizes an empty span in a cell to draw something.
+# It cannot be a sheet — a sheet is a block pinned over the viewport, and the sweep exists for
+# those — and it cannot be a cell, whose empty white would show as a hole: a `<td></td>` keeps
+# the sweep, which turns it transparent so the row's black shows through.  So the ground painters
+# do not match a mark and the sweeps do not touch it, and it keeps whatever the page drew.  Only
+# the GROUND side: a mark has no ink to make legible, so the fg painters are left as they are —
+# a glyph drawn in its `::before` must still come out yellow.
+#
+# Cost, per the asymmetry: a decorative strip built as an empty span in a cell stays the colour
+# the site chose, and a mark the site drew dark for a light page stays dark on our black — the
+# filled `kuro` circle is #2c2c2c, 1.3:1 against black, and no rule can know that a fill is dark
+# without knowing it is a fill.  What comes back is everything drawn in a colour: the red bar
+# reads at 5:1 on black.
+MARK = ":is(td, th) > span:empty"
+NOT_MARK_OR_SAMPLE = ":where(:not(%s, %s *, %s))" % (SAMPLE, SAMPLE, MARK)
+# The guard for anything that paints or clears a GROUND: stops at a colour sample and at a mark.
+SURFACE = NEVER + NOT_MARK_OR_SAMPLE
 CODE_TAGS = ["pre", "code", "kbd", "samp", "tt"]
 # These sit on the id ladder too, and have to: they carry a colour, so they compete with the
 # `fg all` blanket at (1,0,0), and the descendant form competes with `fg text` at (1,0,1) —
@@ -586,7 +624,7 @@ styles = [
     # it would tie with `ui: image-ground` and the grey behind every transparent PNG would come or
     # go with the injection order — the same tie that keeps `object` and `embed` out of FRAMES.
     style("bg all",
-          rule(guarded(ALL, PAINT), BG)
+          rule(guarded(ALL, SURFACE), BG)
           + "\n/* a frame is a window onto another document; painting it can only board it up */\n"
           + rule(guarded(FRAMES, per_line=3), "background-color: transparent"),
           [CLAUDE, OWNCLOUD]),
@@ -598,26 +636,32 @@ styles = [
     # first was a mistake: that style ships enabled but the sync preserves each profile's own
     # on/off state, so on a profile where it had been switched off the fix could never run.
     style("bg blocks",
-          rule(guarded(BLOCKS, PAINT), BG)
+          rule(guarded(BLOCKS, SURFACE), BG)
           + "\n"
-          + rule(guarded(["table", "thead", "tbody", "tfoot", "tr", "td", "th"], PAINT, per_line=4),
+          + rule(guarded(["table", "thead", "tbody", "tfoot", "tr", "td", "th"], SURFACE, per_line=4),
                  "background-image: none")),
-    style("bg div", rule(guarded(DIV, PAINT), BG), [CLAUDE]),
+    style("bg div", rule(guarded(DIV, SURFACE), BG), [CLAUDE]),
     # The page ground also drops its background *image*. background-color paints behind an image,
     # never over it, so a body wallpaper keeps showing through wherever the content wrapper does
     # not cover it — the light bands down both margins on forum.mobilism.org are a
     # `linear-gradient(#ccc, #e8e8e8)` on <body>. Safe to generalise, unlike the same fix
     # elsewhere: a background image on <html> or <body> is page decoration by definition, and it
     # is precisely the thing a black ground is meant to replace.
-    style("bg ground", rule(guarded(GROUND, PAINT), BG, "background-image: none"), [CLAUDE]),
-    style("bg text", rule(guarded(TEXT, PAINT), BG)),
+    style("bg ground", rule(guarded(GROUND, SURFACE), BG, "background-image: none"), [CLAUDE]),
+    style("bg text", rule(guarded(TEXT, SURFACE), BG)),
 
     # --- colour: yellow, global with exceptions ----------------------------
-    style("fg all", rule(blanket(PAINT), FG), [SUMO, CLAUDE]),
-    style("fg blocks", rule(guarded(BLOCKS, PAINT), FG), [SUMO, CLAUDE]),
-    style("fg div", rule(guarded(DIV, PAINT), FG), [SUMO, CLAUDE]),
-    style("fg ground", rule(guarded(GROUND, PAINT), FG), [SUMO]),
-    style("fg text", rule(guarded(TEXT, PAINT), FG), [SUMO]),
+    # ⚠ The old Stylish export excluded a sports federation's site from the five ink styles and
+    # from nothing else, and the shipped seed carried that over. The bg blankets kept painting
+    # every card there black at (1,0,0) while the site's own #2c2c2c ink stayed put — black on
+    # black, on every page of it: profile cards, the results board, the schedule. An ink
+    # exclusion without its ground exclusion is never what the reader wants; the glob is withdrawn
+    # and the sync takes it out of every profile it seeded it into.
+    style("fg all", rule(blanket(PAINT), FG), [CLAUDE], withdrawn=[SUMO]),
+    style("fg blocks", rule(guarded(BLOCKS, PAINT), FG), [CLAUDE], withdrawn=[SUMO]),
+    style("fg div", rule(guarded(DIV, PAINT), FG), [CLAUDE], withdrawn=[SUMO]),
+    style("fg ground", rule(guarded(GROUND, PAINT), FG), withdrawn=[SUMO]),
+    style("fg text", rule(guarded(TEXT, PAINT), FG), withdrawn=[SUMO]),
 
     # --- typography --------------------------------------------------------
     style("line-height", LINE_HEIGHT),
@@ -826,7 +870,7 @@ styles = [
     # `ui: controls` had decided. Which style is switched on is a per-profile matter, so the
     # carve-out has to hold in both.
     style("ui: strip-backdrops",
-          rule("*:empty%s%s%s%s%s%s" % (PAINT, NOT_ICONS, NOT_MEDIA, NOT_CONTROLS,
+          rule("*:empty%s%s%s%s%s%s" % (SURFACE, NOT_ICONS, NOT_MEDIA, NOT_CONTROLS,
                                         NOT_LINKS, NOT_ART),
                "background-image: none")
           ,
@@ -886,7 +930,7 @@ styles = [
             "   and <video> are :empty by definition and `ui: image-ground` must survive. Links:\n"
             "   an empty link is a picture, treated just above. <hr>: void, so always :empty, and\n"
             "   `ui: borders` fills it yellow to draw the line. */\n"
-          + rule("*:empty%s%s%s%s%s:not(hr)" % (PAINT, NOT_ICONS, NOT_MEDIA,
+          + rule("*:empty%s%s%s%s%s:not(hr)" % (SURFACE, NOT_ICONS, NOT_MEDIA,
                                                 NOT_CONTROLS, NOT_LINKS),
                  "background-color: transparent")
           + "\n/* ⚠ The fifth kind of layer, and the one the sweep above is built to miss: the\n"
@@ -969,7 +1013,7 @@ styles = [
           + rule("html" + NEVER, *["%s: %s" % (t, DIM_YELLOW) for t in TOKENS_DIM])
           + "\n/* borders, focus rings and the input outline — line colours, not fills */\n"
           + rule("html" + NEVER, *["%s: %s" % (t, YELLOW) for t in TOKENS_LINE]),
-          [SUMO, CLAUDE, OWNCLOUD]),
+          [CLAUDE, OWNCLOUD], withdrawn=[SUMO]),
 
     # Sites constrain article text to a narrow column with max-width; this hands the window back.
     # Media keeps its own max-width, which is what stops an oversized image overflowing.
@@ -1104,6 +1148,13 @@ styles = [
     style("site: claude.ai",
           rule("pre.code-block__code", "padding: 4px 8px", "margin: 2px 0"),
           domains=["claude.ai"]),
+    # The results board's loss mark is a filled circle, and the fill is #2c2c2c — chosen for a
+    # white page, and 1.3:1 against our black, so a loss reads as a win. MARK keeps the fill and
+    # can do no more: no rule can know a fill is dark without knowing it is a fill, and the class
+    # is the only thing that does. Named here, on the one site that uses it.
+    style("site: sumo.or.jp",
+          rule(".kuro" + NEVER + NEVER, "background-color: %s" % YELLOW),
+          domains=["sumo.or.jp"]),
     style("site: nikkansports.com",
           rule(wrap(EVERY), "font-size: 30px") + "\n" + rule("h1", "font-size: 40px"),
           domains=["nikkansports.com"]),
