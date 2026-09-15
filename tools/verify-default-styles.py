@@ -91,6 +91,17 @@ PAGE = """<!doctype html><meta charset="utf-8"><title>verify</title>
      left in the DOM for a toast that never comes or a gate already dismissed, and named
      nothing a style could match */
   .toastHost { position: fixed; inset: 0; z-index: 1060; pointer-events: none; }
+  /* a dialog's SHELL: the role on a fixed, inset-0, click-through layer holding the shut panel
+     and the tab that opens it, both fixed themselves. Its ground is the scrim, nothing at rest.
+     Painted, it is the sheet above with a widget inside it, and :empty cannot see it. */
+  .leadShell { position: fixed; inset: 0; z-index: 999; pointer-events: none; }
+  .leadShell.is-active { background-color: rgba(0, 0, 0, .4); }
+  .leadPanel { position: fixed; top: 50%; right: 24px; width: 200px; opacity: 0;
+               pointer-events: none; background-color: #fff; }
+  .leadTab { position: fixed; top: 50%; right: 4px; pointer-events: auto; }
+  /* ...and a dialog WINDOW, a panel the page grounded white, with its own heading and close
+     button, and one built of nothing but divs */
+  .dialogWin, .dialogDivs { background-color: #fff !important; padding: 24px; }
   /* a product tile, and the two ways it turns black. The whole-card click target is one <a>
      laid over the tile showing nothing of its own -- and NOT :empty, because the accessible name
      is a text node with a data element beside it. The cover under it is stacked behind the page
@@ -275,6 +286,22 @@ __SHEETS__
   <img id="img" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==">
   <img id="filtIcon" class="dlGlyph" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==">
   <div class="toastHost" id="toastHost"></div>
+  <!-- a dialog's shell, only boxes inside -- the panel, the tab, its own <style> -- so it is
+       unpainted; a dialog window whose heading and close button say it is the window, so it
+       keeps its ground; and the trade-off, a window built of divs alone -->
+  <div class="leadShell" id="leadShell" role="dialog" aria-modal="true" tabindex="-1"
+    ><style>.leadShell .never { color: inherit; }</style
+    ><div class="leadPanel" id="leadPanel"><div><h4>An offer worth your attention</h4
+      ><input placeholder="Your phone number"></div></div
+    ><div class="leadTab" id="leadTab"><div id="leadTabBtn" role="button">Call me</div></div></div>
+  <div class="dialogWin" id="dialogWin" role="dialog" aria-modal="true"
+    ><button id="dialogClose">&times;</button><h2>Are you sure?</h2><div><p>Body</p></div></div>
+  <div class="dialogDivs" id="dialogDivs" role="dialog"
+    ><div class="hd">Title</div><div class="bd" id="dialogDivsBody">Body</div></div>
+  <!-- the same shape declaring itself NON-modal: a floating window over a live page, a component
+       library's cookie notice, and it keeps its ground -->
+  <div class="dialogDivs" id="dialogNonModal" role="dialog" aria-modal="false"
+    ><div class="stack"><div>Cookie preferences</div></div></div>
   <ul><li class="tileCard" id="tileCard"
     ><a class="cardLink" id="cardLink" href="#">Bekenntnisse<card-data></card-data></a
     ><picture class="cardCover" id="cardCover"><img id="cardImg"
@@ -520,6 +547,19 @@ t('an empty control whose class says icon keeps the black ground (its glyph uses
 // --- the layer that blanks a page: empty, pinned, click-through ------------
 t('an EMPTY pinned layer stays transparent (painted, the whole page goes black)',
   g('toastHost').backgroundColor, g('toastHost').backgroundColor === 'rgba(0, 0, 0, 0)');
+
+// --- the seventh layer: a dialog's shell, nothing but boxes inside -----------
+t('a dialog SHELL holding nothing but boxes is left transparent (painted, the page is a sheet)',
+  g('leadShell').backgroundColor, g('leadShell').backgroundColor === 'rgba(0, 0, 0, 0)');
+t('the panel inside it is a box, and keeps the black ground',
+  g('leadPanel').backgroundColor, g('leadPanel').backgroundColor === BLACK);
+t('a dialog WINDOW with a heading and a close button of its own keeps its ground',
+  g('dialogWin').backgroundColor, g('dialogWin').backgroundColor === BLACK);
+t('a window built of divs alone is read as a shell: unpainted, its children black (the trade-off)',
+  g('dialogDivs').backgroundColor + ' / ' + g('dialogDivsBody').backgroundColor,
+  g('dialogDivs').backgroundColor === 'rgba(0, 0, 0, 0)' && g('dialogDivsBody').backgroundColor === BLACK);
+t('but one declaring itself NON-modal is a window over a live page, and keeps its ground',
+  g('dialogNonModal').backgroundColor, g('dialogNonModal').backgroundColor === BLACK);
 
 // --- a value bar: empty on purpose, because its content is its geometry ----
 t('the filled part of a value bar gets ink of its own (swept, it carries no reading)',

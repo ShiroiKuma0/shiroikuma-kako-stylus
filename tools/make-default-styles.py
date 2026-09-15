@@ -449,6 +449,42 @@ CONTROL_KINDS = ":is(%s)" % ", ".join(BUTTONS + BUTTON_INPUTS)
 CONTROL_STRIP = "*%s:not(:has(> :not(%s))):has(> %s)%s" % (
     NEVER, CONTROL_KINDS, CONTROL_KINDS, NO_OWN_MEDIA)
 CONTROL_STRIP_SEL = beside_media(CONTROL_STRIP)
+# ⚠ A dialog's shell is its scrim, and a scrim at rest is nothing at all.  The `role="dialog"` a
+# page puts on a floating widget goes on the SHELL as often as on the window: one `position:
+# fixed; inset: 0` layer at a high z-index, `pointer-events: none` so the page under it stays
+# reachable, holding the panel and the tab that opens it — both of them `fixed` in their own right,
+# so the shell's own box holds nothing in flow.  Its ground IS the scrim: nothing while the dialog
+# is shut, a translucent black once it opens.  An operator's "call me back" collector is built
+# exactly so and sits in the DOM on every page from load, shut; `bg all` painted it at (1,0,0) and
+# the site rendered 94 % `#000` — the empty-pinned-layer failure again, one element type further.
+#
+# Not `:empty`, since it holds the panel and the tab; named nothing the overlay list carries (the
+# classes say `floating`, `leadcollector`, `survey`, none of which is safe to match — a floating
+# HEADER is a surface, and unpainting one lets the page scroll through it); and click-through, so
+# it never appears in a hit test.  The role is the handle, and the children say which of the two
+# things it is: a shell holds nothing but BOXES — the panel, a launcher, its own <style> — where
+# the window itself holds a heading, a close button, a paragraph, a picture, a form's fields.
+# So a dialog whose element children are all containers is unpainted, and one with anything else
+# among them keeps its ground.  A panel that happens to be built of nothing but <div>s loses only
+# the ground under its padding: its children are boxes too, painted by the same blankets, and its
+# words sit on those.  A panel with a heading or a button of its own is untouched.
+#
+# One more thing the markup can say: `aria-modal="false"`.  A scrim host is modal by construction
+# — the scrim is what makes it so — and a dialog that declares itself NON-modal is a floating
+# window over a live page, whose ground is the window's own.  A component library's cookie notice
+# is exactly that, a `Paper[role=dialog][aria-modal=false]` holding one stack of boxes, and in a
+# pixel A/B it was the only thing on six pages the shell rule touched: the page beneath showed
+# through its padding.  The shell that was met says `aria-modal="true"`, shut or open.
+#
+# (1,2,1): above `bg all` at (1,0,0) and `bg div`/`bg blocks` at (1,0,1), and no rule of ours
+# paints a dialog on purpose at any weight — a dialog is not a control, a picture or a link — so
+# a single guard is enough and there is nothing to tie with.  The active-state scrim goes with the
+# rest, `!important` beating the page's normal declaration whatever its specificity; the panel
+# that slides in is a box, and black.
+SHELL_KINDS = ["div", "section", "article", "aside", "form", "style", "script", "template"]
+DIALOG_ROLES = ['[role="dialog"]', '[role="alertdialog"]']
+DIALOG_SHELL_SEL = ':is(%s)%s:not([aria-modal="false"]):not(:has(> :not(%s)))' % (
+    ", ".join(DIALOG_ROLES), NEVER, ", ".join(SHELL_KINDS))
 # ⚠ A picture stacked behind the page is a picture we bury ourselves.  `z-index: -1` on an in-flow
 # image wrapper is an ordinary idiom — it is how a card puts its cover under the layer that has to
 # stay clickable — and it works only because everything above it is transparent.  Painting order
@@ -1043,7 +1079,21 @@ styles = [
             "   handle: it holds a control, holds nothing but controls, holds no picture, and lies\n"
             "   beside one. A box whose whole content is chrome has nothing of its own to make\n"
             "   legible — and the controls inside keep their own ground at (2,1,1) regardless. */\n"
-          + rule(CONTROL_STRIP_SEL, "background-color: transparent")),
+          + rule(CONTROL_STRIP_SEL, "background-color: transparent")
+          + "\n/* ⚠ The seventh kind of layer: a dialog's SHELL. `role=dialog` goes on the shell as\n"
+            "   often as on the window — one fixed, inset-0, click-through layer at z-index 999,\n"
+            "   holding the panel and the tab that opens it, both fixed themselves, so the shell's\n"
+            "   own box holds nothing in flow. Its ground is the scrim: nothing while the dialog is\n"
+            "   shut, translucent once it opens. An operator's \"call me back\" collector sits in\n"
+            "   the DOM like this from load, shut, and painted it was an opaque sheet over 94 % of\n"
+            "   the page. Not :empty (it holds the panel and the tab), named nothing safe to match\n"
+            "   (`floating`, `leadcollector`), and click-through, so no hit test sees it. The role\n"
+            "   is the handle and the children tell shell from window: a shell holds nothing but\n"
+            "   BOXES, where the window holds a heading, a close button, a paragraph, a picture.\n"
+            "   A panel built of nothing but divs loses only the ground under its padding — its\n"
+            "   children are painted by the same blankets. One with anything else is untouched,\n"
+            "   and so is one saying `aria-modal=false`: a scrim host is modal by construction. */\n"
+          + rule(DIALOG_SHELL_SEL, "background-color: transparent")),
 
     # The doubled guard is not decoration: `ui: borders` sits at (1,1,0) now that it carves
     # the CSS triangles out, and a single guard here would tie with it and leave which of cyan
