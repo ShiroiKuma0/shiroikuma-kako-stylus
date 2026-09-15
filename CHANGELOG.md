@@ -5,6 +5,58 @@ for the upstream [Stylus](https://github.com/openstyles/stylus) release it is bu
 ships no changelog file of its own — its notes live only on GitHub Releases — so this file is
 entirely ours to maintain, newest first.
 
+## 白い熊 Stylus 2.4.10.57 — 2026-09-15
+
+Built on upstream 2.4.10. A discussion site's feed came back with the title and the first lines of
+text of most posts hidden under a black rectangle, and every crosspost card blank; with those
+visible again, the text in them was link‑cyan where a reader expects prose. Two repairs to the
+library, both structural, no site named in a rule. The behavioural fixture grew from 127 checks to
+142. Note the version jump: 2.4.10.55 and 2.4.10.56 were the unsigned iteration builds.
+
+### A card's click target is unpainted among blocks, not only beside a picture
+
+The sheet was the whole‑card click target — one `<a class="absolute inset-0">` laid across each
+post — and the repair for exactly that shape could not see it. It asked for a **picture beside the
+link**, and the feed's previews are web components whose thumbnail is a background inside the
+embed's shadow root, out of reach of `:has()`. Whether the sheet was painted then turned on the
+**author**: a default avatar is an `<img>` in the credit bar and the sibling test found it; a
+custom one is an inline `<svg>` and the test found nothing. Eleven of the thirty posts on the page
+were boarded up, and a crosspost card's own stretched link has nothing but `<div>`s beside it, so
+those went on every load.
+
+The test widens from "beside a picture" to **"beside a picture, or among blocks"**. A link in a
+sentence has inline neighbours — a span, an emphasis, another link, a line break — and never a
+block, because a paragraph cannot hold one; a link with a `div`, a `p` or a heading beside it is
+laid among the boxes of a card or of the page's chrome, and there its ground is never its own to
+keep: transparent, it shows the ancestor's, which got the same treatment it did. A pixel A/B of the
+old library against the new at rest, on six unrelated pages, changed nothing anywhere but the feed.
+
+What it costs is the cyan hover **fill** on links that sit among blocks — a footer column's links,
+a header's sign‑up link beside the nav — so the cue moves: the hovered twin now draws a 2 px cyan
+frame inside the link's box, around the words of a text link and around the whole card on a
+stretched one, whose own text is hidden and never showed the fill anyway. It covers `:focus-visible`
+too, since `ui: links` fills on focus as on hover and a tabbed‑to title link beside a picture had
+been going black on black.
+
+### A link's label is never a paragraph
+
+The feed wraps each post's text preview — the first lines of the body, `<p>`s in a `div.md` — in
+one link to the post, and `ui: links` colours every descendant of a link cyan, because modern sites
+wrap link text in a span. So every preview was a wall of link colour; it had been so all along, the
+sheet had merely been hiding it. Prose elements inside a link — `p`, `li`, `dd`, `dt`,
+`blockquote`, `pre`, `figcaption` — are prose the link *carries*, and take the yellow back; a
+heading in the same link stays cyan, being the label; a link written inside that prose is a link
+again. The rule is weighed to sit exactly between the two forms it must respect — above the
+descendant form, so the tie goes to prose, and below the hover form, so a hovered preview still
+inverts to black on cyan.
+
+Fifteen new assertions in the fixture: a feed post with its picture in a declarative shadow root and
+an `<svg>` avatar, a crosspost card, the hovered sheet and its frame, a focused title link, a link
+in a sentence keeping its ground and its fill, and a card link whose paragraph, emphasis and list
+item are yellow while its heading stays cyan. ALL 142 PASSED in both engines; the built extension on
+the live feed in Gecko measured 0 of 30 stretched links black, all 85 preview paragraphs
+`rgb(255,255,0)`, all 28 titles cyan, in the card view, the compact view and at phone width.
+
 ## 白い熊 Stylus 2.4.10.54 — 2026-09-13
 
 Built on upstream 2.4.10. A sports federation's site — the one that carries the results of every
