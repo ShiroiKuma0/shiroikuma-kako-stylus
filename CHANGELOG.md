@@ -5,6 +5,45 @@ for the upstream [Stylus](https://github.com/openstyles/stylus) release it is bu
 ships no changelog file of its own — its notes live only on GitHub Releases — so this file is
 entirely ours to maintain, newest first.
 
+## 白い熊 Stylus 2.4.10.59 — 2026-09-15
+
+Built on upstream 2.4.10. An operator's homepage rendered as one black sheet — header, hero, tiles,
+all of it — with only a "call me back" tab showing at the right edge. One repair to the library,
+structural, no site named in a rule. The behavioural fixture grew from 142 checks to 147. Note the
+version jump: 2.4.10.58 was the unsigned iteration build.
+
+### A dialog's shell is unpainted: its ground is its scrim
+
+The sheet was that widget's **shell** — a `<div role="dialog" aria-modal="true">` at
+`position: fixed; inset: 0; z-index: 999; pointer-events: none`, sitting in the DOM on every page
+from load, shut. Its ground is the scrim: nothing while the dialog is shut, a 40 % black once it
+opens. Its three children — a `<style>`, the hidden panel and the tab — are all `fixed` themselves,
+so the shell's own box holds nothing in flow, and `bg all` painted it at (1,0,0). It is the
+empty‑pinned‑layer failure one element type further, and every handle `ui: overlays` had missed it
+again: not `:empty`, since it holds the panel and the tab; named nothing safe to match (`floating`
+also names sticky headers); and click‑through, so no hit test sees it. The paint diff found it.
+
+The role is the handle and the **children** tell shell from window. A shell holds nothing but boxes
+— the panel, a launcher, its own `<style>` — where a window holds a heading, a close button, a
+paragraph, a picture, a field. So a `[role=dialog]` or `[role=alertdialog]` whose element children
+are all containers (`div`, `section`, `article`, `aside`, `form`, `style`, `script`, `template`) is
+left transparent at (1,2,1), above `bg all` and `bg div`; nothing of ours paints a dialog on purpose,
+so nothing ties. One thing more the markup says: a scrim host is modal by construction, so a dialog
+declaring `aria-modal="false"` is a window over a live page and keeps its ground — a component
+library's cookie notice is exactly that, one `Paper[role=dialog]` holding a stack of boxes, and it
+was the only thing on six pages the first draft touched, the page showing through its padding.
+
+What it costs, asserted by name in the fixture: a modal window built of nothing but `<div>`s loses
+the ground under its padding. Its children are boxes too and take the same blankets, so its words
+still sit on black.
+
+Five new assertions in the fixture: a shell holding only boxes, the panel inside it, a window with a
+heading and a close button, a window of divs alone, and a non‑modal one. ALL 147 PASSED in both
+engines. A pixel A/B of the old library against the new at rest on six unrelated pages — two shops,
+two dailies, and the modal docs of two component libraries — changed nothing anywhere but the
+reported site, where the sheet is gone and the built extension measures the shell at
+`rgba(0, 0, 0, 0)`.
+
 ## 白い熊 Stylus 2.4.10.57 — 2026-09-15
 
 Built on upstream 2.4.10. A discussion site's feed came back with the title and the first lines of
