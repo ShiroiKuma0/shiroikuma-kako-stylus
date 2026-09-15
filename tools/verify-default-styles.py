@@ -18,7 +18,8 @@ Gecko is the engine that ships, so its answer is the one that counts.
 Hover is tested too.  A headless run cannot move a mouse, so every `:hover` in the injected sheets
 is rewritten to the class `.sk-hover` — a pseudo-class and a class weigh the same, (0,1,0), so the
 cascade is byte-for-byte the one a real hover resolves — and the elements meant to be under the
-mouse carry that class in the markup.  Nothing else in the fixture is touched by the rewrite.
+mouse carry that class in the markup.  `:focus-visible` becomes `.sk-focus` the same way.  Nothing
+else in the fixture is touched by the rewrite.
 """
 import html, json, os
 
@@ -35,7 +36,7 @@ allowlisted = [s["name"] for s in lib if s.get("overridden")]
 sheets = "\n".join(
     '<style data-name="%s" data-rules="%d">%s</style>'
     % (html.escape(s["name"]), s["sections"][0]["code"].count("{"),
-       s["sections"][0]["code"].replace(":hover", ".sk-hover"))
+       s["sections"][0]["code"].replace(":hover", ".sk-hover").replace(":focus-visible", ".sk-focus"))
     for s in globals_
 )
 
@@ -109,6 +110,12 @@ PAGE = """<!doctype html><meta charset="utf-8"><title>verify</title>
   /* the same tile, hovered, with a title link beside the cover; and the two shapes the card
      link deliberately leaves alone: a pill link and a wordmark, each beside a picture */
   .pillLink { background: #00cfff !important; }
+  /* a discussion site's feed: the same stretched link across every post, the preview a web
+     component with its picture in a shadow root, the avatar an inline <svg> -- no picture in the
+     light DOM anywhere for the sibling test to find. And a crosspost card, whose own stretched
+     link has nothing but <div>s beside it. */
+  .feedPost, .xCard { position: relative; display: block; width: 300px; }
+  x-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
   /* a carousel's nav: one absolutely-positioned strip stretched over the whole viewport of the
      carousel, click-through so the photo underneath stays reachable, holding the prev and next
      buttons and nothing else. Painted, it boards the photo up. */
@@ -294,6 +301,39 @@ __SHEETS__
     ><a class="pillLink btn-buy" id="pillLink" href="/buy">Buy</a
     ><a class="pillLink btn-buy sk-hover" id="pillLinkHov" href="/buy">Buy</a
     ><a class="css-1qz4h9b" id="wordmarkBeside" href="#"></a></div>
+  <!-- the feed post: nothing beside the stretched link but a span holding an <svg>, the title
+       link, and a div whose picture is inside a shadow root -->
+  <article class="feedPost" id="feedPost"
+    ><a class="cardLink" id="postLink" href="/post"><x-sr-only>Post title</x-sr-only></a
+    ><span id="creditBar"><svg width="24" height="24"><circle r="12" cx="12" cy="12"/></svg> u/author</span
+    ><a id="postTitle" href="/post">Post title</a
+    ><div id="postMedia"><x-embed id="embedHost"><template shadowrootmode="open"><div id="shadowPic"
+      style="width:300px;height:100px;background-image:url(data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==)"></div
+    ></template></x-embed></div></article>
+  <!-- the crosspost card: the stretched link's neighbours are divs and nothing else -->
+  <div class="xCard" id="xCard"
+    ><a class="cardLink" id="xLink" href="/x"><x-sr-only>Crossposted title</x-sr-only></a
+    ><div id="xCredit">r/elsewhere</div><div><p id="xText">Crossposted body</p></div></div>
+  <!-- the same post under the mouse: the sheet must stay transparent and the cue is a frame -->
+  <article class="feedPost" id="feedPostHov"
+    ><a class="cardLink sk-hover" id="postLinkHov" href="/post"><x-sr-only>Post title</x-sr-only></a
+    ><div id="postBodyHov">Post body</div></article>
+  <!-- a title link beside a picture, tabbed to: `ui: links` fills on focus as it does on hover -->
+  <div class="tileCard" id="tileFocus"><img id="tileFocusImg"
+      src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="
+    ><a class="sk-focus" id="titleFocus" href="/x">Title beside a picture, focused</a></div>
+  <!-- a link in a sentence: inline neighbours only, so it keeps its ground and its hover fill -->
+  <p id="prose">Read <a id="proseLink" href="/p">this</a>, <em>then</em> <a class="sk-hover"
+    id="proseHov" href="/q">that</a><br>and <span>more</span>.</p>
+  <!-- a card that wraps its whole body in one link: the heading is the label, the paragraph is
+       prose the link carries. A feed's text preview is exactly this shape. -->
+  <a class="tileCard" id="bodyLink" href="/post"><h3 id="bodyHead">Card title</h3
+    ><div class="md"><p id="bodyPara">First lines of the <em id="bodyEm">body</em>
+      <i class="fa fa-star" id="bodyIcon"></i></p><ol><li id="bodyItem">a list item</li></ol></div></a>
+  <a class="tileCard sk-hover" id="bodyLinkHov" href="/post"><p id="bodyParaHov">hovered body</p></a>
+  <!-- the ARIA form of the same, with a real link written inside the prose -->
+  <div role="link" id="roleLink"><p id="rolePara">Read <a id="innerLink" href="/i"><span
+    id="innerSpan">this</span></a> now</p></div>
   <!-- the Material UI row hovered: the ripple span is still a layer, the label still under it -->
   <a class="MuiButtonBase-root MuiListItemButton-root sk-hover" id="muiItemHov" href="#"
     ><span class="MuiListItemText-primary" id="muiLabelHov">Alza dny</span
@@ -535,8 +575,41 @@ checks.push({name: 'NOTE :has(> :not(control)) sees ELEMENTS, so a bare text nod
                ? 'text counts, row keeps its ground' : 'text ignored, row unpainted'});
 t('and a strip of chrome with no picture beside it keeps its ground too',
   g('loneRow').backgroundColor, g('loneRow').backgroundColor === BLACK);
-t('a link with no picture beside it keeps its ground',
-  g('link').backgroundColor, g('link').backgroundColor === BLACK);
+t('a link among blocks is unpainted, picture or no picture (its ancestors are black already)',
+  g('link').backgroundColor, g('link').backgroundColor === 'rgba(0, 0, 0, 0)');
+t('a link in a sentence keeps its ground (inline neighbours are not blocks)',
+  g('proseLink').backgroundColor, g('proseLink').backgroundColor === BLACK);
+t('and its hover fill', g('proseHov').backgroundColor + ' / ' + g('proseHov').color,
+  g('proseHov').backgroundColor === CYAN && g('proseHov').color === BLACK);
+t('a paragraph inside a link is prose: yellow, not link cyan (a feed preview is one link)',
+  g('bodyPara').color, g('bodyPara').color === YELLOW);
+t('and so is an emphasis inside that paragraph', g('bodyEm').color, g('bodyEm').color === YELLOW);
+t('and a list item', g('bodyItem').color, g('bodyItem').color === YELLOW);
+t('while the heading in the same link stays cyan: it is the label',
+  g('bodyHead').color, g('bodyHead').color === CYAN);
+t('an icon in that paragraph keeps its exemption (yellow either way)',
+  g('bodyIcon').color, g('bodyIcon').color === YELLOW);
+t('hovered, the prose still takes the fill: black on cyan',
+  g('bodyParaHov').color + ' / ' + g('bodyParaHov').backgroundColor,
+  g('bodyParaHov').color === BLACK && g('bodyParaHov').backgroundColor === CYAN);
+t('a paragraph inside a role=link is prose too', g('rolePara').color, g('rolePara').color === YELLOW);
+t('but a link written inside that prose is a link again, label and all',
+  g('innerLink').color + ' / ' + g('innerSpan').color,
+  g('innerLink').color === CYAN && g('innerSpan').color === CYAN);
+t('a stretched link over a post whose picture is in a shadow root is left transparent',
+  g('postLink').backgroundColor, g('postLink').backgroundColor === 'rgba(0, 0, 0, 0)');
+t('and the one over a crosspost card, with nothing but <div>s beside it',
+  g('xLink').backgroundColor, g('xLink').backgroundColor === 'rgba(0, 0, 0, 0)');
+t('the post title link among blocks is unpainted too',
+  g('postTitle').backgroundColor, g('postTitle').backgroundColor === 'rgba(0, 0, 0, 0)');
+t('the stretched link UNDER THE MOUSE stays transparent and frames the card in cyan',
+  g('postLinkHov').backgroundColor + ' / ' + g('postLinkHov').outlineColor + ' '
+    + g('postLinkHov').outlineWidth + ' ' + g('postLinkHov').outlineOffset,
+  g('postLinkHov').backgroundColor === 'rgba(0, 0, 0, 0)' && g('postLinkHov').outlineColor === CYAN
+    && g('postLinkHov').outlineWidth === '2px' && g('postLinkHov').outlineOffset === '-2px');
+t('a title link beside a picture TABBED TO keeps cyan ink (the focus fill would go black on black)',
+  g('titleFocus').backgroundColor + ' / ' + g('titleFocus').color,
+  g('titleFocus').backgroundColor === 'rgba(0, 0, 0, 0)' && g('titleFocus').color === CYAN);
 t('the box around a cover is isolated, so a z-index:-1 picture is not buried by our own ground',
   g('tileCard').isolation, g('tileCard').isolation === 'isolate');
 t('and the cover still gets the image ground under it',

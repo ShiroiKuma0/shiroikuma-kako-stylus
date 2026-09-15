@@ -324,9 +324,51 @@ NOT_FRAME_NEIGHBOUR = ":not(%s)" % ", ".join(
 # states by the rule above.  The descendants are untouched on purpose: `a:hover *` still fills a
 # span or a badge inside the link, and that is the hover cue — the daily's gallery badge comes up
 # black on cyan while the photo under it stays a photo.
+#
+# ⚠ And the picture beside it may be one CSS cannot see.  A discussion site's feed lays the same
+# `<a class="absolute inset-0">` across every post, and its previews are web components: the video
+# thumbnail is a `background-image` on an element inside the embed's shadow root, where `:has()`
+# does not reach, so the post's light DOM holds no picture at all.  Whether the sheet was painted
+# then turned on the AUTHOR: a default avatar is an `<img>` in the credit bar and the sibling test
+# found it; a custom one is an inline `<svg>`, and the test found nothing.  Every preview under such
+# an author came out as a black rectangle — the picture was there, behind the link — and every text
+# post lost its title and body the same way.  A crosspost card was worse: its own stretched link
+# has nothing but `<div>`s beside it, since a text post has neither picture nor avatar in the card.
+#
+# So the test widens from "beside a picture" to "beside a picture, or among blocks".  A link in a
+# sentence has inline neighbours — a span, an emphasis, another link, a line break — and never a
+# block, because a paragraph cannot hold one; a link with a `<div>` or a `<p>` or a heading beside
+# it is laid out among the boxes of a card or of the page's chrome, and there its ground is never
+# its own to keep: transparent, it shows the ancestor's, which got the same treatment it did.  The
+# blocks are matched only as the sibling itself, not inside one — the media arms already look
+# inside, and a sibling holding a block is a container, which is a block by another name.
+#
+# What this costs is the hover FILL on links that sit among blocks — a footer column's links under
+# their heading, a header's sign-up link beside the nav — since the rule above the fill now reaches
+# them.  A fill is a painter and nothing left transparent may take it, so the cue moves: the hovered
+# twin draws a cyan frame inside the link's box instead.  On a text link that boxes the words; on
+# the stretched link it frames the whole card, which is the one place the fill never showed at all,
+# the link's own text being hidden.  Inset, so an ancestor's `overflow: hidden` cannot clip it, and
+# on `:focus-visible` as well as `:hover`, since the fill was taken from both and a tabbed-to title
+# link beside a picture had been going black on black — a gap the single hover twin left open.
 IS_MEDIA = ":is(%s)" % ", ".join(MEDIA)
 NO_OWN_MEDIA = ":not(:has(%s))" % ", ".join(MEDIA)
 NOT_LINK_BUTTONS = ":not(%s)" % ", ".join(LINK_BUTTONS)
+# The flow containers a card, a post or a strip of chrome is built from. Nothing here can sit
+# inside a paragraph, which is what makes "beside one of these" mean "not in a sentence".
+BLOCKS = ["div", "p", "h1", "h2", "h3", "h4", "h5", "h6", "ul", "ol", "dl", "table",
+          "section", "article", "header", "footer", "aside", "nav", "figure", "form",
+          "blockquote", "pre"]
+IS_BLOCK = ":is(%s)" % ", ".join(BLOCKS)
+# The elements that only ever hold running text. Inside a link they are prose the link carries,
+# never its label — see `ui: links`.
+PROSE = ["p", "li", "dd", "dt", "blockquote", "pre", "figcaption"]
+IS_PROSE = ":is(%s)" % ", ".join(PROSE)
+LINK_ROOTS = [":any-link", '[role="link"]']
+# A link written INSIDE that prose is a link again, label and all — kept out of the prose arm at
+# zero weight, since the arm has none to spare.
+NOT_INNER_LINK = ":not(:where(%s))" % ", ".join(
+    "%s %s%s" % (IS_PROSE, l, tail) for l in LINK_ROOTS for tail in ("", " *"))
 
 
 def beside_media(sel):
@@ -345,14 +387,29 @@ def beside_media(sel):
     ])
 
 
+def beside_content(sel):
+    """The six arms of "this box lies beside a picture, or among blocks".
+
+    The four media arms, plus the block as a direct sibling in either direction. Only direct: a
+    sibling that holds a block is itself a container, and the media arms cover what is inside.
+    """
+    return ",\n".join([
+        beside_media(sel),
+        "%s:has(~ %s)" % (sel, IS_BLOCK),
+        "%s ~ %s" % (IS_BLOCK, sel),
+    ])
+
+
 def card_link(state=""):
-    """A link holding no picture of its own, beside one — in the given state, e.g. `:hover`."""
-    return beside_media("a%s%s%s:not(:empty)%s%s" % (NEVER, NEVER, state, NOT_LINK_BUTTONS,
-                                                     NO_OWN_MEDIA))
+    """A link holding no picture of its own, beside one or among blocks — in the given state."""
+    return beside_content("a%s%s%s:not(:empty)%s%s" % (NEVER, NEVER, state, NOT_LINK_BUTTONS,
+                                                       NO_OWN_MEDIA))
 
 
 CARD_LINK_SEL = card_link()
-CARD_LINK_HOVER_SEL = card_link(":hover")
+# `:is(:hover, :focus-visible)` weighs what its heaviest arm does, (0,1,0) — the same as the bare
+# `:hover` it replaces, so the twin sits exactly where it did: one class above the rest form.
+CARD_LINK_HOVER_SEL = card_link(":is(:hover, :focus-visible)")
 # ⚠ A box whose whole content is controls has nothing of its own to make legible.  The carousel
 # nav strip is the shape that says it plainly: one absolutely-positioned layer stretched over the
 # entire carousel viewport, `pointer-events: none` so the picture underneath stays clickable, and
@@ -950,13 +1007,31 @@ styles = [
             "   moment the mouse crossed the click target laid over it. The two exclusions are\n"
             "   what the old single guard was losing to on purpose: an empty link is a wordmark\n"
             "   and keeps its grey, and a link that names itself a button keeps its pill. */\n"
+          + "\n/* ⚠ ...or beside a picture CSS cannot see. A discussion site's feed lays the same\n"
+            "   link across every post, and the preview is a web component: the thumbnail is a\n"
+            "   background inside the embed's shadow root, out of reach of `:has()`, so the post\n"
+            "   holds no picture in the light DOM at all. Whether the sheet was painted then turned\n"
+            "   on the author: a default avatar is an <img> in the credit bar and the sibling test\n"
+            "   found it, a custom one is an inline <svg> and it found nothing — every preview under\n"
+            "   such an author was a black rectangle, and every text post lost its title and body.\n"
+            "   A crosspost card's own stretched link has nothing but <div>s beside it. So the test\n"
+            "   is BESIDE A PICTURE, OR AMONG BLOCKS: a link in a sentence has inline neighbours\n"
+            "   and never a block, since a paragraph cannot hold one; a link with a div, a p or a\n"
+            "   heading beside it is laid among the boxes of a card or of the page's chrome, and\n"
+            "   there its ground is never its own to keep — transparent, it shows the ancestor's,\n"
+            "   which got the same treatment it did. */\n"
           + rule(CARD_LINK_SEL, "background-color: transparent")
           + "\n/* ...and hovered, the ink comes back with it. The fill also turns the link's text\n"
             "   black, which is right on cyan and, over the black of every ancestor, is black on\n"
-            "   black: a title link beside a picture would vanish while hovered. Hover only, so\n"
-            "   :visited keeps its magenta at rest. The descendants are untouched: `a:hover *`\n"
-            "   still fills a span or a badge inside, and that is the hover cue. */\n"
-          + rule(CARD_LINK_HOVER_SEL, "color: %s" % CYAN)
+            "   black: a title link beside a picture would vanish while hovered — or tabbed to,\n"
+            "   since `ui: links` fills on :focus-visible as well. Both states, and neither at\n"
+            "   rest, so :visited keeps its magenta. The cue the fill was giving moves to a cyan\n"
+            "   frame inside the box: around the words of a text link, around the whole card on\n"
+            "   the stretched link, whose own text is hidden and never showed the fill anyway.\n"
+            "   Inset, so an ancestor's overflow:hidden cannot clip it. The descendants are\n"
+            "   untouched: `a:hover *` still fills a span or a badge inside the link. */\n"
+          + rule(CARD_LINK_HOVER_SEL, "color: %s" % CYAN,
+                 "outline: 2px solid %s" % CYAN, "outline-offset: -2px")
           + "\n/* ⚠ The sixth kind of layer: a strip of chrome pinned over the picture it drives.\n"
             "   A carousel's nav is one absolutely-positioned layer stretched over the whole\n"
             "   viewport of the carousel, `pointer-events: none` so the photo underneath stays\n"
@@ -1076,6 +1151,24 @@ styles = [
     # :visited is listed after :any-link so the tie resolves to it. Firefox restricts :visited to
     # colour properties on the <a> itself and never on descendants — a privacy rule, not a bug.
     #
+    # ⚠ And it must stop at prose.  The descendant term says "everything inside a link is the
+    # link's label", and a card says otherwise: a discussion site's feed wraps each post's text
+    # preview — the first lines of the body, `<p>`s in a `div.md` — in one <a> to the post, so
+    # every preview came out cyan, a wall of link colour where the reader expects prose.  The
+    # structure is the handle and it is exact: a link's label is never a paragraph.  A <p>, a list
+    # item, a quote, a code block, a caption inside a link are prose the link CARRIES — the card
+    # idiom, `<a class="card"><h3>Title</h3><p>Teaser</p></a>` — so they take the prose ink back,
+    # while a heading inside the same link stays cyan, being the label.  A div or a span inside a
+    # link cannot be told either way and stays as it was.
+    #
+    # Weighed to sit exactly between the two forms it must respect: (1,2,1), the descendant
+    # form's own weight, placed after it so the tie goes to prose — and before the hover form,
+    # also (1,2,1), so the fill still inverts it under the mouse.  `:any-link` alone rather than
+    # `a:any-link`, and the class guard, are what land it on that weight; the descendants-of-prose
+    # arm reaches it through `:not(ICONS)` instead, so an icon in a paragraph keeps its exemption.
+    # A link written inside that prose is a link again, label and all — a preview that keeps its
+    # hyperlinks — and is carved out of the descendants arm in a `:where()`, at no weight.
+    #
     # ⚠ The hover fill is a painter, exactly as `bg all` is, and it has to sit BELOW `ui: overlays`
     # — every layer that style leaves transparent must stay transparent with the mouse over it.
     # The first version guarded every compound of the descendant form mechanically, which put
@@ -1092,6 +1185,18 @@ styles = [
                "color: %s" % CYAN)
           + "\n"
           + rule("a:visited" + PAINT, "color: %s" % MAGENTA)
+          + "\n"
+          + "\n/* ⚠ ...but a link's label is never a paragraph. A card wraps its whole body in one\n"
+            "   link — a feed's text preview, `<a><div class=md><p>…` — and the descendant term\n"
+            "   above turned every preview into a wall of cyan. Prose inside a link is prose the\n"
+            "   link carries, so it takes the prose ink back; a heading in the same link stays\n"
+            "   cyan, being the label. (1,2,1) exactly, between the rest form and the hover form,\n"
+            "   so the fill under the mouse still inverts it. */\n"
+          + rule(",\n".join(
+                     ["%s%s %s%s%s" % (l, NEVER, IS_PROSE, NEVER_CLS, NOT_SAMPLE) for l in LINK_ROOTS]
+                     + ["%s%s %s *%s%s%s" % (l, NEVER, IS_PROSE, NOT_ICONS, NOT_INNER_LINK, NOT_SAMPLE)
+                        for l in LINK_ROOTS]),
+                 "color: %s" % YELLOW)
           + "\n"
           + "\n/* one guard, on the link, for the descendant forms too: (1,2,1), a painter's weight,\n"
             "   so that a layer `ui: overlays` leaves transparent stays so under the mouse */\n"
