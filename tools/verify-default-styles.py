@@ -91,6 +91,11 @@ PAGE = """<!doctype html><meta charset="utf-8"><title>verify</title>
      left in the DOM for a toast that never comes or a gate already dismissed, and named
      nothing a style could match */
   .toastHost { position: fixed; inset: 0; z-index: 1060; pointer-events: none; }
+  /* ...and the same layer wearing the one attribute that used to spare it. A slide-over drawer
+     keeps its scrim in the DOM shut, hidden from the accessibility tree with aria-hidden, and a
+     marketplace parks fourteen of them at once. ICONS carries that attribute because a
+     decorative icon does, so every one was spared and the page went black under the first. */
+  .drawerScrim { position: fixed; inset: 0; z-index: 4000; pointer-events: none; }
   /* a dialog's SHELL: the role on a fixed, inset-0, click-through layer holding the shut panel
      and the tab that opens it, both fixed themselves. Its ground is the scrim, nothing at rest.
      Painted, it is the sheet above with a widget inside it, and :empty cannot see it. */
@@ -133,6 +138,13 @@ PAGE = """<!doctype html><meta charset="utf-8"><title>verify</title>
   .carShell { position: relative; width: 160px; height: 90px; }
   .carNavs { position: absolute; inset: 0; z-index: 9; pointer-events: none; }
   .carNav { pointer-events: auto; }
+  /* the OTHER layer over the same carousel: the one you drag. An absolutely positioned
+     `overflow-x: scroll` box laid across the picture, holding one oversized empty spacer and
+     nothing else, so that dragging it scrolls and the slides follow. It is chrome that is not a
+     control -- nothing in it draws, and the point of the whole arrangement is that the picture
+     shows through. */
+  .dragLayer { position: absolute; inset: 0; z-index: 2; overflow-x: scroll; overflow-y: hidden; }
+  .dragSpacer { width: 200%; height: 100%; }
   /* the same shape with something of its own to say — a row that is not only chrome — and the
      same shape with no picture beside it. Both must keep their ground. */
   .actionRow { display: flex; }
@@ -297,6 +309,10 @@ __SHEETS__
   <img id="img" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==">
   <img id="filtIcon" class="dlGlyph" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==">
   <div class="toastHost" id="toastHost"></div>
+  <!-- the same sheet, hidden from the accessibility tree: still a sheet. And beside it the icon
+       that attribute exists to protect, which says icon by NAME and keeps its ground. -->
+  <div class="drawerScrim" id="drawerScrim" aria-hidden="true"></div>
+  <span class="spriteIcon" id="ariaSprite" aria-hidden="true"></span>
   <!-- a dialog's shell, only boxes inside -- the panel, the tab, its own <style> -- so it is
        unpainted; a dialog window whose heading and close button say it is the window, so it
        keeps its ground; and the trade-off, a window built of divs alone -->
@@ -384,7 +400,8 @@ __SHEETS__
       ><div class="carNav" id="carNext" role="button">&#8250;</div></div
     ><div class="actionRow" id="actionRow"><span id="rowLabel">Sdílet</span
       ><button id="rowBtn">Buy</button></div
-    ><div class="actionRow" id="textRow">Sdílet<button id="textBtn">Buy</button></div></div>
+    ><div class="actionRow" id="textRow">Sdílet<button id="textBtn">Buy</button></div
+    ><div class="dragLayer" id="dragLayer"><div class="dragSpacer" id="dragSpacer"></div></div></div>
   <div id="loneWrap"><div class="actionRow" id="loneRow"><button id="loneBtn">Buy</button></div></div>
   <div class="volRow hovered"><div class="volumeBar-N1rUCF" id="volTrack"
     ><div style="width:70%" class="volumeLevel-VDMLnw" id="volLevel"></div></div></div>
@@ -564,6 +581,11 @@ t('an empty control whose class says icon keeps the black ground (its glyph uses
 // --- the layer that blanks a page: empty, pinned, click-through ------------
 t('an EMPTY pinned layer stays transparent (painted, the whole page goes black)',
   g('toastHost').backgroundColor, g('toastHost').backgroundColor === 'rgba(0, 0, 0, 0)');
+t('...and so does one marked aria-hidden (a scrim, shut: no content AND no meaning)',
+  g('drawerScrim').backgroundColor, g('drawerScrim').backgroundColor === 'rgba(0, 0, 0, 0)');
+t('an empty icon marked aria-hidden still keeps its ground (the NAME is what spares it)',
+  g('ariaSprite').backgroundColor + ' / ' + g('ariaSprite').backgroundImage,
+  g('ariaSprite').backgroundColor === BLACK && g('ariaSprite').backgroundImage !== 'none');
 
 // --- the seventh layer: a dialog's shell, nothing but boxes inside -----------
 t('a dialog SHELL holding nothing but boxes is left transparent (painted, the page is a sheet)',
@@ -625,6 +647,8 @@ t('a carousel nav strip is left transparent (painted it boards up the photo it d
   g('carNavs').backgroundColor, g('carNavs').backgroundColor === 'rgba(0, 0, 0, 0)');
 t('and its buttons still carry their own ground, so the strip never takes one with it',
   g('carPrev').backgroundColor, g('carPrev').backgroundColor === BLACK);
+t('a drag layer over the same photo is transparent too (its whole content is one empty box)',
+  g('dragLayer').backgroundColor, g('dragLayer').backgroundColor === 'rgba(0, 0, 0, 0)');
 t('a row beside a picture holding anything but controls keeps its ground',
   g('actionRow').backgroundColor, g('actionRow').backgroundColor === BLACK);
 checks.push({name: 'NOTE :has(> :not(control)) sees ELEMENTS, so a bare text node does not count',

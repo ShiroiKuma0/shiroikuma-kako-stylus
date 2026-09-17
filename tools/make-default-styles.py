@@ -89,6 +89,10 @@ ART = ['[class*="logo" i]', '[class*="brand" i]', '[class*="badge" i]', '[class*
 # `:empty` is always true of a void element and so can tell you nothing about it.
 BUTTONS = ["button", "select", '[role="button"]', '[role="tab"]', '[role="switch"]']
 BUTTON_INPUTS = ['input[type="submit"]', 'input[type="button"]', 'input[type="reset"]']
+# The containers a box is built from, holding no content of their own: what a dialog's SHELL is
+# made of, and what a spacer inside a drag layer is.  Read twice, by CHROME_KINDS and by
+# DIALOG_SHELL_SEL, so it lives here with the other element lists rather than beside either rule.
+SHELL_KINDS = ["div", "section", "article", "aside", "form", "style", "script", "template"]
 # The pseudo-element variants: * never matches ::before/::after, so a glyph drawn
 # in a pseudo would otherwise inherit the parent's forced length.
 ICON_PSEUDOS = [
@@ -243,6 +247,16 @@ LINE_HEIGHT = (
 # wanted" -- `revert` drops to the UA default, not the page's.  :not() is per-element, so an
 # exempt .fa keeps its icon font while an ordinary span inside it still gets Arial.
 NOT_ICONS = ":not(%s)" % ", ".join(ICONS)
+# ⚠ ICONS minus the one term that says nothing about painting.  `[aria-hidden="true"]` earns its
+# place in ICONS because a decorative icon carries it — but it is a statement about the
+# ACCESSIBILITY TREE, not about what the box draws: every other term in the list names an icon
+# system (`fa-`, `octicon`, `[class*="icon"]`) or an icon element (`i`, `svg`, `use`), and
+# `[role="img"]` says outright that the box is a picture.  `aria-hidden` says only "ignore me".
+# Put beside `:empty` it therefore reverses: no content AND no meaning is the strongest statement
+# a page can make that an element is a layer, not a surface.  Same specificity either way —
+# `[class*="icon" i]` keeps the list at (0,1,0) — so no rule that uses this moves on the ladder.
+ICONS_DRAWN = [t for t in ICONS if t != '[aria-hidden="true"]']
+NOT_ICONS_DRAWN = ":not(%s)" % ", ".join(ICONS_DRAWN)
 NOT_MEDIA = ":not(%s)" % ", ".join(MEDIA)
 NOT_CONTROLS = ":not(%s)" % ", ".join(CONTROLS)
 NOT_ART = ":not(%s)" % ", ".join(ART)
@@ -410,6 +424,30 @@ CARD_LINK_SEL = card_link()
 # `:is(:hover, :focus-visible)` weighs what its heaviest arm does, (0,1,0) — the same as the bare
 # `:hover` it replaces, so the twin sits exactly where it did: one class above the rest form.
 CARD_LINK_HOVER_SEL = card_link(":is(:hover, :focus-visible)")
+# ⚠ A value bar's reading IS the boundary between two colours, and it is empty on purpose.
+# A volume slider, a scrubber, a progress bar and a level meter are all one idiom: a track, and
+# inside it a filled part whose width (or height, or scaleX) is the number.  The filled part holds
+# no text and no child, because it does not need any — its content is its geometry.  That is
+# exactly the shape the `:empty` sweep in `ui: overlays` was built to neutralise, on the premise
+# that "an element with no content has nothing of its own to make legible", and here the premise is
+# simply wrong: the sweep wiped the level's own white, `bg all` and `bg div` painted the track
+# black, and a volume bar that slides open on hover came out as a black rectangle with no reading
+# in it at all.  So the filled part is given ink of its own, and only the filled part — a yellow
+# level on the black track is the boundary back, and touching the track as well would risk a grey
+# box wherever a name matched something that is not a bar.
+# The name is the only handle, as with ICONS and ART: a hashed class keeps its readable prefix
+# (`volumeLevel-VDMLnw`, `progress-K0IenH`) and Video.js spells it out (`vjs-volume-level`,
+# `vjs-play-progress`).  Matched on the element or on its parent, since a generic `<div class=fill>`
+# inside `<div class=progress>` is just as common as a named level.  `range` and `track` are
+# deliberately absent — they would catch *orange*, *tracking* and *soundtrack* — and the same
+# media/control/icon guards the sweep uses are kept, so a void <input type=range> or an <img> never
+# takes the ink.
+VALUE_BARS = ['[class*="volume" i]', '[class*="progress" i]', '[class*="scrub" i]',
+              '[class*="seek" i]', '[class*="slider" i]', '[class*="played" i]',
+              '[class*="buffer" i]', '[class*="meter" i]', '[class*="gauge" i]',
+              '[class*="level" i]', '[role="progressbar"]', '[role="slider"]']
+IS_VALUE_BAR = ":is(%s)" % ", ".join(VALUE_BARS)
+NOT_VALUE_BAR = ":not(%s)" % ", ".join(VALUE_BARS)
 # ⚠ A box whose whole content is controls has nothing of its own to make legible.  The carousel
 # nav strip is the shape that says it plainly: one absolutely-positioned layer stretched over the
 # entire carousel viewport, `pointer-events: none` so the picture underneath stays clickable, and
@@ -446,8 +484,36 @@ CARD_LINK_HOVER_SEL = card_link(":is(:hover, :focus-visible)")
 # instead of its own.  The controls inside keep the black ground and yellow trace `ui: controls`
 # gives them at (2,1,1), so a button never goes missing with the strip.
 CONTROL_KINDS = ":is(%s)" % ", ".join(BUTTONS + BUTTON_INPUTS)
+# ⚠ ...and chrome is not only controls.  It is also NOTHING AT ALL, one level down.  A carousel
+# that can be dragged lays a second layer over the very same viewport — `position: absolute;
+# inset: 0; overflow-x: scroll` — holding one oversized EMPTY box and nothing else, so that
+# dragging the layer scrolls it and the slides follow.  It draws nothing by construction: the
+# layer is transparent, the spacer inside it is transparent, and the whole point of the
+# arrangement is that the picture shows through.  Neither test could reach it — the `:empty`
+# sweep because the layer is not empty, it holds the spacer, and the strip above because a spacer
+# is not a control — so a marketplace's offer page kept its thumbnail row and its recommendation
+# carousels and lost the main photo behind one black rectangle.
+#
+# The content test therefore becomes "controls, or boxes with nothing in them": a box whose whole
+# content is chrome, or is nothing, has no ground of its own to defend, and beside a picture that
+# ground can only ever be a sheet over it.  The emptiness has simply moved one level down, and the
+# premise the `:empty` sweep rests on moves with it.
+#
+# Two things keep it honest, and the fixture found both on the first run.  The empty term is
+# SHELL_KINDS rather than `*`, because ANY LEAF ELEMENT is `:empty`: an <svg> holding one <path>
+# matched `*:empty`, and lost the ground the fixture asserts for it.  And it carries
+# NOT_VALUE_BAR, because an empty box that is a value bar is not nothing at all — it is the
+# reading, the one documented exception to the whole `:empty` premise, and a seek bar's track
+# holds one empty `progress-…` div and went transparent.
+#
+# The weight does not move: `:empty` and `[class*="volume" i]` are both (0,1,0), exactly what
+# `[role="button"]` already contributed to this `:is()`.  And an <img> is `:empty` by definition,
+# so it is NO_OWN_MEDIA, not the content test, that keeps a box holding a picture out of this; it
+# was already there for the nav strip and it is load-bearing twice over now.
+CHROME_KINDS = ":is(%s)" % ", ".join(
+    BUTTONS + BUTTON_INPUTS + ["%s:empty%s" % (":is(%s)" % ", ".join(SHELL_KINDS), NOT_VALUE_BAR)])
 CONTROL_STRIP = "*%s:not(:has(> :not(%s))):has(> %s)%s" % (
-    NEVER, CONTROL_KINDS, CONTROL_KINDS, NO_OWN_MEDIA)
+    NEVER, CHROME_KINDS, CHROME_KINDS, NO_OWN_MEDIA)
 CONTROL_STRIP_SEL = beside_media(CONTROL_STRIP)
 # ⚠ A dialog's shell is its scrim, and a scrim at rest is nothing at all.  The `role="dialog"` a
 # page puts on a floating widget goes on the SHELL as often as on the window: one `position:
@@ -481,7 +547,6 @@ CONTROL_STRIP_SEL = beside_media(CONTROL_STRIP)
 # a single guard is enough and there is nothing to tie with.  The active-state scrim goes with the
 # rest, `!important` beating the page's normal declaration whatever its specificity; the panel
 # that slides in is a box, and black.
-SHELL_KINDS = ["div", "section", "article", "aside", "form", "style", "script", "template"]
 DIALOG_ROLES = ['[role="dialog"]', '[role="alertdialog"]']
 DIALOG_SHELL_SEL = ':is(%s)%s:not([aria-modal="false"]):not(:has(> :not(%s)))' % (
     ", ".join(DIALOG_ROLES), NEVER, ", ".join(SHELL_KINDS))
@@ -563,30 +628,6 @@ MEDIA_PARENT = "*%s:has(> %s)" % (NEVER, IS_MEDIA)
 TRIANGLES = ['[class*="arrow" i]', '[class*="caret" i]', '[class*="triangle" i]',
              '[class*="chevron" i]', '[class*="play" i]', '[class*="tooltip" i]']
 NOT_TRIANGLES = ":not(%s)" % ", ".join(TRIANGLES)
-# ⚠ A value bar's reading IS the boundary between two colours, and it is empty on purpose.
-# A volume slider, a scrubber, a progress bar and a level meter are all one idiom: a track, and
-# inside it a filled part whose width (or height, or scaleX) is the number.  The filled part holds
-# no text and no child, because it does not need any — its content is its geometry.  That is
-# exactly the shape the `:empty` sweep in `ui: overlays` was built to neutralise, on the premise
-# that "an element with no content has nothing of its own to make legible", and here the premise is
-# simply wrong: the sweep wiped the level's own white, `bg all` and `bg div` painted the track
-# black, and a volume bar that slides open on hover came out as a black rectangle with no reading
-# in it at all.  So the filled part is given ink of its own, and only the filled part — a yellow
-# level on the black track is the boundary back, and touching the track as well would risk a grey
-# box wherever a name matched something that is not a bar.
-# The name is the only handle, as with ICONS and ART: a hashed class keeps its readable prefix
-# (`volumeLevel-VDMLnw`, `progress-K0IenH`) and Video.js spells it out (`vjs-volume-level`,
-# `vjs-play-progress`).  Matched on the element or on its parent, since a generic `<div class=fill>`
-# inside `<div class=progress>` is just as common as a named level.  `range` and `track` are
-# deliberately absent — they would catch *orange*, *tracking* and *soundtrack* — and the same
-# media/control/icon guards the sweep uses are kept, so a void <input type=range> or an <img> never
-# takes the ink.
-VALUE_BARS = ['[class*="volume" i]', '[class*="progress" i]', '[class*="scrub" i]',
-              '[class*="seek" i]', '[class*="slider" i]', '[class*="played" i]',
-              '[class*="buffer" i]', '[class*="meter" i]', '[class*="gauge" i]',
-              '[class*="level" i]', '[role="progressbar"]', '[role="slider"]']
-IS_VALUE_BAR = ":is(%s)" % ", ".join(VALUE_BARS)
-NOT_VALUE_BAR = ":not(%s)" % ", ".join(VALUE_BARS)
 # The doubled guard is load-bearing: the `:empty` sweep it has to beat sits near (1,4,2), which no
 # amount of class terms would clear, and the same trick already puts the named-overlay rules above
 # every bg blanket.  Two ids make it (2,x,y) and the argument is over.
@@ -1064,8 +1105,21 @@ styles = [
             "   #808080 ground `ui: controls` gives an empty icon button. Media: <img>, <iframe>\n"
             "   and <video> are :empty by definition and `ui: image-ground` must survive. Links:\n"
             "   an empty link is a picture, treated just above. <hr>: void, so always :empty, and\n"
-            "   `ui: borders` fills it yellow to draw the line. */\n"
-          + rule("*:empty%s%s%s%s%s:not(hr)" % (SURFACE, NOT_ICONS, NOT_MEDIA,
+            "   `ui: borders` fills it yellow to draw the line.\n"
+            "   ⚠ And one exclusion was load-bearing the wrong way round: `[aria-hidden=\"true\"]`,\n"
+            "   which ICONS carries because a decorative icon does. It is the page saying \"ignore\n"
+            "   me\", never \"this box draws something\" — and a scrim says it too. A marketplace\n"
+            "   parks one per slide-over drawer, shut: `<div aria-hidden=\"true\"></div>`, fixed,\n"
+            "   inset 0, z-index 4000, click-through, fourteen of them in the DOM at once. Every\n"
+            "   one was spared, and `bg all`, `bg div` or `bg blocks` — any of the three alone —\n"
+            "   made it an opaque sheet at the top of the stack: the offer page measured 98 %%\n"
+            "   black. Across four real pages the term spared nothing else that draws — a 1px\n"
+            "   decorative rule, and boxes with no box at all. So it is out of THIS sweep, and\n"
+            "   only this one: the cost is bounded by the page's own declaration, since whatever\n"
+            "   an aria-hidden element was drawing, the page has already said a reader loses\n"
+            "   nothing by not perceiving it. In `ui: strip-backdrops` it stays, because there\n"
+            "   the sweep takes a background IMAGE, and an erased picture is content gone. */\n"
+          + rule("*:empty%s%s%s%s%s:not(hr)" % (SURFACE, NOT_ICONS_DRAWN, NOT_MEDIA,
                                                 NOT_CONTROLS, NOT_LINKS),
                  "background-color: transparent")
           + "\n/* ⚠ The fifth kind of layer, and the one the sweep above is built to miss: the\n"
