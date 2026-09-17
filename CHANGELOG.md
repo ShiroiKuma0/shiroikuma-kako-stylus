@@ -5,6 +5,54 @@ for the upstream [Stylus](https://github.com/openstyles/stylus) release it is bu
 ships no changelog file of its own — its notes live only on GitHub Releases — so this file is
 entirely ours to maintain, newest first.
 
+## 白い熊 Stylus 2.4.10.61 — 2026-09-17
+
+Built on upstream 2.4.10. A streaming site's live player rendered as one black rectangle with the
+page around it untouched. One repair to the library, structural, no site named in a rule. The
+behavioural fixture grew from 147 checks to 151. Note the version jump: 2.4.10.60 was the unsigned
+iteration build.
+
+### A layer inside a player is unpainted: it is a window onto the picture
+
+The sheet was Video.js' **caption layer** — a `<div class="vjs-text-track-display">` at
+`position: absolute; left/right/top: 0; bottom: 1em; pointer-events: none`, measured 890×2109
+against a player of 890×2116, holding the cue window and nothing else. `bg all` paints it at
+(1,0,0) and `bg div` at (1,0,1); either style **alone** boards the film up.
+
+Every handle `ui: overlays` had walks straight past it. Not `:empty`, since it holds the cue window
+— and it has to go on holding cue boxes with text in them whenever captions are switched on, so
+**no** test on its content could ever hold. Not a name: `vjs-text-track-display` carries no word the
+overlay list matches, and the library prefix is no use either, `vjs-` being on the transport bar
+too, which needs its ground. Not the control strip, which asks for a box whose children are
+controls, where this one holds none at all. And `pointer-events: none` keeps it out of every hit
+test, so only a paint diff finds it — the notification host and the carousel nav strip again.
+
+The structure carries it instead, one step up from the element: a box that **directly** holds a
+`<video>` is a player, the video is laid across the whole of that box, and every other child is
+therefore stacked over the picture by construction. So inside a player, a child that is neither the
+media, nor a control, nor a box holding one is a layer — whatever it is named and whatever is
+inside it. Unpainted at (2,2,4): above the bg blankets, and above `ui: image-ground`'s grey at
+(1,0,1), which inside a player is right, a watermark laid over the film being meant to be over the
+film.
+
+Two things it deliberately does not reach. `<body>` is not a player: a `<video>` that is a child of
+the page is a background film, and there the siblings are the page's own content, so unpainting
+them would show the film through every word. And the wrapped player, whose `<video>` sits in a
+wrapper of its own and whose caption layer is then a nephew rather than a sibling — `:has(video)`
+would reach it and reach every ancestor up to the root along with it, while the sibling arms of
+`beside_media` would reach half the boxes of every card on the page. Direct children are what the
+met case needs and all that can be argued for; a second case can widen it.
+
+What it costs, asserted by name in the fixture: a box inside a player that holds no control loses a
+ground of its own, so an error panel shows its words over the film rather than on black.
+
+Four new assertions in the fixture: the caption layer, the cue box inside it, the transport bar
+beside it, and a page with a background film. ALL 151 PASSED in both engines. On the reported page
+the shipped library measures the caption layer at `rgba(0, 0, 0, 0)`, with the transport bar still
+black and the big play button still on its `#808080`; across three saved pages carrying eight
+players between them the rule reaches those five Video.js layers, one 16×16 link laid over a
+lecture player, and nothing else.
+
 ## 白い熊 Stylus 2.4.10.59 — 2026-09-15
 
 Built on upstream 2.4.10. An operator's homepage rendered as one black sheet — header, hero, tiles,
