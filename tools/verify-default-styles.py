@@ -149,6 +149,17 @@ PAGE = """<!doctype html><meta charset="utf-8"><title>verify</title>
   .playerRoot { position: relative; width: 320px; height: 180px; border-radius: 8px; }
   .videoPlaceholderWithPoster { width: 320px; height: 180px; border-radius: 8px;
       background: url("data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==") center/cover; }
+  /* ...and the layers a player stacks over that picture. The caption layer is pinned across the
+     film and holds the cue window; the transport bar runs along the bottom and holds controls */
+  .capLayer { position: absolute; inset: 0 0 1em 0; pointer-events: none; }
+  .cueWindow { position: absolute; inset: 0; margin: 1.5%; }
+  .cueBox { background-color: rgba(0, 0, 0, .8); color: #fff; }
+  .transportBar { position: absolute; left: 0; right: 0; bottom: 0; height: 24px;
+      background-color: rgba(43, 51, 63, .7); }
+  /* a page with a background film: <body> holds the <video>, so its other children are the
+     page's own content and not layers over a picture */
+  .bgFilm { position: fixed; inset: 0; width: 100%; height: 100%; }
+  .pageBlock { background-color: #fff; }
   /* the CSS-triangle idiom: two transparent borders and one coloured */
   .playArrow { width: 0; height: 0; border-top: 9px solid transparent;
                border-bottom: 9px solid transparent; border-left: 15px solid #fff; }
@@ -384,7 +395,13 @@ __SHEETS__
   <div class="playerRoot" id="playerRoot" role="button" tabindex="0"
     ><video id="playerVideo" width="320" height="180"></video
     ><button class="videoPlaceholderWithPoster" id="posterBtn"
-      ><span class="playArrow" id="playArrow"></span></button></div>
+      ><span class="playArrow" id="playArrow"></span></button
+    ><div class="capLayer" id="capLayer"><div class="cueWindow" id="cueWindow"
+      ><div class="cueBox" id="cueBox">a caption cue</div></div></div
+    ><div class="transportBar" id="transportBar"><button id="tbPlay">Play</button
+      ><span id="tbTime">0:00</span></div></div>
+  <video class="bgFilm" id="bgFilm"></video>
+  <div class="pageBlock" id="pageBlock">page content over a background film</div>
   <a class="css-1qz4h9b" id="wordmark" href="#"></a>
   <button class="pl-play-control pl-control pl-button" id="plPlay"
     ><span class="pl-control-text" id="plText">Play</span></button>
@@ -668,6 +685,16 @@ t('a poster frame survives on the button that carries it',
 t('and neither the poster nor the player it sits in is clipped to a pill',
   g('posterBtn').borderRadius + ' / ' + g('playerRoot').borderRadius,
   g('posterBtn').borderRadius === '8px' && g('playerRoot').borderRadius === '8px');
+// --- a layer inside a player is a window onto the picture ------------------
+t('a caption layer inside a player keeps no ground of its own, cue text and all',
+  g('capLayer').backgroundColor, g('capLayer').backgroundColor === 'rgba(0, 0, 0, 0)');
+t('and the cue box inside it keeps one, so a subtitle sits on black and not on the film',
+  g('cueBox').backgroundColor, g('cueBox').backgroundColor === BLACK);
+t('the transport bar holds a control, so it is chrome and keeps its ground',
+  g('transportBar').backgroundColor, g('transportBar').backgroundColor === BLACK);
+t('<body> is not a player: a page with a background film still paints its own content',
+  g('pageBlock').backgroundColor, g('pageBlock').backgroundColor === BLACK);
+
 t('a CSS triangle keeps its transparent sides (recoloured, it is a solid square)',
   g('playArrow').borderTopColor + ' / ' + g('playArrow').borderLeftColor,
   g('playArrow').borderTopColor === 'rgba(0, 0, 0, 0)'

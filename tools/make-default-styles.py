@@ -485,6 +485,48 @@ SHELL_KINDS = ["div", "section", "article", "aside", "form", "style", "script", 
 DIALOG_ROLES = ['[role="dialog"]', '[role="alertdialog"]']
 DIALOG_SHELL_SEL = ':is(%s)%s:not([aria-modal="false"]):not(:has(> :not(%s)))' % (
     ", ".join(DIALOG_ROLES), NEVER, ", ".join(SHELL_KINDS))
+# ⚠ A layer inside a player is a window onto the picture, never a surface.  The <iframe> row's
+# sentence one scope further in, and here the structure carries it: a box that DIRECTLY holds a
+# <video> is a player, the video is laid across the whole of that box, and every other child is
+# therefore stacked over the picture by construction.
+#
+# Video.js is the case met, and a streaming site's live player rendered as one black rectangle
+# with the page around it untouched.  Its caption layer is `position: absolute; left/right/top: 0;
+# bottom: 1em; pointer-events: none` — measured 890x2109 against a player of 890x2116 — and
+# `bg all` at (1,0,0) or `bg div` at (1,0,1), either one alone, turns it into an opaque sheet over
+# the film.
+#
+# Every handle `ui: overlays` already had walks straight past it.  Not `:empty`: it holds the cue
+# window, one empty div — and it must go on holding cue boxes with text in them whenever captions
+# are switched on, so NO test on its content can ever hold.  Not a name: `vjs-text-track-display`
+# carries no word the overlay list could match, and the library prefix is no use either, since
+# `vjs-` is on the transport bar too and that needs its ground.  Not the control strip, which asks
+# for a box whose children are controls, where this one holds none at all.  And `pointer-events:
+# none` keeps it out of every hit test, so only a paint diff finds it — the notification host and
+# the carousel nav strip again.
+#
+# The player is the scope, and the two control tests are the whole exclusion list: a control keeps
+# the ground `ui: controls` gives it, and a box that HOLDS one is chrome — the transport bar, a
+# settings menu — and keeps its own.  A box holding neither is a layer, whatever it is named and
+# whatever is inside it.  On the fixture page only the caption layer moves: the bar stays black
+# and the big play button keeps its #808080.
+#
+# <body> is not a player.  A <video> that is a child of the page is a background film, and there
+# the siblings are the page's own content — unpainting them would show the film through every
+# word.  (<html> may hold only <head> and <body>, so it needs no naming.)
+#
+# The wrapped player is left out on purpose.  Some players put the <video> inside a wrapper of its
+# own and the caption layer is then a NEPHEW rather than a sibling; `:has(video)` would reach it
+# and reach every ancestor up to the root along with it, while the sibling arms of `beside_media`
+# would reach half the boxes of every card on the page.  Direct children are what the met case
+# needs and all that can be argued for — a second case can widen it.
+#
+# (2,2,4), the weight the card link carries and for the same reason: above the bg blankets, and
+# above `ui: image-ground`'s grey at (1,0,1), which inside a player is right — a watermark laid
+# over the film is meant to be over the film.  The tie with the card link decides nothing, both
+# of them clearing a ground.
+PLAYER_LAYER_SEL = "*%s:not(body):has(> video) > *%s%s%s:not(:has(%s))" % (
+    NEVER, NEVER, NOT_MEDIA, NOT_CONTROLS, CONTROL_KINDS)
 # ⚠ A picture stacked behind the page is a picture we bury ourselves.  `z-index: -1` on an in-flow
 # image wrapper is an ordinary idiom — it is how a card puts its cover under the layer that has to
 # stay clickable — and it works only because everything above it is transparent.  Painting order
@@ -1093,7 +1135,20 @@ styles = [
             "   A panel built of nothing but divs loses only the ground under its padding — its\n"
             "   children are painted by the same blankets. One with anything else is untouched,\n"
             "   and so is one saying `aria-modal=false`: a scrim host is modal by construction. */\n"
-          + rule(DIALOG_SHELL_SEL, "background-color: transparent")),
+          + rule(DIALOG_SHELL_SEL, "background-color: transparent")
+          + "\n/* \u26a0 The eighth kind of layer: the one inside a player. A box that directly holds\n"
+            "   a <video> IS a player — the video is laid across the whole of it, so every other\n"
+            "   child is stacked over the picture by construction. Video.js's caption layer is\n"
+            "   the case met: absolutely positioned across the film, `pointer-events: none`,\n"
+            "   holding one empty cue window — and holding cue boxes with text in them whenever\n"
+            "   captions are switched on, so no test on its content can ever hold. Painted, it\n"
+            "   boarded a streaming site's live player up: one black rectangle, the page around\n"
+            "   it untouched. The two control tests are the whole exclusion list — a control\n"
+            "   keeps the ground `ui: controls` gives it, and a box that HOLDS one is chrome,\n"
+            "   the transport bar or a settings menu, and keeps its own. <body> is not a player:\n"
+            "   a <video> that is a child of the page is a background film, and its siblings are\n"
+            "   the page's own content. */\n"
+          + rule(PLAYER_LAYER_SEL, "background-color: transparent")),
 
     # The doubled guard is not decoration: `ui: borders` sits at (1,1,0) now that it carves
     # the CSS triangles out, and a single guard here would tie with it and leave which of cyan
