@@ -5,6 +5,82 @@ for the upstream [Stylus](https://github.com/openstyles/stylus) release it is bu
 ships no changelog file of its own — its notes live only on GitHub Releases — so this file is
 entirely ours to maintain, newest first.
 
+## 白い熊 Stylus 2.4.10.63 — 2026-09-17
+
+Built on upstream 2.4.10. A marketplace's offer page rendered **98 % `#000`**, and two separate
+sheets were doing it. Two repairs to the library, both structural, no site named in a rule. The
+behavioural fixture grew from 151 checks to 154. Note the version jump: 2.4.10.62 was the unsigned
+iteration build.
+
+The page also needed a new way to be looked at. Its bot wall serves headless Chromium *and*
+headless Firefox an empty interstitial — a 1.6 KB document with no challenge to solve — so neither
+engine could see the bug at all. A **windowed** Firefox on a virtual display loads it for real, and
+that is how both sheets were measured.
+
+### An empty box marked `aria-hidden` is a layer twice over, not an icon
+
+The worst failure this library can produce, met again through the one exclusion nobody had argued
+for. `ICONS` carries `[aria-hidden="true"]` because a decorative icon does, and the `:empty` sweep
+in `ui: overlays` — the sweep that exists precisely to neutralise an empty layer left pinned over
+the viewport — inherited the whole list.
+
+But that attribute is a statement about the **accessibility tree**, never about painting. Every
+other term in `ICONS` names an icon system (`fa-`, `octicon`, `[class*="icon"]`) or an icon element
+(`i`, `svg`, `use`), and `[role="img"]` says outright that the box is a picture. `aria-hidden` says
+only *ignore me* — and a scrim says it too. The site parks one per slide-over drawer, shut:
+`<div aria-hidden="true"></div>`, `position: fixed`, `inset: 0`, `z-index: 4000`,
+`pointer-events: none`, **fourteen of them in the DOM at once**. Every one was spared, and `bg all`,
+`bg div` or `bg blocks` — any of the three **alone** — made the first an opaque sheet at the top of
+the stack. `pointer-events: none` keeps such a layer out of every hit test, so only a paint diff
+finds it.
+
+Put beside `:empty` the attribute reverses: no content **and** no meaning is the strongest statement
+a page can make that an element is a layer rather than a surface. Measured across four real pages
+the term spared nothing else that draws — a 1px decorative rule, and boxes with no box at all — and
+what it costs is bounded by the page's own declaration, since whatever an `aria-hidden` element was
+drawing, the page has already said a reader loses nothing by not perceiving it.
+
+Out of **this** sweep only. In `ui: strip-backdrops` the same word stays, because there the sweep
+takes a background *image*, and an erased picture is content simply gone. Specificity is unchanged
+either way — `[class*="icon" i]` keeps the list at (0,1,0) — so no rule moves on the ladder.
+
+### Chrome is not only controls — it is also nothing, one level down
+
+With the scrims gone the page came back, all but the **main product photo**, which was still one
+black rectangle. A second layer, and the nav strip's sibling.
+
+A carousel that can be **dragged** lays another layer over the very same viewport:
+`position: absolute; inset: 0; overflow-x: scroll`, holding one oversized **empty** box and nothing
+else, so that dragging it scrolls and the slides follow. It draws nothing by construction — the
+layer is transparent, the spacer inside it is transparent, and the whole point of the arrangement is
+that the picture shows through. Neither test could reach it: not the `:empty` sweep, because the
+layer is not empty, it holds the spacer; and not the carousel nav strip, because a spacer is not a
+control.
+
+So the strip's content test becomes **controls, or boxes with nothing in them**. A box whose whole
+content is chrome, or is nothing, has no ground of its own to defend, and beside a picture that
+ground can only ever be a sheet over it — the emptiness has simply moved one level down, and the
+premise the `:empty` sweep rests on moves with it.
+
+Two things keep it honest, and the fixture found both on the first run. The empty term is
+`SHELL_KINDS` (`div`, `section`, …) rather than `*`, because **any leaf element is `:empty`**: an
+`<svg>` holding one `<path>` matched `*:empty` and lost the ground asserted for it. And it carries
+`NOT_VALUE_BAR`, because an empty box that is a value bar is not nothing at all — it is the reading,
+the one documented exception to the whole `:empty` premise, and a seek bar's track holds one empty
+`progress-…` div and went transparent. The weight is unchanged: `:empty` and `[class*="volume" i]`
+are both (0,1,0), exactly what `[role="button"]` already contributed. And an `<img>` is `:empty` by
+definition, so it is `NO_OWN_MEDIA` — already there for the nav strip — that keeps a box holding a
+picture out of this, load-bearing twice over now.
+
+### Verification
+
+Three new assertions in the fixture — the `aria-hidden` scrim, the icon beside it that keeps its
+ground because its **name** says icon, and the drag layer over a photo. **ALL 154 PASSED** in Gecko.
+Pixel A/B of the shipped library against this one, injected into the same loaded page: **zero
+changed pixels** on Wikipedia, GitHub, alza.cz, Hacker News, BBC News and Stack Overflow. On the
+reported page the main photo, the thumbnail row, both recommendation carousels, the price column and
+the parameter table all render.
+
 ## 白い熊 Stylus 2.4.10.61 — 2026-09-17
 
 Built on upstream 2.4.10. A streaming site's live player rendered as one black rectangle with the
