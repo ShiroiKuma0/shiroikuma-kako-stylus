@@ -131,6 +131,13 @@ node tools/build-fork.mjs --sign        # release only: AMO-signed .xpi (see bel
 pnpm build-firefox                      # webpack only -> dist-firefox-mv2/
 ```
 
+**`git push` needs that same shell.** Upstream ships a husky `pre-push` hook that runs
+`pnpm lint && pnpm test-csslint`, so a push from a shell that has not selected Node 24 dies
+with `.husky/pre-push: 1: pnpm: not found` and `code 127`, having pushed nothing — which reads
+like a remote or permissions failure and is neither. Source nvm first and the hook runs and
+passes. Never reach for `--no-verify`: that skips upstream's lint gate, which is the one thing
+the hook is there for.
+
 **Iterate unsigned.** 白い熊 火狐 desktop is built with `MOZ_REQUIRE_SIGNING` unset, so it installs
 unsigned builds directly — load `dist-firefox-mv2/` via `about:debugging`. Sign only at release:
 every signing run is an AMO round-trip and burns a version number AMO will never accept again.
