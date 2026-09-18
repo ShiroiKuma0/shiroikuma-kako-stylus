@@ -168,6 +168,35 @@ PAGE = """<!doctype html><meta charset="utf-8"><title>verify</title>
   .cueBox { background-color: rgba(0, 0, 0, .8); color: #fff; }
   .transportBar { position: absolute; left: 0; right: 0; bottom: 0; height: 24px;
       background-color: rgba(43, 51, 63, .7); }
+  /* ...and the layer a broadcaster's player lays over the whole film: inset 0, the size of the
+     player, holding a top bar and a bottom bar with the actual buttons two levels down. Its own
+     ground must go -- painted, the film plays behind a black rectangle -- while the bars inside
+     it, which hold their controls as children, keep theirs. */
+  .ovLayer { position: absolute; inset: 0; z-index: 2; }
+  .ovBar { position: absolute; left: 0; right: 0; height: 20px;
+      background-color: rgba(16, 22, 34, .8); }
+  .ovBar.is-top { top: 0; }
+  .ovBar.is-bottom { bottom: 0; }
+  /* a seek bar under CSS-in-JS hashes: no name a list could match, so only role=slider says this
+     box carries a number. Its parts are empty boxes whose width IS the reading and whose colour
+     is the only thing that renders them -- the page already made them legible on its own track. */
+  .ctpl_178sn8c1 { position: relative; width: 300px; height: 4px; }
+  .ctpl_9vxwfz1 { background-color: rgba(255, 255, 255, .3); height: 4px; }
+  .ctpl_1gmgbia3 { background-color: rgb(170, 170, 170); height: 4px; width: 60%; }
+  .ctpl_1gmgbia2 { background-color: rgb(255, 255, 255); height: 4px; width: 40%; }
+  /* ...and the SAME player with no name to go on: role=button on the box carrying the poster,
+     under a CSS-in-JS hash, with the real <button> for the play arrow inside it. A control never
+     nests a control, so the role is on a surface. */
+  .ctpl_6uqqq21 { position: absolute; width: 320px; height: 180px;
+      background: url("data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==") center/cover; }
+  /* a thumbnail card: an aspect-ratio box holding an absolutely-positioned <picture>, and beside
+     it a chain of boxes each holding exactly one box, reaching a badge row at the bottom edge */
+  .thumbFrame { position: relative; width: 216px; height: 122px; }
+  .thumbPic { position: absolute; inset: 0; }
+  .thumbOver { position: absolute; inset: 0; }
+  .thumbMid { position: relative; width: 200px; height: 106px; }
+  .thumbRow { position: absolute; bottom: 0; height: 24px; }
+  .thumbBadge { background-color: rgba(16, 22, 34, .8); color: #fff; }
   /* a page with a background film: <body> holds the <video>, so its other children are the
      page's own content and not layers over a picture */
   .bgFilm { position: fixed; inset: 0; width: 100%; height: 100%; }
@@ -406,6 +435,10 @@ __SHEETS__
   <div class="volRow hovered"><div class="volumeBar-N1rUCF" id="volTrack"
     ><div style="width:70%" class="volumeLevel-VDMLnw" id="volLevel"></div></div></div>
   <div class="timelineTrack" id="seekTrack"><div class="progress-K0IenH" id="seekPlayed"></div></div>
+  <div class="ctpl_178sn8c1" id="hashSlider" role="slider" aria-valuenow="40"
+    ><div class="ctpl_9vxwfz1" id="hashRail"
+      ><div class="ctpl_1gmgbia3" id="hashBuffered"></div
+      ><div class="ctpl_1gmgbia2" id="hashPlayed"></div></div></div>
   <iframe class="payFrame" id="payFrame" title="3D Secure Flow Modal"
     srcdoc="&lt;html&gt;&lt;/html&gt;" allowtransparency="true"></iframe>
   <object id="objFrame" type="text/html"></object>
@@ -416,7 +449,21 @@ __SHEETS__
     ><div class="capLayer" id="capLayer"><div class="cueWindow" id="cueWindow"
       ><div class="cueBox" id="cueBox">a caption cue</div></div></div
     ><div class="transportBar" id="transportBar"><button id="tbPlay">Play</button
-      ><span id="tbTime">0:00</span></div></div>
+      ><span id="tbTime">0:00</span></div
+    ><div class="ovLayer" id="ovLayer"
+      ><div class="ovBar is-top" id="ovTop"><button id="ovBack">Back</button></div
+      ><div class="ovBar is-bottom" id="ovBottom"><button id="ovPlay">Play</button></div></div></div>
+  <div class="playerRoot" id="hashPlayer" role="button" tabindex="0"
+    ><div class="ctpl_6uqqq21" id="hashPoster" role="button" tabindex="0"
+      ><div id="hashInner"><button id="hashPlay"><span>Play</span></button></div></div></div>
+  <!-- a thumbnail card: the picture, and the wrapper chain laid across it -->
+  <div class="thumbFrame" id="thumbFrame"
+    ><picture class="thumbPic" id="thumbPic"><img id="thumbImg"
+        src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw="></picture
+    ><div class="thumbOver" id="thumbOver"><div class="thumbMid" id="thumbMid"
+      ><div class="thumbRow" id="thumbRow"><div id="thumbBadges"
+        ><div class="thumbBadge" id="thumbPlay">&#9654;</div
+        ><div class="thumbBadge" id="thumbLen">50 min</div></div></div></div></div></div>
   <video class="bgFilm" id="bgFilm"></video>
   <div class="pageBlock" id="pageBlock">page content over a background film</div>
   <a class="css-1qz4h9b" id="wordmark" href="#"></a>
@@ -610,6 +657,10 @@ t('and the bar can still open, `width: auto !important` having stopped short of 
 t('a seek bar is the same idiom and reads the same way',
   g('seekPlayed').backgroundColor + ' / ' + g('seekTrack').backgroundColor,
   g('seekPlayed').backgroundColor === YELLOW && g('seekTrack').backgroundColor === BLACK);
+t('a hashed seek bar keeps the colours the page gave its parts (no name to match)',
+  g('hashPlayed').backgroundColor + ' / ' + g('hashBuffered').backgroundColor,
+  g('hashPlayed').backgroundColor === 'rgb(255, 255, 255)'
+    && g('hashBuffered').backgroundColor === 'rgb(170, 170, 170)');
 t('an empty layer that is NOT a value bar keeps the sweep, not the ink',
   g('toastHost').backgroundColor, g('toastHost').backgroundColor === 'rgba(0, 0, 0, 0)');
 
@@ -709,11 +760,39 @@ t('a poster frame survives on the button that carries it',
 t('and neither the poster nor the player it sits in is clipped to a pill',
   g('posterBtn').borderRadius + ' / ' + g('playerRoot').borderRadius,
   g('posterBtn').borderRadius === '8px' && g('playerRoot').borderRadius === '8px');
+// --- a control that HOLDS a control is a surface wearing the role ----------
+t('a role=button under a hashed class keeps its poster (it holds the real button)',
+  g('hashPoster').backgroundImage === 'none' ? 'none' : 'kept',
+  g('hashPoster').backgroundImage !== 'none');
+t('...and is not clipped to a pill either',
+  g('hashPoster').borderRadius, g('hashPoster').borderRadius === '0px');
+t('the real button inside it is still a control: pill, black ground, yellow trace',
+  g('hashPlay').borderRadius + ' / ' + g('hashPlay').backgroundColor + ' / ' + g('hashPlay').color,
+  g('hashPlay').borderRadius === '999px' && g('hashPlay').backgroundColor === BLACK
+    && g('hashPlay').color === YELLOW);
+t('and an ordinary labelled button, holding no control, keeps the pill',
+  g('cta').borderRadius, g('cta').borderRadius === '999px');
+// --- the ninth layer: the wrapper chain over a thumbnail -------------------
+t('the wrapper laid across a thumbnail is transparent (painted, the picture is gone)',
+  g('thumbOver').backgroundColor, g('thumbOver').backgroundColor === 'rgba(0, 0, 0, 0)');
+t('and so is every box in the chain below it',
+  g('thumbMid').backgroundColor + ' / ' + g('thumbRow').backgroundColor,
+  g('thumbMid').backgroundColor === 'rgba(0, 0, 0, 0)'
+    && g('thumbRow').backgroundColor === 'rgba(0, 0, 0, 0)');
+t('the badge row holds TWO badges, so it keeps its ground and they stay legible',
+  g('thumbBadges').backgroundColor, g('thumbBadges').backgroundColor === BLACK);
+t('the picture underneath keeps the image ground',
+  g('thumbImg').backgroundColor, g('thumbImg').backgroundColor === 'rgb(128, 128, 128)');
 // --- a layer inside a player is a window onto the picture ------------------
 t('a caption layer inside a player keeps no ground of its own, cue text and all',
   g('capLayer').backgroundColor, g('capLayer').backgroundColor === 'rgba(0, 0, 0, 0)');
 t('and the cue box inside it keeps one, so a subtitle sits on black and not on the film',
   g('cueBox').backgroundColor, g('cueBox').backgroundColor === BLACK);
+t('a layer over the whole film is unpainted even though controls sit deep inside it',
+  g('ovLayer').backgroundColor, g('ovLayer').backgroundColor === 'rgba(0, 0, 0, 0)');
+t('...while the bars within it, holding their buttons as CHILDREN, keep their grounds',
+  g('ovTop').backgroundColor + ' / ' + g('ovBottom').backgroundColor,
+  g('ovTop').backgroundColor === BLACK && g('ovBottom').backgroundColor === BLACK);
 t('the transport bar holds a control, so it is chrome and keeps its ground',
   g('transportBar').backgroundColor, g('transportBar').backgroundColor === BLACK);
 t('<body> is not a player: a page with a background film still paints its own content',

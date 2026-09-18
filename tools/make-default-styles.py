@@ -268,6 +268,24 @@ NOT_LINKS = ":not(%s)" % ", ".join(LINKS)
 # so: a player is routinely `<div role="button">` wrapped around a <video>, under a hashed class
 # name that says nothing at all.  The child is the tell.
 NOT_MEDIA_HOST = ":not(:has(%s))" % ", ".join("> " + m for m in MEDIA)
+# ⚠ ...and the other kind of control that is not one: the control that HOLDS a control.  A
+# broadcaster's player hangs `role="button"` on the 1400x788 box carrying the poster as its
+# background, and two levels inside it sits the real <button> with the play arrow.  A control never
+# nests a control — the platform forbids it and ARIA has no use for it — so a role that wraps one
+# is on a SURFACE, and the thing inside is the control.  The name heuristic had run out again: the
+# class is `ctpl_6uqqq21`, a CSS-in-JS hash, so ART matched nothing, the poster was stripped as a
+# gloss gradient and `border-radius: 999px` clipped the player into an ellipse.
+# Three elements, and the list is as short as it is on purpose.  Element selectors only, so the
+# test weighs (0,0,1) and every line it joins keeps the weight it had; and a real <button> inside
+# says the outer box is not a control, where a second `[role="button"]` inside might only be a
+# page that hangs the role on everything.  <option> is absent, so a <select> is untouched — its
+# options are its own content, not chrome laid on a surface.
+# ⚠ And <input> is absent, which a pixel A/B is what caught: `input[type="hidden"]` is not a
+# control at all, it is a data carrier with no box, and a Q&A site puts one inside every Follow
+# button on the page.  With <input> in the list all of them stopped being buttons and lost their
+# pill.  `input:not([type="hidden"])` would express it and costs (0,1,1), moving every line it
+# joins on the ladder; a button, a select or a textarea inside is the met case and enough.
+NOT_CONTROL_HOST = ":not(:has(button, select, textarea))"
 # ⚠ A shut drawer is `width: 0`, and `width: auto` re-opens it.  A page that keeps a panel in the
 # DOM at `width: 0` with `overflow: hidden` — the transcript drawer beside a podcast player, an
 # off-canvas menu, any panel that slides — is saying the panel is closed; releasing its width sizes
@@ -510,8 +528,9 @@ CONTROL_KINDS = ":is(%s)" % ", ".join(BUTTONS + BUTTON_INPUTS)
 # `[role="button"]` already contributed to this `:is()`.  And an <img> is `:empty` by definition,
 # so it is NO_OWN_MEDIA, not the content test, that keeps a box holding a picture out of this; it
 # was already there for the nav strip and it is load-bearing twice over now.
+IS_SHELL_BOX = ":is(%s)" % ", ".join(SHELL_KINDS)
 CHROME_KINDS = ":is(%s)" % ", ".join(
-    BUTTONS + BUTTON_INPUTS + ["%s:empty%s" % (":is(%s)" % ", ".join(SHELL_KINDS), NOT_VALUE_BAR)])
+    BUTTONS + BUTTON_INPUTS + ["%s:empty%s" % (IS_SHELL_BOX, NOT_VALUE_BAR)])
 CONTROL_STRIP = "*%s:not(:has(> :not(%s))):has(> %s)%s" % (
     NEVER, CHROME_KINDS, CHROME_KINDS, NO_OWN_MEDIA)
 CONTROL_STRIP_SEL = beside_media(CONTROL_STRIP)
@@ -590,7 +609,17 @@ DIALOG_SHELL_SEL = ':is(%s)%s:not([aria-modal="false"]):not(:has(> :not(%s)))' %
 # above `ui: image-ground`'s grey at (1,0,1), which inside a player is right — a watermark laid
 # over the film is meant to be over the film.  The tie with the card link decides nothing, both
 # of them clearing a ground.
-PLAYER_LAYER_SEL = "*%s:not(body):has(> video) > *%s%s%s:not(:has(%s))" % (
+# ⚠ And the control test is DIRECT-CHILD scoped, which one broadcaster's player is the whole
+# argument for.  Its layer over the film is `<div>` at `position: absolute; inset: 0; z-index: 2`,
+# the size of the player, holding four boxes — a top bar, a bottom bar, a click catcher and a mute
+# pill — with the actual <button>s three and four levels down.  A descendant test finds those
+# buttons and reads the whole sheet as chrome, so the film played behind an opaque black rectangle
+# and only the transport icons showed.  A box that DIRECTLY holds a control is the bar the control
+# sits on and must keep its ground; a box that merely contains one somewhere below is a layer that
+# happens to have chrome inside it, and the bars within it keep their own grounds by the same test.
+# Video.js is unaffected — `.vjs-control-bar` holds its buttons as children, which is the shape the
+# exclusion was written for.  `:has(> x)` and `:has(x)` weigh the same, so nothing moves.
+PLAYER_LAYER_SEL = "*%s:not(body):has(> video) > *%s%s%s:not(:has(> %s))" % (
     NEVER, NEVER, NOT_MEDIA, NOT_CONTROLS, CONTROL_KINDS)
 # ⚠ A picture stacked behind the page is a picture we bury ourselves.  `z-index: -1` on an in-flow
 # image wrapper is an ordinary idiom — it is how a card puts its cover under the layer that has to
@@ -716,9 +745,69 @@ PAINT = NEVER + NOT_SAMPLE
 # without knowing it is a fill.  What comes back is everything drawn in a colour: the red bar
 # reads at 5:1 on black.
 MARK = ":is(td, th) > span:empty"
-NOT_MARK_OR_SAMPLE = ":where(:not(%s, %s *, %s))" % (SAMPLE, SAMPLE, MARK)
+# ⚠ And a slider's parts are a reading too, in exactly the sense a colour sample is: the played
+# length, the buffered length and the chapter ticks are EMPTY boxes whose width is the number and
+# whose colour is the only thing that renders them.  VALUE_BARS can hand a named one yellow ink,
+# but this player's classes are CSS-in-JS hashes — `ctpl_1gmgbia2` — so the name list sees nothing,
+# and the structure cannot tell played from buffered from a chapter list: yellow on all three reads
+# as 100 % played.  The page already made them legible against its own track, so the answer is the
+# sample's answer — do not match them, and let the page's colours stand.
+# `[role="slider"]`/`[role="progressbar"]` is the handle, and it is the markup's own word for "this
+# box carries a number".  Ground painters and both `:empty` sweeps only: an empty box has no ink.
+SLIDER_PART = ':is([role="slider"], [role="progressbar"]) *:empty'
+NOT_MARK_OR_SAMPLE = ":where(:not(%s, %s *, %s, %s))" % (SAMPLE, SAMPLE, MARK, SLIDER_PART)
 # The guard for anything that paints or clears a GROUND: stops at a colour sample and at a mark.
 SURFACE = NEVER + NOT_MARK_OR_SAMPLE
+# ⚠ The ninth kind of layer: the WRAPPER CHAIN over a thumbnail.  A card lays its chrome across
+# the picture the way a player does — one absolutely-positioned box the size of the frame, and
+# inside it a chain of boxes that finally reach the play badge and the duration pill at the bottom
+# edge.  A broadcaster's episode list is the shape that named it: `<div style="padding-bottom:
+# 56.25%">` holding an absolutely-positioned <picture> and, beside it, four nested <div>s of which
+# the outer three each hold exactly one box.  Painted, every one of them is an opaque sheet the
+# size of the thumbnail, and forty episodes rendered as forty black rectangles with a play arrow
+# on them.
+#
+# Nothing already here reaches it.  Not the `:empty` sweep, since each box holds the next.  Not
+# the drag layer's test, since the child of a wrapper is a box and not an empty one.  Not the
+# carousel nav strip, which looks at direct children and finds a <div>, not a control — the chrome
+# is four levels down.  And not the player rule, which is scoped to a direct child of a box
+# holding a <video>, where these are grandchildren of a box holding a <picture>.
+#
+# The premise is the one the whole family rests on, one step further: a box whose whole content is
+# a single box has nothing of its own to make legible — the emptiness has moved down a level, not
+# away.  Alone that says nothing about painting, so it is scoped to where such a box can only ever
+# be a layer: INSIDE A PICTURE'S FRAME.  A box that directly holds a picture is a frame, the
+# picture is laid across it, and every other box in it is stacked over the picture by construction
+# — the player rule's argument, with <picture> and <img> in place of <video>.
+#
+# Where it deliberately stops.  A box holding two children is left alone, which is what spares the
+# badge row itself: the play pill and the duration pill sit on a box holding both, it keeps its
+# ground, and they stay legible over the photo.  <body> is not a frame, for the reason the player
+# rule gives.  Controls keep the ground `ui: controls` gives them, media the grey, a value bar its
+# reading (a track holds one empty box and would match), and a mark or a colour sample its own
+# paint — SURFACE, as everywhere a ground is touched.
+FRAME_LAYER_SEL = "%s:not(body) *%s%s%s%s:has(> %s:only-child)" % (
+    MEDIA_PARENT, SURFACE, NOT_MEDIA, NOT_CONTROLS, NOT_VALUE_BAR, IS_SHELL_BOX)
+# ⚠ ...and a layer inside that layer is still a layer.  The rule above reaches only DIRECT children
+# of the player, and the transport bar a broadcaster mounts ON HOVER is a grandchild: the control
+# layer holds it, and it is itself `position: absolute` at the full size of the player — 1025x577
+# measured against a player of 1025x577 — holding a top bar, the progress row and the button bar.
+# At rest the film plays; the moment the pointer crosses it the whole picture goes black, which is
+# why it survived three rounds of this and every headless screenshot: no hover, no element.
+#
+# Depth alone cannot be the answer — `> *` widened to a descendant combinator unpaints the CUE BOX
+# too, and a subtitle then sits on the film instead of on black, which the fixture asserts against.
+# What separates them is what they hold: a box whose element children are ALL BOXES is holding
+# structure, not content, and inside a player structure is stacked over the film by construction.
+# The cue box holds a text node and no element at all, so `:has(> box)` is false of it and it keeps
+# its ground; a bar that holds its <button>s directly keeps its ground for the same reason, the
+# buttons not being boxes; and a badge holding an <img> keeps the grey behind the picture.
+#
+# Scoped to a player — a box that directly holds a <video> — and NOT widened to pictures, which is
+# what keeps the thumbnail badge row painted: there the same test would take the row holding the
+# play pill and the duration pill, and those must stay legible over the photo.
+PLAYER_BOX_LAYER_SEL = "*%s:not(body):has(> video) *%s%s%s:has(> %s):not(:has(> :not(%s)))" % (
+    NEVER, SURFACE, NOT_MEDIA, NOT_CONTROLS, IS_SHELL_BOX, IS_SHELL_BOX)
 CODE_TAGS = ["pre", "code", "kbd", "samp", "tt"]
 # These sit on the id ladder too, and have to: they carry a colour, so they compete with the
 # `fg all` blanket at (1,0,0), and the descendant form competes with `fg text` at (1,0,1) —
@@ -878,7 +967,7 @@ styles = [
             "   Spared by the same two tests the background image is spared by:\n"
             "   a name that says picture, or a media child. The void input forms cannot hold a\n"
             "   child at all, so they keep the pill unconditionally. */\n"
-          + rule(wrap([b + NEVER + NOT_ART + NOT_MEDIA_HOST for b in BUTTONS]
+          + rule(wrap([b + NEVER + NOT_ART + NOT_MEDIA_HOST + NOT_CONTROL_HOST for b in BUTTONS]
                       + [b + NEVER for b in BUTTON_INPUTS], 1),
                  "border-radius: 999px")
           + "\n/* A control's background image is a gloss gradient, and colour paints behind an\n"
@@ -891,8 +980,13 @@ styles = [
             "   inline <svg> child never enters into it: a child makes the button non-empty.\n"
             "   EXCEPT, again, when the class says the background is a picture: a player's poster\n"
             "   frame is exactly that — a background image on a <button> that is not empty,\n"
-            "   because it holds the play arrow. `:empty` cannot see it; the name can. */\n"
-          + rule(wrap([b + NEVER + ":not(:empty)" + NOT_ART for b in BUTTONS], 1),
+            "   because it holds the play arrow. `:empty` cannot see it; the name can.\n"
+            "   EXCEPT, a third time, when the control HOLDS a control. A broadcaster hangs\n"
+            "   `role=\"button\"` on the 1400x788 box carrying the poster, with the real <button>\n"
+            "   for the play arrow two levels inside it — and there the name says nothing at all,\n"
+            "   the class being a CSS-in-JS hash. A control never nests a control, so a role that\n"
+            "   wraps one is on a surface and the thing inside is the control. */\n"
+          + rule(wrap([b + NEVER + ":not(:empty)" + NOT_ART + NOT_CONTROL_HOST for b in BUTTONS], 1),
                  "background-image: none")
           + "\n/* the button-shaped inputs are void elements, so `:empty` is always true of them\n"
             "   and can say nothing; their label is the `value`, never a picture */\n"
@@ -1202,7 +1296,42 @@ styles = [
             "   the transport bar or a settings menu, and keeps its own. <body> is not a player:\n"
             "   a <video> that is a child of the page is a background film, and its siblings are\n"
             "   the page's own content. */\n"
-          + rule(PLAYER_LAYER_SEL, "background-color: transparent")),
+          + rule(PLAYER_LAYER_SEL, "background-color: transparent")
+          + "\n/* \u26a0 The ninth kind of layer: the wrapper chain over a thumbnail. A card lays\n"
+            "   its chrome across the picture the way a player does \u2014 one absolutely-positioned\n"
+            "   box the size of the frame, and inside it a chain of boxes reaching the play badge\n"
+            "   and the duration pill at the bottom edge. A broadcaster's episode list is the\n"
+            "   shape that named it: an aspect-ratio box holding an absolutely-positioned\n"
+            "   <picture> and, beside it, four nested <div>s of which the outer three each hold\n"
+            "   exactly one box. Painted, every one is an opaque sheet the size of the thumbnail,\n"
+            "   and forty episodes rendered as forty black rectangles with a play arrow on them.\n"
+            "   Nothing here reached it: not the `:empty` sweep, since each box holds the next;\n"
+            "   not the drag layer, whose child must be empty; not the nav strip, which looks at\n"
+            "   direct children and finds a <div> four levels above the chrome; not the player\n"
+            "   rule, scoped to a direct child of a box holding a <video>.\n"
+            "   The premise is the family's own, one step further: a box whose whole content is a\n"
+            "   single box has nothing of its own to make legible. Alone that says nothing about\n"
+            "   painting, so it is scoped to where such a box can only be a layer \u2014 inside a\n"
+            "   picture's frame, where the picture is laid across the box and everything else in\n"
+            "   it is stacked over the picture by construction. A box holding TWO children is\n"
+            "   left alone, and that is what spares the badge row: the play pill and the duration\n"
+            "   pill sit on a box holding both, which keeps its ground and its legibility. */\n"
+          + rule(FRAME_LAYER_SEL, "background-color: transparent")
+          + "\n/* \u26a0 The tenth kind of layer: a layer inside the layer, inside a player. The\n"
+            "   player rule above reaches only DIRECT children, and the transport bar a\n"
+            "   broadcaster mounts ON HOVER is a grandchild — the control layer holds it, and it\n"
+            "   is itself absolutely positioned at the full size of the player, holding a top bar,\n"
+            "   the progress row and the button bar. At rest the film plays; the moment the\n"
+            "   pointer crosses it the whole picture goes black. No hover, no element, which is\n"
+            "   why no headless screenshot had ever shown it.\n"
+            "   Depth alone cannot be the answer: a plain descendant combinator unpaints the CUE\n"
+            "   BOX as well, and a subtitle then sits on the film instead of on black. What\n"
+            "   separates them is what they hold — a box whose element children are ALL BOXES is\n"
+            "   holding structure, not content, and inside a player structure is stacked over the\n"
+            "   film by construction. The cue box holds a text node and no element, so it keeps\n"
+            "   its ground; a bar holding its <button>s directly keeps its ground too, a button\n"
+            "   not being a box; a badge holding an <img> keeps the grey behind the picture. */\n"
+          + rule(PLAYER_BOX_LAYER_SEL, "background-color: transparent")),
 
     # The doubled guard is not decoration: `ui: borders` sits at (1,1,0) now that it carves
     # the CSS triangles out, and a single guard here would tie with it and leave which of cyan
