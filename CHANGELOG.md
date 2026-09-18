@@ -5,6 +5,108 @@ for the upstream [Stylus](https://github.com/openstyles/stylus) release it is bu
 ships no changelog file of its own — its notes live only on GitHub Releases — so this file is
 entirely ours to maintain, newest first.
 
+## 白い熊 Stylus 2.4.10.67 — 2026-09-18
+
+Built on upstream 2.4.10. Two reports — a marketplace's offer page and a broadcaster's episode page
+— and **five repairs** to the library, all structural, no site named in a rule. The behavioural
+fixture grew from 154 checks to 165. Note the version jump: 2.4.10.64 to .66 were unsigned
+iteration builds.
+
+One of them was found only after 白い熊 pointed out that the testing was being done in the wrong
+browser. The library had been measured in stock Firefox with the CSS hand-injected; the bug lives in
+白い熊 火狐 with the extension actually loaded, and — worse — only while the pointer is over the
+film. Every headless screenshot had shown a healthy player.
+
+### A control that HOLDS a control is a surface wearing the role
+
+A player hangs `role="button"` on the 1400×788 box carrying the episode's poster as its **background
+image**, with the real `<button>` for the play arrow two levels inside it. `ui: controls` read the
+outer box as a button: it stripped the poster as a gloss gradient — the one case the name list
+exists to prevent — and `border-radius: 999px` clipped the player into a **giant ellipse**.
+
+Neither existing escape could save it. The class is `ctpl_6uqqq21`, a CSS-in-JS hash, so the picture
+names matched nothing; and the media-child test asks for a **direct** `<img>`/`<video>` child, where
+this box holds four `<div>`s and, before you press play, no video at all.
+
+The structure is exact: **a control never nests a control** — the platform forbids interactive
+content inside a button, and ARIA has no use for it — so a role that wraps one is on a *surface*, and
+the thing inside is the control. Element selectors only (`button, select, textarea`), which is
+load-bearing twice: at (0,0,1) it leaves the weight of every line it joins where it was, and a real
+`<button>` inside proves the outer box is not one, where a second `[role="button"]` might only mean a
+page that hangs the role on everything. `<input>` is deliberately absent, and a pixel A/B is what
+caught that: `input[type="hidden"]` is not a control but a data carrier with no box, and a Q&A site
+puts one inside every *Follow* button on the page — with `input` in the list, all of them stopped
+being buttons and lost their pill.
+
+### A wrapper chain over a thumbnail
+
+Forty episode thumbnails, every one a black rectangle with a play arrow on it. The card lays its
+chrome across the picture the way a player does: an aspect-ratio box holding an absolutely
+positioned `<picture>` and, beside it, four nested `<div>`s of which **the outer three each hold
+exactly one box**, the innermost reaching the play badge and the duration pill.
+
+Nothing could reach them — not the `:empty` sweep, since each box holds the next; not the drag
+layer's test, whose child must be *empty*; not the carousel nav strip, which reads direct children
+and finds a `<div>` four levels above the chrome; not the player rule, scoped to a box holding a
+`<video>`. The premise is the family's own, one step further: **a box whose whole content is a single
+box has nothing of its own to make legible**, the emptiness having moved down a level rather than
+away. Scoped to **inside a picture's frame**, where such a box can only ever be a layer.
+
+Two guards, both found by the fixture on the first run. The empty term is `SHELL_KINDS` rather than
+`*`, because **any leaf element is `:empty`** — an `<svg>` holding one `<path>` matched and lost the
+ground asserted for it. And a value bar is excluded, because an empty box that is a value bar is not
+nothing at all: it is the reading. A box holding **two** children is left alone, which is what spares
+the badge row — so a restored thumbnail wears a black strip along its bottom fifth, with the play
+arrow and the duration legible on it.
+
+### A box holding a control deep below it is still a layer
+
+The playing page, and a correction to the player rule's own exclusion. That rule spares a box which
+holds a control anywhere inside, on the argument that such a box is chrome — a transport bar — and
+keeps its ground. This player puts one `<div>` at `position: absolute; inset: 0; z-index: 2` across
+the **entire** film, holding four boxes with the actual `<button>`s three and four levels down. The
+descendant test read the whole sheet as chrome, and the film played behind an opaque black rectangle.
+
+So the test is **direct-child scoped**: a box that *directly* holds a control is the bar the control
+sits on and keeps its ground, where a box that merely contains one somewhere below is a layer that
+happens to have chrome inside it — and the bars within it keep their own grounds by the very same
+test, one level down.
+
+### ...and a layer inside that layer is still a layer
+
+The one that survived three rounds, because **it only exists while the pointer is over the film**.
+The transport bar is mounted on hover as a *grandchild* of the player — the control layer holds it,
+and it is itself absolutely positioned at the full size of the player, 1025×577 against a player of
+1025×577. At rest the film plays; the moment the pointer crosses it the picture goes **97 % `#000`**.
+
+Depth alone is not the answer: widening to a plain descendant combinator takes the **cue box** with
+it, and a subtitle then sits on the film instead of on black. What separates them is what they hold —
+**a box whose element children are all boxes** is holding structure, not content, and inside a player
+structure is stacked over the film by construction. The cue box holds a text node and no element, so
+it keeps its ground; a bar holding its `<button>`s directly keeps its ground too, a button not being
+a box; a badge holding an `<img>` keeps the grey behind the picture. Scoped to a player, and
+deliberately **not** widened to pictures, which is what keeps the thumbnail badge row painted.
+
+### A slider's parts are a reading, like a colour sample
+
+The progress line: a black strip with nothing in it. The played length, the buffered length and the
+chapter ticks are **empty boxes whose width is the number and whose colour is the only thing that
+renders them** — the value-bar idiom, but under CSS-in-JS hashes, so the name list has nothing to
+match. Ink cannot be the answer: the structure cannot tell played from buffered from a chapter list,
+and yellow on all three reads as 100 % played. So it is the **colour sample's** answer — do not match
+them, and let the page's own colours stand, since the page already made them legible against its own
+track. `[role="slider"]`/`[role="progressbar"]` is the handle, and it is the markup's own word for
+*this box carries a number*; ground painters and both `:empty` sweeps only, an empty box having no
+ink.
+
+### Verification
+
+**ALL 165 PASSED** in Gecko, eleven assertions new. Measured on the live pages in 白い熊 火狐 with the
+extension loaded: hovered, the film goes from 97.4 % black to 21.5 %, and the played bar returns to
+the broadcaster's red `#ED1C24` on the rail's black; the offer page's main photo, thumbnail row and
+both recommendation carousels render. Pixel A/B of the shipped library against this one: **zero
+changed pixels** on Wikipedia, GitHub, alza.cz, Hacker News, BBC News and Stack Overflow.
+
 ## 白い熊 Stylus 2.4.10.63 — 2026-09-17
 
 Built on upstream 2.4.10. A marketplace's offer page rendered **98 % `#000`**, and two separate
