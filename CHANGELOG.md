@@ -5,6 +5,67 @@ for the upstream [Stylus](https://github.com/openstyles/stylus) release it is bu
 ships no changelog file of its own — its notes live only on GitHub Releases — so this file is
 entirely ours to maintain, newest first.
 
+## 白い熊 Stylus 2.4.10.69 — 2026-09-24
+
+Built on upstream 2.4.10. One report — a page of a scanned book rendered as a black rectangle with
+yellow text on it — and **one repair**, which turns out to reach every viewer of scanned pages on
+the web. The behavioural fixture grew from 165 checks to 176. Note the version jump: 2.4.10.68 was
+an unsigned iteration build.
+
+The text on the black rectangle was not the book. It was the OCR reading of it, which is how the
+diagnosis started: a title page from 1852 was announcing itself as *MAY 2f 1987NOVOČESKÁ*.
+
+### A transcription is the picture's own words, and it is invisible on purpose
+
+Every viewer of scanned pages lays a transcription over the picture. BookReader writes
+`<div class="BRPageLayer BRtextLayer">` across each `<img class="BRpageimage">` — sized to the scan,
+2700×4696, and scaled down onto it, one absolutely-positioned `<p>` per OCR paragraph, each word a
+`<span>` stretched by an inline `letter-spacing` to the width of the scanned word beneath it, and
+`color: transparent` throughout — and PDF.js lays `.textLayer` over its `<canvas>` exactly the same
+way. The layer exists so that a picture's words can be selected, searched and read aloud; it is
+invisible because the picture underneath is already showing them.
+
+Painted, it is an opaque sheet at precisely the size of the page, and the ink painters then make the
+OCR the only thing left to read: `bg div` blackens the layer, `bg text` the paragraphs, `bg all`
+every word span, and `fg all` turns the transparent words yellow. The scan itself was never touched
+— it sat intact behind the sheet the whole time.
+
+Nothing structural could see it, and each near miss is instructive. It is not `:empty`: it holds the
+paragraphs. The wrapper-chain rule wants a box whose whole content is **one** box, and this one holds
+ten. The player rules want a `<video>`. And a badge row over a thumbnail has exactly this shape — a
+box of text over a picture — and has to keep its ground, so no test on *holds content, lies over a
+picture* can ever separate them. The one thing that does is that the page made this one's ink
+transparent, and CSS cannot ask what colour an element already has, any more than it can ask about
+the `pointer-events: none` this layer also carries.
+
+So it is **named**, on the terms the icon and artwork lists are named: the word names an idiom and
+the two libraries most of the web embeds for paged documents, never a site. And it is spared
+**whole** — ground, ink and metrics — because every one of those is measured against the picture.
+
+The metrics are the partial half, and the limit is worth stating. The exclusion keeps what the page
+*declares* on the layer: BookReader's per-line `line-height: 112px`, PDF.js's per-span
+`font-family`, and the `start` alignment that is the right edge of an RTL book. What it cannot keep
+is an **inherited** face — `font-family` comes down from `<body>`, which the sans blanket has
+already set to Arial, and no value means "the font this page wanted". So a viewer that declares no
+face of its own still narrows by about a tenth (one title word measured 388px against the scan and
+349px after), and a selection highlight sits slightly narrow on the words it covers. The words
+themselves stay right, and invisible, which is what the ground and ink halves are for.
+
+Zero-weight `:where()` throughout, so the ink guard, the ground guard and all three typography
+blankets each gain it without a single rule moving on the specificity ladder.
+
+### Verification
+
+Twelve new assertions in the fixture and a note recording the inherited face, 176 in all, passing in
+both engines. A pixel A/B of the shipped library against this one, old and new in the same page
+load: zero changed pixels on three healthy pages, and the scan back on the fourth. Then the real
+extension, loaded into 白い熊 火狐 156 — the layer, its paragraphs and every one of its words
+transparent, and the line height back to the page's own.
+
+One thing learned that is not a rule change: a page whose own Content-Security-Policy carries
+`style-src 'self'` cannot be paint-tested at all. The injected sheet's `.sheet` is `null`, the A/B
+reports no change, and it proves nothing — the standalone PDF.js viewer is exactly that page.
+
 ## 白い熊 Stylus 2.4.10.67 — 2026-09-18
 
 Built on upstream 2.4.10. Two reports — a marketplace's offer page and a broadcaster's episode page
