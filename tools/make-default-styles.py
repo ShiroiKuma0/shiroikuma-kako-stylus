@@ -128,6 +128,54 @@ ADORNMENTS = ["span", "label"]
 ADORNMENT_SEL = ":is(%s)%s ~ :is(%s)%s" % (", ".join(CONTROLS_OWNING), NEVER,
                                            ", ".join(ADORNMENTS), NEVER)
 
+# --- the transcription over a scanned page ---------------------------------
+# ⚠ A transcription is a picture's own words, laid over it and made invisible on purpose.  Every
+# viewer of scanned pages draws one: BookReader puts `<div class="BRPageLayer BRtextLayer">` over
+# each `<img class="BRpageimage">` — sized to the scan (2700x4696) and scaled down onto it, one
+# absolutely-positioned <p> per OCR paragraph, every word a <span> stretched by an inline
+# `letter-spacing` to the width of the scanned word beneath it, and `color: transparent`
+# throughout — and PDF.js lays `.textLayer` over its <canvas> exactly the same way.  The layer
+# exists so that the words of a picture can be selected, searched and read aloud; it is invisible
+# because the picture underneath is already showing them.
+#
+# Painted, it is an opaque sheet at precisely the size of the page, and the ink painters then make
+# the OCR the only thing left to read: `bg div` blackens the layer, `bg text` the paragraphs and
+# `bg all` every word span, while `fg all` turns the transparent words yellow.  An archive of
+# scanned books rendered as black rectangles carrying a bad machine reading of a 19th-century
+# Fraktur title page — STANFORD UNIVERSITY i.lBRARIES, MAY 2f 1987NOVOČESKÁ.
+#
+# Nothing structural can see it, and each near miss is instructive.  It is not `:empty`: it holds
+# the paragraphs.  The wrapper-chain rule wants a box whose whole content is ONE box, and this one
+# holds ten.  The player rules want a box holding a <video>.  A badge row over a thumbnail has
+# exactly this shape — a box of text over a picture — and must keep its ground, so no test on
+# "holds content, lies over a picture" can separate them.  The one thing that does is that the
+# page made this one's ink transparent, and CSS cannot ask what colour an element already has;
+# `pointer-events: none` is on it, as on every layer in this family, and CSS cannot ask that
+# either.  So it is named, on the terms `ICONS`, `ART` and `vjs-` are named: the word names an
+# idiom and the two libraries most of the web embeds for paged documents, never a site.
+#
+# Spared WHOLE — ground, ink and metrics — because every one of those is measured against the
+# picture.  The metrics are the secondary failure and the partial one: forcing Arial at
+# `line-height: 1em` shrank BIBLIOTHÉKA from 388px to 349px and walked the rest of its line left
+# with it, so a selection highlight no longer covers the words it is over.  The exclusion keeps
+# whatever the page DECLARES on the layer — BookReader's per-line `line-height: 112px`, PDF.js's
+# per-span `font-family`, and the `start` alignment that is the right edge of an RTL book.  What
+# it cannot keep is an INHERITED face: `font-family` comes down from <body>, which the sans
+# blanket has already set to Arial, and there is no value meaning "the font this page wanted" —
+# the same wall that makes SANS_SERIF a `:not()` rather than an override.  So a viewer that
+# declares no face of its own still narrows by about a tenth; the words stay right and invisible,
+# which is what the ground and ink halves are for.  Zero-weight `:where()` throughout, so it can
+# be appended to a painter or to a typography blanket without moving either on the ladder — the
+# same reason the colour sample's exclusion has it.
+#
+# Cost, per the asymmetry that governs the file: an element that calls itself a text layer and is
+# not one keeps the page's own ground and ink, which on our black may be dark on dark — a design
+# tool's canvas is the shape that would do it.  Against that, a transcription missed is a scanned
+# page simply gone.
+TEXT_LAYERS = ['[class*="textlayer" i]', '[class*="text-layer" i]']
+IS_TEXT_LAYER = ":is(%s)" % ", ".join(TEXT_LAYERS)
+NOT_TRANSCRIPTION = ":where(:not(%s, %s *))" % (IS_TEXT_LAYER, IS_TEXT_LAYER)
+
 # --- design tokens ---------------------------------------------------------
 # The shadcn/ui vocabulary, which Tailwind v4 sites declare on :root.  Only the tokens that get
 # used ALONE are moved, and that restriction is the whole design.  `--foreground` and
@@ -234,10 +282,14 @@ MONO = 'font-family: "DejaVu Sans Mono", "Liberation Mono", Consolas, monospace'
 # The repair is an override rather than a :not() exclusion, because `normal` IS a universally safe
 # value: it is recomputed per element from its own font metrics, so unlike a length it cannot be
 # inherited into a child with a larger font-size.
+# The transcription is the one thing here that cannot take `normal` either: its lines are pinned
+# to the scan by an inline `line-height` in pixels, and `normal` is no more the page's value than
+# `1em` is.  So it is a `:where()` exclusion, at no cost to the ladder — lifting the blanket to
+# (0,1,0) would put it above `svg` and `i` at (0,0,1) and take the icon metrics with it.
 LINE_HEIGHT = (
-    rule(wrap(["*", "*::before", "*::after"], 3), "line-height: 1em")
+    rule(blanket(NOT_TRANSCRIPTION), "line-height: 1em")
     + "\n"
-    + rule(wrap(EVERY), "line-height: 1em")
+    + rule(guarded(EVERY, NOT_TRANSCRIPTION, per_line=4), "line-height: 1em")
     + "\n/* icons, controls and media keep their own metrics */\n"
     + rule(wrap(ICONS + CONTROLS + MEDIA + ICON_PSEUDOS), "line-height: normal")
 )
@@ -718,8 +770,8 @@ SAMPLE = ":is(%s)%s%s:is(%s, :empty)" % (", ".join(SAMPLE_KINDS), INLINE_GROUND,
                                           INLINE_INK)
 NOT_SAMPLE = ":where(:not(%s, %s *))" % (SAMPLE, SAMPLE)
 # The guard for anything that paints a ground or sets an ink: id-level weight, stopping at a
-# colour sample.  `:where()` keeps it at exactly NEVER's weight.
-PAINT = NEVER + NOT_SAMPLE
+# colour sample and at a transcription.  `:where()` keeps it at exactly NEVER's weight.
+PAINT = NEVER + NOT_SAMPLE + NOT_TRANSCRIPTION
 # ⚠ A mark is the colour sample's cousin with no inline style to give it away: an EMPTY <span>
 # the page put in a table cell, sized and coloured by its stylesheet, whose whole content is its
 # colour.  A sports federation's results board is built of them — the winner of each bout is
@@ -756,8 +808,9 @@ MARK = ":is(td, th) > span:empty"
 # box carries a number".  Ground painters and both `:empty` sweeps only: an empty box has no ink.
 SLIDER_PART = ':is([role="slider"], [role="progressbar"]) *:empty'
 NOT_MARK_OR_SAMPLE = ":where(:not(%s, %s *, %s, %s))" % (SAMPLE, SAMPLE, MARK, SLIDER_PART)
-# The guard for anything that paints or clears a GROUND: stops at a colour sample and at a mark.
-SURFACE = NEVER + NOT_MARK_OR_SAMPLE
+# The guard for anything that paints or clears a GROUND: stops at a colour sample, at a mark and
+# at a transcription.
+SURFACE = NEVER + NOT_MARK_OR_SAMPLE + NOT_TRANSCRIPTION
 # ⚠ The ninth kind of layer: the WRAPPER CHAIN over a thumbnail.  A card lays its chrome across
 # the picture the way a player does — one absolutely-positioned box the size of the frame, and
 # inside it a chain of boxes that finally reach the play badge and the duration pill at the bottom
@@ -847,7 +900,7 @@ NOT_FONT_HOSTS = ":not(%s)" % ", ".join(FONT_HOSTS)
 # fact about the page's stylesheet, not about its markup.  Dropping the pseudo form fixes every
 # such site at once and costs nothing anywhere, which is why there is no :not() list here.
 SANS_SERIF = (
-    rule("*%s%s" % (NOT_ICONS, NOT_FONT_HOSTS), SANS)
+    rule("*%s%s%s" % (NOT_ICONS, NOT_FONT_HOSTS, NOT_TRANSCRIPTION), SANS)
     + "\n/* Code keeps a monospace face and a colour that is not body-yellow. #sk-never is an id\n"
       "   that matches nothing; it exists purely to put these rules on the same specificity\n"
       "   ladder as the bg/fg blankets, which would otherwise repaint the code yellow. */\n"
@@ -931,7 +984,9 @@ styles = [
     # --- typography --------------------------------------------------------
     style("line-height", LINE_HEIGHT),
     style("sans-serif", SANS_SERIF),
-    style("text-align", rule(wrap(TEXT), "text-align: left")),
+    # A transcription's lines are laid against the scan, and `start` is the right edge in an RTL
+    # book: forcing `left` there moves every line off the words it transcribes.
+    style("text-align", rule(guarded(TEXT, NOT_TRANSCRIPTION, per_line=4), "text-align: left")),
 
     # --- UI affordances ----------------------------------------------------
     # Every frame, rule and divider on the page becomes yellow. border-color on an element whose

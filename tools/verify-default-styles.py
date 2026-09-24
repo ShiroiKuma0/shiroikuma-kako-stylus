@@ -243,6 +243,16 @@ PAGE = """<!doctype html><meta charset="utf-8"><title>verify</title>
   .kuro { background: #2c2c2c; }
   /* ...and the empty boxes around them, white on the page, whose sweep must stay */
   .boardCell { background: #ffffff; }
+  /* a book scan and its transcription: the layer is laid over the picture at the scan's own
+     resolution, and every word of it is transparent because the picture is already showing them */
+  .scanPage { position: relative; background: #fefdeb; width: 200px; height: 120px; }
+  .scanPage > img { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .BRtextLayer { position: absolute; top: 0; left: 0; transform-origin: 0 0;
+      pointer-events: none; color: transparent; z-index: 2; }
+  .BRparagraphElement { position: absolute; margin: 0; }
+  .scanCaption { position: absolute; bottom: 0; background: #ffffff; color: #333; }
+  .pdfPage { position: relative; }
+  .text-layer { position: absolute; inset: 0; color: transparent; }
   /* the design tokens a Tailwind v4 site declares, and a shadow-DOM widget then reads by
      inheritance — `:root` inside a shadow stylesheet matches nothing, so the value it sees is
      this one, which is why moving it here reaches inside the sealed tree */
@@ -308,6 +318,22 @@ __SHEETS__
     ><td><div class="boardCell" id="cellDiv"></div></td></tr></table>
   <!-- an empty span outside a cell is not a mark, and keeps the sweep -->
   <p><span class="boardCell" id="looseSpan"></span></p>
+  <!-- a scanned page and the transcription laid over it: BookReader's spelling, sized to the scan
+       and scaled down onto it, every word invisible so the picture underneath can be read -->
+  <div class="scanPage" id="scanPage"><img id="scanImg"
+      src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="
+    ><div class="BRPageLayer BRtextLayer" id="textLayer" lang="cs" dir="ltr"
+      style="width:2700px; height:4696px; transform:scale(0.24,0.24)"
+      ><p class="BRparagraphElement" id="ocrPara" style="left:184px; top:290px; font-size:106px"
+        ><span class="BRlineElement" id="ocrLine" style="line-height:112px"
+          ><span class="BRwordElement" id="ocrWord" style="letter-spacing:-13px">BIBLIOTHÉKA</span
+          ></span></p></div
+    ><div class="scanCaption" id="scanCaption">Page 4 of 639</div></div>
+  <!-- PDF.js writes the same layer over a <canvas>, spells it with a hyphen, and puts the face
+       on every span inline — which is the half of the metrics an exclusion can actually keep -->
+  <div class="pdfPage" id="pdfPage"><canvas id="pdfCanvas" width="8" height="8"></canvas
+    ><div class="text-layer" id="pdfTextLayer"><span id="pdfWord"
+      style="font-family:serif; transform:scaleX(0.83)">Chapter</span></div></div>
   <!-- a map's legend: each key is a blank span whose inline colour IS the content. Both parser
        shapes -- bare non-breaking spaces, and each space wrapped in a child span -- and the
        named form the same site's other legend template writes -->
@@ -905,6 +931,41 @@ t('so does an empty div in a cell (a mark is a span)',
   g('cellDiv').backgroundColor, g('cellDiv').backgroundColor === 'rgba(0, 0, 0, 0)');
 t('and an empty span outside a cell',
   g('looseSpan').backgroundColor, g('looseSpan').backgroundColor === 'rgba(0, 0, 0, 0)');
+
+// --- the transcription over a scanned page ---------------------------------
+t('a transcription layer is not painted (it is a window onto the scan)',
+  g('textLayer').backgroundColor, g('textLayer').backgroundColor === 'rgba(0, 0, 0, 0)');
+t('nor are its paragraphs, lines and words',
+  [g('ocrPara'), g('ocrLine'), g('ocrWord')].map(c => c.backgroundColor).join(' / '),
+  [g('ocrPara'), g('ocrLine'), g('ocrWord')].every(c => c.backgroundColor === 'rgba(0, 0, 0, 0)'));
+t('and the words stay invisible, as the page wrote them',
+  g('ocrWord').color, g('ocrWord').color === 'rgba(0, 0, 0, 0)');
+t('a face the page wrote on the word is kept, so it keeps the scanned word\\'s width',
+  g('pdfWord').fontFamily, /serif/.test(g('pdfWord').fontFamily)
+    && !/Arial/.test(g('pdfWord').fontFamily));
+t('...and the line keeps the height the page pinned it to',
+  g('ocrLine').lineHeight, g('ocrLine').lineHeight === '112px');
+t('...and its alignment, which is the right edge in an RTL book',
+  g('ocrPara').textAlign, g('ocrPara').textAlign === 'start');
+t('PDF.js spells the same layer with a hyphen, and is spared too',
+  g('pdfTextLayer').backgroundColor + ' / ' + g('pdfWord').color,
+  g('pdfTextLayer').backgroundColor === 'rgba(0, 0, 0, 0)'
+    && g('pdfWord').color === 'rgba(0, 0, 0, 0)');
+t('the picture under it keeps image-ground grey', g('scanImg').backgroundColor,
+  g('scanImg').backgroundColor === 'rgb(128, 128, 128)');
+t('a caption beside the layer is ordinary content and is still painted',
+  g('scanCaption').backgroundColor + ' / ' + g('scanCaption').color,
+  g('scanCaption').backgroundColor === BLACK && g('scanCaption').color === YELLOW);
+t('and the page holding both is painted (only the layer is spared)',
+  g('scanPage').backgroundColor, g('scanPage').backgroundColor === BLACK);
+// A face the page does not declare on the layer is inherited from <body>, which the sans blanket
+// has already set to Arial — no :not() can hold that back, since there is no value meaning "the
+// font this page wanted". BookReader is that case: it pins the line-height in pixels and leaves
+// the face to inherit, so its word boxes narrow by about a tenth and a selection highlight sits
+// slightly narrow on the scan. The words themselves are right, and invisible, which is what the
+// ground and ink exclusions are for.
+checks.push({name: 'NOTE an inherited face still reaches the layer (BookReader)',
+             got: g('ocrWord').fontFamily, ok: true});
 
 // --- transparent artwork ---------------------------------------------------
 t('image ground is mid grey, so neither dark nor light ink can vanish',
