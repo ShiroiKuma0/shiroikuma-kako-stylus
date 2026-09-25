@@ -5,6 +5,84 @@ for the upstream [Stylus](https://github.com/openstyles/stylus) release it is bu
 ships no changelog file of its own — its notes live only on GitHub Releases — so this file is
 entirely ours to maintain, newest first.
 
+## 白い熊 Stylus 2.4.10.71 — 2026-09-25
+
+Built on upstream 2.4.10. One report — a mapping site rendering as one black rectangle where the map
+belongs, the page around it intact — and **two independent repairs**, because either cause did it on
+its own. The behavioural fixture grows from 176 checks to 182. Note the version jump: 2.4.10.70 was
+an unsigned iteration build.
+
+### A drawing surface is a window, not a surface
+
+The `<iframe>` argument, two element types further. A `<canvas>` is transparent everywhere its
+script has drawn nothing and an `<svg>` everywhere its shapes are not, so the element's own ground
+is never the drawing — it is what shows *through* it.
+
+A slippy map is where that boards the picture up. The tiles are `<img>`s absolutely positioned
+inside zero-sized boxes, and laid across them at the full size of the viewport are a `<canvas>`
+carrying the labels and route geometry and an `<svg>` carrying the outlines. Only `bg all` reaches
+either of them — neither is a div, a block or text — `ui: image-ground` deliberately covers just
+`img`/`picture`/`object`/`embed`, and `svg` sits in the icon list, which is exempt from the grey. So
+each came out opaque black, and each alone was a sheet over every tile.
+
+Transparent rather than the image grey, and that is the whole argument: the grey exists so a
+picture's own ink is legible whichever way it runs, but a surface that draws **nothing** is meant to
+be seen through, and a mid grey there is the same sheet black was. The cost is nil wherever the
+blankets have run — an unpainted box shows its ancestor, and its ancestor is black — and the two
+differ only where the ancestor is *not* black, which is exactly the case this exists for. No tie to
+settle either: both weigh (1,0,1) and nothing else in the library grounds them, which is precisely
+what kept `object` and `embed` out of the frame carve-out.
+
+### The eleventh kind of layer: the chrome stacked over a drawing
+
+Handing the surfaces back is half of it. The viewport is covered a second time by one click-through
+box at `z-index: 301` holding the toolbars, another filling it and a third filling that — three
+transparent sheets, each the full size of the map, and `bg all`, `bg div` or `bg blocks` **alone**
+turns the first of them opaque.
+
+Every handle in the file walks straight past them. Not `:empty`: each holds the next. Not the
+carousel nav strip, whose children must be controls or empty boxes, where these hold populated
+`<div>`s. Not the wrapper chain nor the player box, both scoped *inside* a box that directly frames
+the picture, where a slippy map's tiles are five levels down a **sibling**, so no ancestor of the
+chrome frames anything at all. And no name: the classes say `all-controls`, `map-controls`, which
+are facts about the site rather than about painting — and `controls` is what a player calls the bar
+that must **keep** its ground.
+
+So the scope comes off the sibling axis, as the nav strip's does, with the drawing as the mark: a
+box that **follows** a sibling holding a `<canvas>` is chrome for that drawing. Following only, for
+the reason the full-width rule gives about a shut drawer — chrome is appended after the surface it
+drives, never prepended, and the mirrored arm would reach every box that merely precedes a canvas.
+
+And the two must share a parent that is **not `<body>`**, which is the whole difference between a
+map and a page and the one thing the fixture had to teach. `<body>` is not a player, by the argument
+the player rule already makes, and it is not a map either: a drawing that is a child of the page is
+the page's own content, and its siblings are the page's content too. Without that clause the rule
+was not a scope at all but *this page has a canvas somewhere*, and it unpainted a dialog panel, a
+non-modal dialog, a volume track and a seek bar — four shapes the file had gone to trouble to
+protect. With it, a map is a **box** holding a viewport and its chrome, and only such a box is read
+that way.
+
+The content test is the family's two halves put together: a box whose element children are all
+**boxes** (the tenth layer — it is holding structure, not content) or **controls** (the nav strip —
+its whole content is chrome), and at least one of them a box, so this says only what the nav strip
+does not. That is what tells the three sheets from the things inside them that must stay painted:
+the promo card holds a heading, a picture and two links, and the button toggles hold an icon and a
+span, none of them a box. Two arms rather than a descendant sweep — the layer, and a layer inside
+the layer — so a box that merely sits within a map does not match.
+
+What it does not reach is a strip whose children are all custom elements, and that cost is bounded
+and visible: a 315×32 black bar behind the mapset buttons, where the sheet it could not see was the
+entire map.
+
+### Verification
+
+Six new assertions in the fixture, 182 in all, passing in both engines — including the two that fix
+the boundary: the promo card keeps its ground, and the viewport behind the tiles keeps its own. A
+pixel A/B of the shipped library against this one, across a shop, a code host, an encyclopedia, a
+charting site and a news site: **zero changed pixels** on every one. Then the real extension, loaded
+into 白い熊 火狐 156 — the map fully rendered, its toolbars black pills with yellow ink, 83.7 % of
+the viewport black before and 25.6 % after, all of it the sidebar.
+
 ## 白い熊 Stylus 2.4.10.69 — 2026-09-24
 
 Built on upstream 2.4.10. One report — a page of a scanned book rendered as a black rectangle with
