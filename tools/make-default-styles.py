@@ -69,6 +69,26 @@ MEDIA = ["img", "picture", "video", "canvas", "object", "embed", "iframe"]
 # of equal weight are decided by whichever sheet was injected last. A transparent overlay is an
 # iframe in every case met; a plugin element is artwork, and artwork is what the grey is for.
 FRAMES = ["iframe"]
+# ⚠ ...and a DRAWING SURFACE is a window too, onto whatever it does not draw.  A <canvas> is
+# painted by a script and is transparent everywhere the script has drawn nothing; an <svg> is the
+# same thing declared instead of scripted.  So the element's own ground is never the drawing — it
+# is what shows THROUGH the drawing, and on a layer stacked over a picture that is the picture.
+# A mapping site is where it boards the whole thing up: the tiles are <img>s absolutely positioned
+# inside zero-sized boxes, and laid across them at the full size of the viewport are a <canvas>
+# carrying the labels and route geometry and an <svg> carrying the cadastral outlines.  `bg all`
+# paints `*` at (1,0,0), nothing else reaches either element — `ui: image-ground` deliberately
+# covers only `img`/`picture`/`object`/`embed`, and `svg` is in ICONS, which is exempt from the
+# grey — so both came out opaque black and the map rendered as one black rectangle.
+#
+# Transparent rather than the grey, and that is the whole argument: the grey exists so a picture's
+# own ink is legible whichever way it runs, but a drawing surface that draws nothing is MEANT to
+# be seen through, and a mid grey there is the same sheet black was.  The cost of transparency is
+# nil wherever the blankets have run — an unpainted box shows its ancestor, and its ancestor is
+# black — and it is only where the ancestor is NOT black, over a picture or another drawing, that
+# the two differ at all; there transparency is the whole point.  No tie to worry about either:
+# `canvas:not(#sk-never)` and `svg:not(#sk-never)` weigh (1,0,1), and nothing else in the library
+# gives either element a ground, which is exactly what kept `object` and `embed` out of FRAMES.
+DRAWINGS = ["canvas", "svg"]
 # An icon is not the only thing a site draws as an empty box with a background image, and the
 # `:empty` sweep in `ui: strip-backdrops` cannot tell such a picture from a decorative strip. Same
 # heuristic as ICONS — match how the thing is NAMED — carrying the words that mean "this
@@ -586,6 +606,10 @@ CHROME_KINDS = ":is(%s)" % ", ".join(
 CONTROL_STRIP = "*%s:not(:has(> :not(%s))):has(> %s)%s" % (
     NEVER, CHROME_KINDS, CHROME_KINDS, NO_OWN_MEDIA)
 CONTROL_STRIP_SEL = beside_media(CONTROL_STRIP)
+# The two halves of "this box holds no content of its own" put together, for the chrome stacked
+# over a map — see MAP_CHROME.  A box is chrome, a box is structure; a heading, a picture, a link
+# or a span is content, and a box holding one of those keeps its ground.
+IS_CHROME_BOX = ":is(%s)" % ", ".join(SHELL_KINDS + BUTTONS + BUTTON_INPUTS)
 # ⚠ A dialog's shell is its scrim, and a scrim at rest is nothing at all.  The `role="dialog"` a
 # page puts on a floating widget goes on the SHELL as often as on the window: one `position:
 # fixed; inset: 0` layer at a high z-index, `pointer-events: none` so the page under it stays
@@ -861,6 +885,55 @@ FRAME_LAYER_SEL = "%s:not(body) *%s%s%s%s:has(> %s:only-child)" % (
 # play pill and the duration pill, and those must stay legible over the photo.
 PLAYER_BOX_LAYER_SEL = "*%s:not(body):has(> video) *%s%s%s:has(> %s):not(:has(> :not(%s)))" % (
     NEVER, SURFACE, NOT_MEDIA, NOT_CONTROLS, IS_SHELL_BOX, IS_SHELL_BOX)
+# ⚠ The eleventh kind of layer: the chrome stacked over a drawing, which is where a MAP keeps its
+# toolbars.  Making the drawing surfaces windows (DRAWINGS, above) hands the tiles back and the
+# map is black still, because the whole of the viewport is covered a second time: one transparent
+# click-through box at `z-index: 301` holding the toolbars, another filling it, and a third
+# filling that — three sheets, each the full 1000x757, and `bg all`, `bg div` or `bg blocks` alone
+# is enough to make the first of them opaque.
+#
+# Every handle the file has walks past them.  Not `:empty` — each holds the next.  Not the nav
+# strip, whose children must be controls or empty boxes, where these hold populated <div>s.  Not
+# the wrapper chain (`:has(> box:only-child)`) nor the player box, both scoped INSIDE a box that
+# directly frames the picture: here the picture is a slippy map's tile pane, <img>s absolutely
+# positioned inside zero-sized boxes five levels down a SIBLING, so no ancestor of the chrome
+# frames anything at all.  And no name: the classes say `all-controls`, `map-controls`,
+# `map-controls__topToolbar`, which are facts about the site and not about painting — `controls`
+# in particular is what a player calls the bar that must KEEP its ground.
+#
+# So the scope comes off the sibling axis, as the nav strip's does, and the drawing is what marks
+# it: a <canvas> is a surface a script paints, and a box that FOLLOWS one is chrome for the
+# drawing.  Only the following direction, for the reason `ui: full-width` gives about a drawer —
+# chrome is appended after the surface it drives, never prepended, and the mirrored arm would
+# reach every box that merely precedes a canvas, which on a flat page is most of them.
+#
+# ⚠ And the two of them must share a parent that is NOT <body>, which is the whole difference
+# between a map and a page and the one thing the fixture had to teach.  <body> is not a player, by
+# the argument the player rule makes, and it is not a map either: a drawing that is a child of the
+# page is the page's own content, and its siblings are the page's content too — a dialog, a volume
+# bar, a seek bar, every block that happens to come after a <canvas> in the flow.  Without it the
+# rule was not a scope at all but "this page has a canvas somewhere", and it unpainted four shapes
+# the file had gone to trouble to protect.  With it, a map is a BOX holding a viewport and its
+# chrome, and only such a box is read that way.
+#
+# The content test is the family's own, with the two halves it has learnt put together: a box
+# whose element children are all BOXES (the tenth layer — it is holding structure, not content) or
+# CONTROLS (the nav strip — its whole content is chrome), and at least one of them a box, so this
+# says only what the nav strip does not.  That is what tells the three sheets from the things
+# inside them that must stay painted: the promo card holds a heading, a picture and two links, a
+# button group holds its toggles, and the toggles hold an icon and a span — none of them a box.
+# Two arms, not a descendant sweep: the layer itself, and a layer INSIDE the layer, which is the
+# tenth layer's premise again and keeps every box that merely sits within a map from matching.
+# What it does not reach is a strip whose children are all custom elements, and the cost of that
+# is bounded and visible: a 315x32 black bar behind the mapset buttons, where the sheet it could
+# not see was the map.
+MAP_CHROME = "*%s%s%s:has(> %s):not(:has(> :not(%s)))" % (
+    SURFACE, NOT_MEDIA, NOT_CONTROLS, IS_SHELL_BOX, IS_CHROME_BOX)
+MAP_CHROME_HOST = ":not(body) > *%s:has(canvas)" % NEVER
+MAP_CHROME_SEL = ",\n".join([
+    "%s ~ %s" % (MAP_CHROME_HOST, MAP_CHROME),
+    "%s ~ %s %s" % (MAP_CHROME_HOST, MAP_CHROME, MAP_CHROME),
+])
 CODE_TAGS = ["pre", "code", "kbd", "samp", "tt"]
 # These sit on the id ladder too, and have to: they carry a colour, so they compete with the
 # `fg all` blanket at (1,0,0), and the descendant form competes with `fg text` at (1,0,1) —
@@ -944,7 +1017,19 @@ styles = [
     style("bg all",
           rule(guarded(ALL, SURFACE), BG)
           + "\n/* a frame is a window onto another document; painting it can only board it up */\n"
-          + rule(guarded(FRAMES, per_line=3), "background-color: transparent"),
+          + rule(guarded(FRAMES, per_line=3), "background-color: transparent")
+          + "\n/* ⚠ ...and so is a drawing surface, onto whatever it does not draw. A <canvas> is\n"
+            "   transparent everywhere its script has drawn nothing and an <svg> everywhere its\n"
+            "   shapes are not; the element's own ground is never the drawing, it is what shows\n"
+            "   through it. A mapping site is where that boards the picture up: the tiles are\n"
+            "   <img>s absolutely positioned inside zero-sized boxes, and laid across them at the\n"
+            "   full size of the viewport are a <canvas> of labels and a <svg> of outlines. Only\n"
+            "   `bg all` reaches either — neither is a div, a block or text — and painted, each\n"
+            "   alone is an opaque sheet over every tile. Transparent rather than the image grey:\n"
+            "   the grey is there so a picture's ink is legible whichever way it runs, and a\n"
+            "   surface that draws nothing is meant to be seen through. It costs nothing wherever\n"
+            "   the blankets have run, an unpainted box showing its ancestor's black. */\n"
+          + rule(guarded(DRAWINGS, per_line=3), "background-color: transparent"),
           [CLAUDE, OWNCLOUD]),
     # The table rule lives HERE, not in ui: strip-backdrops, and that placement is the point.
     # A background image on a table cell or row is a tiled gradient strip in every case I have met
@@ -1386,7 +1471,33 @@ styles = [
             "   film by construction. The cue box holds a text node and no element, so it keeps\n"
             "   its ground; a bar holding its <button>s directly keeps its ground too, a button\n"
             "   not being a box; a badge holding an <img> keeps the grey behind the picture. */\n"
-          + rule(PLAYER_BOX_LAYER_SEL, "background-color: transparent")),
+          + rule(PLAYER_BOX_LAYER_SEL, "background-color: transparent")
+          + "\n/* ⚠ The eleventh kind of layer: the chrome stacked over a drawing, which is\n"
+            "   where a map keeps its toolbars. Handing back the drawing surfaces themselves (see\n"
+            "   `bg all`) is only half of it: a mapping site covers its viewport a second time\n"
+            "   with one click-through box at z-index 301 holding the toolbars, another filling\n"
+            "   it and a third filling that — three transparent sheets, each the full size of the\n"
+            "   map, and any one of the bg blankets alone boards the tiles up again.\n"
+            "   Nothing here reached them. Not `:empty` (each holds the next); not the nav strip,\n"
+            "   whose children must be controls or empty boxes, where these hold populated divs;\n"
+            "   and not the wrapper chain or the player box, both scoped inside a box that\n"
+            "   directly frames the picture, where a slippy map's tiles are <img>s absolutely\n"
+            "   positioned inside zero-sized boxes five levels down a SIBLING. The classes say\n"
+            "   `all-controls`, `map-controls` — facts about the site, and `controls` is what a\n"
+            "   player calls the bar that must keep its ground.\n"
+            "   So the scope comes off the sibling axis: a <canvas> is a surface a script paints,\n"
+            "   and a box that FOLLOWS one is chrome for the drawing. Following only — chrome is\n"
+            "   appended after the surface it drives, and the mirrored arm would reach every box\n"
+            "   that merely precedes a canvas. And the two must share a parent that is NOT\n"
+            "   <body>: a drawing that is a child of the page is the page's own content, and its\n"
+            "   siblings are the page's content too — the dialog, the volume bar and the seek bar\n"
+            "   the fixture protects all sit after a <canvas> in the flow. A map is a BOX holding\n"
+            "   a viewport and its chrome, and only such a box is read this way.\n"
+            "   The content test is the family's two halves put together: element children all\n"
+            "   boxes (structure, not content) or controls (chrome), at least one a box. That is\n"
+            "   what spares the promo card holding a heading, a picture and two links, and the\n"
+            "   toggles holding an icon and a span. */\n"
+          + rule(MAP_CHROME_SEL, "background-color: transparent")),
 
     # The doubled guard is not decoration: `ui: borders` sits at (1,1,0) now that it carves
     # the CSS triangles out, and a single guard here would tie with it and leave which of cyan

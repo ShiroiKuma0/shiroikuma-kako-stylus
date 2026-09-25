@@ -490,6 +490,23 @@ __SHEETS__
       ><div class="thumbRow" id="thumbRow"><div id="thumbBadges"
         ><div class="thumbBadge" id="thumbPlay">&#9654;</div
         ><div class="thumbBadge" id="thumbLen">50 min</div></div></div></div></div></div>
+  <!-- a map: the viewport holds a slippy tile pane and, laid across the whole of it, a <canvas>
+       of labels and an <svg> of outlines; beside the viewport the chrome stack lays three
+       transparent sheets over the same area. The parent is a BOX, not <body>, which is the whole
+       difference between a map and a page -->
+  <div class="mapScene" id="mapScene"
+    ><div class="mapViewport" id="mapViewport"
+      ><div class="tilePane" id="tilePane"><img id="mapTile"
+        src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw="></div
+      ><canvas id="mapCanvas" width="8" height="8"></canvas
+      ><svg id="mapGeometry" width="8" height="8"><g><rect width="8" height="8"/></g></svg></div
+    ><div class="all-controls" id="mapChrome"
+      ><div class="map-controls" id="mapChromeInner"
+        ><div class="map-controls__middleToolbar" id="mapToolbar"
+          ><div class="web2app" id="mapPromo"><h4>Open in app</h4><img id="mapQr"
+            src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw="
+            ><a href="#">App Store</a></div></div></div
+      ><button class="mapResizer" id="mapResizer"></button></div></div>
   <video class="bgFilm" id="bgFilm"></video>
   <div class="pageBlock" id="pageBlock">page content over a background film</div>
   <a class="css-1qz4h9b" id="wordmark" href="#"></a>
@@ -970,8 +987,24 @@ checks.push({name: 'NOTE an inherited face still reaches the layer (BookReader)'
 // --- transparent artwork ---------------------------------------------------
 t('image ground is mid grey, so neither dark nor light ink can vanish',
   g('img').backgroundColor, g('img').backgroundColor === 'rgb(128, 128, 128)');
-t('inline svg gets no ground (it follows currentColor already)',
-  g('inline-svg').backgroundColor, g('inline-svg').backgroundColor === BLACK);
+t('a drawing surface is a window: an <svg> takes no ground, so a full-size one is not a sheet',
+  g('inline-svg').backgroundColor, g('inline-svg').backgroundColor === 'rgba(0, 0, 0, 0)');
+
+// --- the eleventh layer: the chrome stacked over a map ---------------------
+t('a <canvas> is a window too, so the labels laid over the tiles are not a sheet',
+  g('mapCanvas').backgroundColor, g('mapCanvas').backgroundColor === 'rgba(0, 0, 0, 0)');
+t('...and so is the <svg> of outlines beside it',
+  g('mapGeometry').backgroundColor, g('mapGeometry').backgroundColor === 'rgba(0, 0, 0, 0)');
+t('the chrome host beside the viewport is a layer (boxes and a control, nothing else)',
+  g('mapChrome').backgroundColor, g('mapChrome').backgroundColor === 'rgba(0, 0, 0, 0)');
+t('and so is each layer inside it, or the map is black twice over',
+  g('mapChromeInner').backgroundColor + ' / ' + g('mapToolbar').backgroundColor,
+  g('mapChromeInner').backgroundColor === 'rgba(0, 0, 0, 0)'
+    && g('mapToolbar').backgroundColor === 'rgba(0, 0, 0, 0)');
+t('the promo card holds a heading, a picture and a link, so it KEEPS its ground',
+  g('mapPromo').backgroundColor, g('mapPromo').backgroundColor === BLACK);
+t('the viewport itself is not chrome and keeps its ground (it lies behind the tiles)',
+  g('mapViewport').backgroundColor, g('mapViewport').backgroundColor === BLACK);
 t('a decorative background-image is removed (strip-backdrops now ships on)',
   g('gradbar').backgroundImage, g('gradbar').backgroundImage === 'none');
 t('an empty box named as a picture keeps it (logo, badge, sprite, avatar)',
