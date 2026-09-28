@@ -88,6 +88,20 @@ if (SIGN) {
 }
 if (!packaged) die(`web-ext produced nothing in ${ARTIFACTS}`);
 
+/* ...and it must be THIS build's package. `find` takes the first .xpi in the directory, which is
+   only ever the right one while a single build owns `web-ext-artifacts/`. Two signing runs
+   overlapping — one believed dead and restarted — left both versions there, and ~/tmp got a file
+   named for 2.4.10.77 carrying 2.4.10.76. The manifest is the only thing that cannot be wrong, so
+   it is read back out of the package and checked, exactly as the dist's is above: a release
+   artefact whose name disagrees with its version is the one mistake that cannot be undone, since
+   AMO never issues a version twice. */
+const inside = execFileSync('unzip', ['-p', path.join(ARTIFACTS, packaged), 'manifest.json']);
+const packagedVersion = JSON.parse(inside).version;
+if (packagedVersion !== version) {
+  die(`${packaged} carries version ${packagedVersion}, not ${version} — another build is writing ` +
+      `to ${ARTIFACTS}. Wait for it to finish, then run this again.`);
+}
+
 fs.mkdirSync(OUT_DIR, {recursive: true});
 // An unsigned build says so in its name. Only a signed .xpi may be delivered to the phone, and
 // only a signed one installs in a stock Firefox, so the two must never be confusable in ~/tmp —
