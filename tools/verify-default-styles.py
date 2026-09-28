@@ -227,6 +227,11 @@ PAGE = """<!doctype html><meta charset="utf-8"><title>verify</title>
      in the icon vocabulary comes near the word "logo" */
   .siteLogo { background-image: url("data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="); width: 44px; height: 44px; }
   .iconClass { background-image: url("data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="); width: 48px; height: 48px; }
+  /* the same icon control the way a webmail's classic skin writes it: an <a> carrying the
+     sprite, a role, and ONE SPACE — which is content to Level 3's `:empty`. The width and
+     the zero padding are the skin's, so the fixture can see ours arriving or not. */
+  .skinBtn { background: url("data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==") no-repeat center;
+             display: inline-block; width: 42px; height: 32px; padding: 0; }
   /* the floating-label field: an opaque label inset over the input, the Piano pattern */
   .fieldGroup { position: relative; display: block; width: 260px; }
   /* the room the site made for its leading envelope — ours must not shrink it */
@@ -302,6 +307,27 @@ __SHEETS__
   <!-- the other kind of icon control: the glyph is drawn with `color`, so its ground
        must stay black or a yellow glyph would land on mid grey -->
   <button class="iconClass" id="iconClsBtn" title="Close"></button>
+  <!-- the same control written as a classic skin writes it: the picture IS the label and the
+       box holds one U+0020, which `:empty` counts as content. And the class says "button", so
+       it is the LINK-button blanket at (2,1,1) that reaches it, above anything the control
+       rules can say — which is why the strip and the padding are split out of that blanket. -->
+  <div class="skinToolbar">
+  <a class="skinBtn button reply" id="wsBtn" role="button" href="#" title="Reply"> </a>
+  <!-- ⚠ ...and beside it the one button in that row that holds a real WORD, which the skin
+       pushes out of its own box with `text-indent: -5000px`. No selector can see a property's
+       value, so it is reached by the company it keeps: a toolbar is built from one kind of
+       thing, and a control next to a blank control is an icon button too. -->
+  <a class="skinBtn button archive" id="toolbarWordBtn" role="button" href="#"
+     title="Archive this message"><span class="inner">Archive</span></a>
+  <a class="skinBtn button mark" id="wsBtn2" role="button" href="#" title="Mark"> </a>
+  </div>
+  <!-- ...and the same link carrying a real word with no icon button beside it, which still
+       loses its gloss and takes the padding the pill's rounded ends need -->
+  <a class="skinBtn button archive" id="wordBtn" href="#">Archive</a>
+  <!-- ...and the greedy case the neighbour test must NOT catch: an empty <span> is not a
+       control, so the labelled button beside it is just a labelled button -->
+  <span id="plainGap"></span>
+  <a class="skinBtn button save" id="spanNeighbourBtn" role="button" href="#">Save</a>
   <!-- a floating-label field: the label FOLLOWS its input, because that is what makes
        `input:not(:placeholder-shown) + label` expressible, and is laid back over the input's own
        text line. unherd.com's registration box, where painting it swallowed every keystroke. -->
@@ -667,6 +693,40 @@ t('a labelled control still loses its gloss gradient',
 t('an empty control whose class says icon keeps the black ground (its glyph uses color)',
   g('iconClsBtn').backgroundColor + ' / ' + g('iconClsBtn').color,
   g('iconClsBtn').backgroundColor === BLACK && g('iconClsBtn').color === YELLOW);
+// ⚠ ...and the same control holding ONE SPACE. `:empty` is Level 3, so a space is content and
+// every one of a webmail's twenty toolbar buttons was stripped to a black pill. Gecko ships the
+// Level 4 definition as `:-moz-only-whitespace`; Blink ships neither, so there it must degrade to
+// exactly today's behaviour rather than lose the rule. Both are asserted, per engine.
+const BLANK_OK = CSS.supports('selector(:-moz-only-whitespace)');
+t('a control holding nothing but a space keeps the picture that IS its label'
+  + (BLANK_OK ? '' : ' [Blink: no :-moz-only-whitespace, documented fallback]'),
+  (BLANK_OK ? 'gecko' : 'blink') + ' / ' + (g('wsBtn').backgroundImage === 'none' ? 'none' : 'kept'),
+  (g('wsBtn').backgroundImage !== 'none') === BLANK_OK);
+t('...and takes the same legible grey an empty control does',
+  g('wsBtn').backgroundColor,
+  g('wsBtn').backgroundColor === (BLANK_OK ? 'rgb(128, 128, 128)' : BLACK));
+t('...and keeps its natural size: the pill padding is for a label made of text',
+  g('wsBtn').paddingLeft, (g('wsBtn').paddingLeft === '0px') === BLANK_OK);
+t('a link-button carrying a real word, alone, still loses its gloss and takes the padding',
+  g('wordBtn').backgroundImage + ' / ' + g('wordBtn').paddingLeft,
+  g('wordBtn').backgroundImage === 'none' && g('wordBtn').paddingLeft !== '0px');
+// ⚠ ...but the same button standing IN a toolbar is an icon button, whatever it holds. Its word
+// is pushed out of the box with text-indent, which no selector can see; the blank controls on
+// either side of it can be seen, and a toolbar is built from one kind of thing.
+t('a control holding a word BESIDE a blank control keeps its picture (the toolbar arm)',
+  (BLANK_OK ? 'gecko' : 'blink') + ' / '
+    + (g('toolbarWordBtn').backgroundImage === 'none' ? 'none' : 'kept'),
+  (g('toolbarWordBtn').backgroundImage !== 'none') === BLANK_OK);
+t('...and takes the grey and its natural size with it',
+  g('toolbarWordBtn').backgroundColor + ' / ' + g('toolbarWordBtn').paddingLeft,
+  BLANK_OK
+    ? g('toolbarWordBtn').backgroundColor === 'rgb(128, 128, 128)'
+      && g('toolbarWordBtn').paddingLeft === '0px'
+    : g('toolbarWordBtn').backgroundColor === BLACK
+      && g('toolbarWordBtn').paddingLeft !== '0px');
+t('the neighbour test needs a CONTROL: a labelled button beside a plain empty span is unmoved',
+  g('spanNeighbourBtn').backgroundImage,
+  g('spanNeighbourBtn').backgroundImage === 'none');
 
 // --- the layer that blanks a page: empty, pinned, click-through ------------
 t('an EMPTY pinned layer stays transparent (painted, the whole page goes black)',

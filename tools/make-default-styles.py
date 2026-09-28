@@ -109,6 +109,74 @@ ART = ['[class*="logo" i]', '[class*="brand" i]', '[class*="badge" i]', '[class*
 # `:empty` is always true of a void element and so can tell you nothing about it.
 BUTTONS = ["button", "select", '[role="button"]', '[role="tab"]', '[role="switch"]']
 BUTTON_INPUTS = ['input[type="submit"]', 'input[type="button"]', 'input[type="reset"]']
+# ⚠ ...and `:empty` is Selectors Level 3, where a single space is content. Every repair in this
+# file that spares a box BECAUSE it is empty is defeated by one character of whitespace — and a
+# page that draws a control's label as a background image has to put SOMETHING in the box, or an
+# inline element with no content collapses. The oldest idiom for an icon button is therefore
+# exactly `<a class="button reply" role="button" href="#"> </a>`, one U+0020 and nothing else.
+# A webmail's classic skin writes all twenty of its toolbar, select and paging buttons that way,
+# and the whole strip came out as black pills with nothing in them: `ui: controls` strips a
+# control's background image unless the control is `:empty`, and not one of them was.
+#
+# Selectors Level 4 redefines `:empty` to tolerate whitespace, and no engine ships that yet
+# (measured in both: a space says false). Gecko ships the same definition under its own name,
+# `:-moz-only-whitespace`, and Gecko is the engine we ship to. It goes inside `:is()`, which is
+# forgiving, so an engine that does not know the term drops the term rather than the rule and
+# keeps today's behaviour; `:not()` would NOT do, its list being non-forgiving — the whole
+# selector would be thrown away in Blink, which is the same trap `:has()` inside `:has()` set for
+# `ui: full-width`. The weight is (0,1,0) either way, exactly `:empty`'s, so nothing moves on the
+# specificity ladder.
+#
+# Widened only where the wider match SPARES something — here, where it hands a control back the
+# picture that is its only label. The two `:empty` sweeps keep `:empty` on purpose: widening one
+# of those erases or unpaints MORE, and that is the direction that costs content. So is the
+# wordmark grey in `ui: links`, whose whole argument is that an empty link has no content to give
+# it width — a link holding a space HAS width, and would show a grey box with nothing in it.
+#
+# Limit: `&nbsp;` is whitespace to neither definition (measured: U+00A0 says false), so a skin
+# that pads its buttons with one is still stripped. CSS cannot see the difference.
+BLANK_TERMS = [":empty", ":-moz-only-whitespace"]
+BLANK = ":is(%s)" % ", ".join(BLANK_TERMS)
+# ⚠ ...and one button in that webmail's row of twenty holds a real WORD, which the page has
+# pushed out of its own box: the archive plugin adds
+#
+#     #messagetoolbar a.button         { width: 32px; height: 32px; overflow: hidden }
+#     #messagetoolbar a.button.archive { text-indent: -5000px; background: url(its own png) }
+#
+# and `<a class="button archive"><span class="inner">Archive</span></a>`.  The word is at
+# x = -4380px, the picture is the label, and nothing about the element says so: `text-indent` is a
+# property, and CSS cannot select on a property's value — the same wall `pointer-events: none`, a
+# computed `filter`, a transparent border and a field's current padding already stand behind.  So
+# it stayed a black pill in a row of restored icons, and a wider one, since the pill padding is
+# still applied to it.
+#
+# What CAN be seen is the company it keeps.  A toolbar is built from ONE KIND OF THING: the
+# buttons are the same size, cut from the same sprite sheet, by the same hand, and they have to
+# line up — a skin does not put a 32x32 picture button next to a text button in the same row.  So
+# a control standing next to a control whose label is a picture is one too, whatever it happens to
+# hold.  That is the whole rule, and it is narrow because the neighbour test is: the sibling must
+# be a CONTROL holding nothing but whitespace, which is the rare icon-button shape this file has
+# already had to name twice.
+#
+# Both directions, because a button can be anywhere in a row, and the backward arm is written as
+# `BLANK_CTRL + *` rather than a second `:has()` — `:has()` has no backward combinator, while
+# `:not()` takes a complex selector (verified in both engines, as is `:has(+ x)`).
+#
+# `button` and `[role="button"]` only, deliberately.  Widening the neighbour to a bare `a` would
+# read a page header's empty wordmark link as an icon button and hand the sign-in pill beside it
+# whatever background it carries.  And the pair weighs (0,2,0), so the four rules that read it
+# move together from (1,3,x) to (1,4,x): above them sits nothing of ours that paints a control,
+# and the `ui: overlays` sweep is already excluded from controls precisely so it cannot outrank
+# the grey below.
+#
+# Cost when the guess is wrong: a control keeps a background image our black would have covered —
+# an opaque gloss gradient stays, and a yellow label on it may be dim.  Against: an icon button's
+# label gone outright.  The asymmetry this whole file runs on says sparing is the safe side.
+BLANK_CTRL = ':is(button, [role="button"])' + BLANK
+ICON_CTRL_TERMS = BLANK_TERMS + [":has(+ %s)" % BLANK_CTRL, "%s + *" % BLANK_CTRL]
+# "the label of this control is a picture": blank, or standing beside one that is
+ICON_CTRL = ":is(%s)" % ", ".join(ICON_CTRL_TERMS)
+NOT_ICON_CTRL = ":not(:is(%s))" % ", ".join(ICON_CTRL_TERMS)
 # The containers a box is built from, holding no content of their own: what a dialog's SHELL is
 # made of, and what a spacer inside a drag layer is.  Read twice, by CHROME_KINDS and by
 # DIALOG_SHELL_SEL, so it lives here with the other element lists rather than beside either rule.
@@ -1113,11 +1181,16 @@ styles = [
           + "\n/* A control's background image is a gloss gradient, and colour paints behind an\n"
             "   image rather than over it, so without this the button stays white — that is what\n"
             "   left the Search button light on forum.mobilism.org even once it was targeted.\n"
-            "   EXCEPT when the control is empty, and then the image is the only label it has:\n"
+            "   EXCEPT when the control is blank, and then the image is the only label it has:\n"
             "   reCAPTCHA's reload, audio and info controls are 48x48 <button>s carrying\n"
             "   `background: url(refresh_2x.png)` and nothing at all inside, so stripping it left\n"
             "   three blank rings and no way to ask for a new challenge. An icon drawn as an\n"
-            "   inline <svg> child never enters into it: a child makes the button non-empty.\n"
+            "   inline <svg> child never enters into it: a child makes the button non-blank.\n"
+            "   ⚠ Blank, not `:empty` — see ICON_CTRL. One space is content to Level 3, and a\n"
+            "   webmail skin writes every icon button as `<a class=\"button reply\"> </a>`. And\n"
+            "   the one button in that row that holds a real WORD, pushed out of its own box with\n"
+            "   `text-indent: -5000px` — a property, so no selector can see it — is reached by\n"
+            "   the company it keeps: a control beside a blank control is an icon button too.\n"
             "   EXCEPT, again, when the class says the background is a picture: a player's poster\n"
             "   frame is exactly that — a background image on a <button> that is not empty,\n"
             "   because it holds the play arrow. `:empty` cannot see it; the name can.\n"
@@ -1126,7 +1199,7 @@ styles = [
             "   for the play arrow two levels inside it — and there the name says nothing at all,\n"
             "   the class being a CSS-in-JS hash. A control never nests a control, so a role that\n"
             "   wraps one is on a surface and the thing inside is the control. */\n"
-          + rule(wrap([b + NEVER + ":not(:empty)" + NOT_ART + NOT_CONTROL_HOST for b in BUTTONS], 1),
+          + rule(wrap([b + NEVER + NOT_ICON_CTRL + NOT_ART + NOT_CONTROL_HOST for b in BUTTONS], 1),
                  "background-image: none")
           + "\n/* the button-shaped inputs are void elements, so `:empty` is always true of them\n"
             "   and can say nothing; their label is the `value`, never a picture */\n"
@@ -1136,17 +1209,31 @@ styles = [
             "   as `ui: image-ground`, and the same mid grey, for the same reason: it is the one\n"
             "   value where neither dark nor light ink can disappear. Elements whose class says\n"
             "   `icon` are left out, because those draw the glyph with `color`, already yellow. */\n"
-          + rule(wrap([b + NEVER + ":empty" + NOT_ICONS for b in BUTTONS], 1),
+          + rule(wrap([b + NEVER + ICON_CTRL + NOT_ICONS for b in BUTTONS], 1),
                  "background-color: #808080")
           + "\n/* the same treatment for links that act as buttons */\n"
           + rule(guarded(LINK_BUTTONS, NEVER + NEVER, per_line=1),
                  "background-color: #000000",
-                 "background-image: none",
                  "color: %s" % YELLOW,
                  "outline: 1px solid %s" % YELLOW,
                  "outline-offset: -1px",
-                 "border-radius: 999px",
+                 "border-radius: 999px")
+          + "\n/* ⚠ ...and the image and the padding are split out of that blanket, because this is\n"
+            "   the rule that actually erased the webmail's toolbar. `class=\"button checkmail\"`\n"
+            "   matches `a[class*=\"button\" i]`, so the link-button blanket reached all twenty\n"
+            "   icon buttons at (2,1,1) — above anything the BUTTONS rules above could say — and\n"
+            "   it carried no carve-out at all. Both declarations are written for a label made of\n"
+            "   TEXT: the strip is there because a gloss gradient would paint over our black, and\n"
+            "   the padding so the pill's rounded ends do not sit against the words. A control\n"
+            "   whose label is its picture needs neither, and the padding actively hurts — a 42x32\n"
+            "   sprite button grows to 53x38 with the glyph left in the top-left corner of it. */\n"
+          + rule(wrap([l + NEVER + NEVER + NOT_ICON_CTRL for l in LINK_BUTTONS], 1),
+                 "background-image: none",
                  "padding: 0.25em 0.9em")
+          + "\n/* ...and a blank one takes the same legible grey an empty control does, for the\n"
+            "   same reason: a sprite is drawn on transparency and may be dark ink. */\n"
+          + rule(wrap([l + NEVER + NEVER + ICON_CTRL + NOT_ICONS for l in LINK_BUTTONS], 1),
+                 "background-color: #808080")
           + "\n/* single-line text entry: a yellow pill, traced rather than filled. The outline\n"
             "   follows border-radius, and being an outline it adds no layout of its own — only\n"
             "   the padding does, which the rounded ends need so text is not clipped. */\n"
