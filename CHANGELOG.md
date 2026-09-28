@@ -5,6 +5,133 @@ for the upstream [Stylus](https://github.com/openstyles/stylus) release it is bu
 ships no changelog file of its own — its notes live only on GitHub Releases — so this file is
 entirely ours to maintain, newest first.
 
+## 白い熊 Stylus 2.4.10.74 — 2026-09-28
+
+Built on upstream 2.4.10. One report — a webmail whose toolbar rendered as a row of black pills
+with every icon gone — and one new thing 白い熊 asked for: a one-click way to turn the library off
+for a single site. The behavioural fixture grows from 182 checks to 189. Note the version jump:
+2.4.10.72 and .73 were unsigned iteration builds — the first restored nine of the ten toolbar
+icons, the second the tenth.
+
+### Whitespace is not content, and `:empty` says otherwise
+
+This library already knows that an empty control's background image *is* its label — that is what
+hands reCAPTCHA back its reload, audio and info buttons. The carve-out is defeated by one space.
+
+`:empty` is Selectors Level 3, where a single text node counts as content. And a page that draws a
+control's label as a background image has to put **something** in the box, or an inline element with
+no content collapses — so the oldest idiom for an icon button is exactly
+
+    <a class="button reply" role="button" href="#"> </a>
+
+one U+0020 and nothing else. A webmail's classic skin writes all twenty of its toolbar, select and
+paging buttons that way, and the whole strip came out as black pills with nothing in them: refresh,
+compose, reply, reply-all, forward, delete, junk, print, mark, settings, and the Select and Threads
+rows and the pager below the list.
+
+Worse, the rule that erased them was not the one that has the carve-out. `class="button checkmail"`
+matches `a[class*="button" i]`, so the **link-button** blanket reached every one of them at (2,1,1)
+— above anything the control rules can say — and it carried no carve-out at all.
+
+Selectors Level 4 redefines `:empty` to tolerate whitespace, and no engine ships that yet (measured
+in both: a space says false). Gecko ships the same definition under its own name,
+`:-moz-only-whitespace`, and Gecko is the engine we ship to. It goes inside `:is()`, which is
+**forgiving**, so an engine that does not know the term drops the term rather than the rule and
+keeps today's behaviour; `:not()` would not do, its list being non-forgiving — the whole selector
+would be thrown away in Blink, the same trap `:has()` inside `:has()` set for `ui: full-width`. The
+weight is (0,1,0) either way, exactly `:empty`'s, so nothing moves on the specificity ladder.
+
+Widened **only where the wider match spares something**. Both `:empty` sweeps keep Level 3 on
+purpose: widening one of those erases or unpaints *more*, and that is the direction that costs
+content. So does the wordmark grey in `ui: links`, whose whole argument is that an empty link has no
+content to give it width — a link holding a space *has* width, and would show a grey box with
+nothing in it.
+
+The image and the padding are split out of the link-button blanket for the same reason: both are
+written for a label made of **text**. The strip is there because a gloss gradient would paint over
+our black, and the padding so the pill's rounded ends do not sit against the words. A control whose
+label is its picture needs neither, and the padding actively hurts — a 42×32 sprite button grows to
+53×38 with the glyph left in the top-left corner of it.
+
+One limit, asserted in the fixture: `&nbsp;` is whitespace to neither definition (measured: U+00A0
+says false), so a skin that pads its buttons with one is still stripped.
+
+### A toolbar is built from one kind of thing
+
+That left one button of the ten a black pill — and a wider one, since the link-button padding still
+applied to it. It is the *other* image-replacement idiom, and on its own it is unreachable. The
+archive plugin adds
+
+    #messagetoolbar a.button         { width: 32px; height: 32px; overflow: hidden }
+    #messagetoolbar a.button.archive { text-indent: -5000px; background: url(its own png) }
+
+around `<a class="button archive"><span class="inner">Archive</span></a>`, so the word sits at
+x = -4380px and the picture is the label. Nothing about the element says so: `text-indent` is a
+property, and CSS cannot select on a property's value — the same wall `pointer-events: none`, a
+computed `filter`, a transparent border and a field's current padding already stand behind.
+
+What **can** be seen is the company it keeps. A toolbar is built from one kind of thing: the buttons
+are the same size, cut from the same sprite sheet, by the same hand, and they have to line up — a
+skin does not put a 32×32 picture button next to a text button in the same row. So a control
+standing next to a control that holds nothing but whitespace is an icon button too, whatever it
+happens to hold.
+
+It is narrow because the neighbour test is. The sibling must be a **control** that is blank, which
+is the rare icon-button shape this file has already had to name twice — an empty `<span>` beside a
+labelled button changes nothing, and the fixture asserts that by name. Both directions, since a
+button can be anywhere in a row; `:has()` has no backward combinator, so the backward arm is written
+`BLANK_CTRL + *` inside the `:not()`, which takes a complex selector (verified in both engines, as
+is `:has(+ x)`). And the neighbour is `button` or `[role="button"]` only: widening it to a bare `a`
+would read a page header's empty wordmark link as an icon button and hand the sign-in pill beside it
+whatever background it carries.
+
+Cost when the guess is wrong: a control keeps a background image our black would have covered, so an
+opaque gloss gradient stays and a yellow label on it may be dim. Against: an icon button's label
+gone outright. The asymmetry this whole library runs on says sparing is the safe side. Measured on
+the page itself, exactly one more element moves — the button in question, which comes back with its
+picture, the mid grey behind it and its neighbours' size.
+
+### A one-click "not on this site"
+
+Upstream has two scopes and nothing between them. `disableAll` is the boss key — every style, every
+page, one switch — and `exclusions` are per style, so turning this 28-style library off on one site
+would mean opening the popup menu 28 times. What was missing is the middle: *not here*.
+
+The popup gains a `⊘` beside the `+` that writes a style for the same host, because it is the other
+half of the same thought: that button says *something else here*, this one says *nothing here*. One
+click writes the host into a new `disableAll.sites` pref and the background stops injecting on it;
+one click takes it out again. Nothing on any other address moves.
+
+**Hosts, not URL globs**, and that is deliberate: a one-click toggle has no way to ask what was
+meant, so the entry has to be the least surprising thing the click could mean — the host in the
+address bar and nothing else. A path-scoped rule would silently leave the rest of the site styled,
+which is the opposite of what "turn it off here" says. The one wildcard is a leading `*.`, which a
+hand edit in Options can add to cover the subdomains.
+
+The state is drawn three ways, so it can never be a surprise: the button lights red, the popup takes
+`html.site-disabled` and strikes the style names through exactly as the boss key's `all-disabled`
+does, and the toolbar icon wears the same dimmed `x`. The list itself stays — what *would* apply
+here is worth seeing while it does not. Options gains an editable list of the hosts, since the popup
+only ever shows the site you are on.
+
+It is named `disableAll.sites` because that is upstream's own idiom for a per-site qualifier
+(`exposeIframes.sites`, `patchCsp.sites`), and because reading it as "disableAll, on these" is
+exactly what it does. The injector already has one word for "not here", `cfg.off`, so the content
+script learns nothing new.
+
+Two places in upstream's machinery needed care, and both would have been quiet bugs:
+
+- `doBroadcast` now resolves `off` per tab for **every** broadcast that carries it, not only the
+  ones the host list started. Otherwise releasing the global switch would send `off: false` to a
+  site that is off on its own account and style it again.
+- `style-via-webrequest` could read `payload.sections` unguarded only because
+  `subscribe(pDisableAll, setup)` unregisters that listener whenever the boss key is on, so the
+  off answer never reached it. A per-site off leaves the listener registered, so it does.
+
+Verified end to end in a real headless Firefox with the built add-on: styled, switched off live
+without a reload, still off after one, back on, and an unrelated host on the list leaving this one
+alone — and the popup button driven by a real click, in both directions.
+
 ## 白い熊 Stylus 2.4.10.71 — 2026-09-25
 
 Built on upstream 2.4.10. One report — a mapping site rendering as one black rectangle where the map
