@@ -5,6 +5,86 @@ for the upstream [Stylus](https://github.com/openstyles/stylus) release it is bu
 ships no changelog file of its own — its notes live only on GitHub Releases — so this file is
 entirely ours to maintain, newest first.
 
+## 白い熊 Stylus 2.4.10.76 — 2026-09-28
+
+Built on upstream 2.4.10. One report — an embedded video that played as a black rectangle — and it
+turned out to be two separate faults, one in the style library and one in the week-old per-site
+switch. The behavioural fixture grows from 189 checks to 195. Note the version jump: 2.4.10.75 was the
+unsigned iteration build the repair was measured on, and .77 went on a duplicate signing run
+of this very source — AMO never issues a version twice, so the number is spent.
+
+### The twelfth kind of layer: a player's own document
+
+The first of this family met not on a page but **inside a frame**. Our content script runs in every
+frame, so an embedded player is styled as a page in its own right — and a video platform's embed
+lays its controls out *beside* the film rather than inside it:
+
+    <body>
+      <div id=player>  …  <video>          the film's box
+      <div id=player-controls>             position: fixed, the size of the frame, one child
+        <custom-element>  …                and three levels down, another such box
+
+Both are transparent, both are the full size of the viewport, and `bg all` at (1,0,0), `bg div` or
+`bg blocks` at (1,0,1) — **any one of the three alone** — makes each an opaque sheet over the
+picture. Measured on the page that reported it: **98.8 %** of the player `#000` while the film
+plays, **0.0 %** with the two of them unpainted.
+
+It hides until the film starts, which is why every screenshot at rest showed a healthy player: the
+embed's own poster layer lives *inside* the black one and covers it, and starting the film takes the
+poster to `opacity: 0` and leaves the sheet.
+
+Every handle this file has walks past them. Not `:empty` — each holds the next box. Not a name: the
+classes read `…ControlsContainerHost`, `new-controls bigbar`; the word *overlay* is in the **id**,
+which the overlay list does not read, and `controls` is the one word this file refuses to match on,
+since that is what a player calls the bar that must **keep** its ground. Not the player rules, the
+eighth and the tenth: both are scoped *inside* a box that directly holds a `<video>`, and here the
+chrome is a **sibling** of the box holding the film, so no ancestor of it holds the film at all. Not
+the control strip, whose children must be controls or empty boxes. Not the wrapper chain, scoped
+inside a picture's frame. And not the map chrome, which is the right *shape* — a box that follows a
+sibling holding the drawing — but is keyed on `<canvas>` and carries `:not(body) >`, where here the
+shared parent **is** `<body>`.
+
+So the scope is the **document**, and that is the honest description of what this is: not a page
+with a player on it, but a player's own document. A `<body>` that holds a film and whose own
+children are nothing but boxes and scripts — no header, no main, no article, no heading, no
+paragraph — has no page in it to make legible. The film *is* the page, and every box laid beside it
+is chrome the player draws its own scrim for. An ordinary page fails that test on its own structure;
+a single-root app passes it and still matches nothing, because the rule needs a box **after** the one
+holding the film and an app has one root. What it does reach, and the cost to weigh: such an app with
+a second body-level box — a portal root with a dialog open in it — loses that box's ground, which is
+the dialog shell's trade and bounded the same way.
+
+The **custom element** is what decides the content test, and it is where the map rule's own
+documented limit — *a strip whose children are all custom elements* — was met for real. The map asks
+for children that are boxes or controls; this layer's only child is a component host, which is
+neither, so that test matched nothing at all. Structure is therefore spelled **negatively** here: a
+box whose element children hold no *content*, where content is the list this file already keeps —
+text, links, media and controls. A custom element is structure, as a `<div>` is. A bar that holds its
+`<button>`s directly is not, and keeps its ground, exactly as the player rule says of the transport
+bar.
+
+Two arms, as the map has: the layer, and a layer inside the layer, since the second sheet is three
+component hosts down. The matched element is a **box**, which is all the met case needs and what
+keeps a span, a link and a component host out of it — 113 boxes inside the embed, none outside it.
+
+### “Not on this site” had a hole in it, and the hole was the frames
+
+Found while chasing the above, and a fault in its own right. The one-click `⊘` from 2.4.10.74 wrote
+the page's host and the page went quiet — but **every frame in it stayed styled**, so an embedded
+player or widget kept the whole library. Measured: with the page's host on the list, a live
+broadcast took page and frames to zero, and one reload put both frames back to all 21 sheets.
+
+Two doors, and they disagreed. `doBroadcast` resolves the list against the **tab's** url and sends
+to every frame, which is right; `getSectionsByUrl` — the door a load comes through — resolved it
+against the **frame's own** url, and a frame's url is not the page's. So a frame is now off when its
+own host is on the list **or** the page holding it is: the tab's url is the very one `topUrl` reads
+a few lines below, so nothing new had to be plumbed. `style-via-api` asks the same pair.
+
+The other direction had to close with it. A host put on the list by hand — a video platform, say,
+which never appears in the address bar — was off at load and switched back **on** by the next
+broadcast of anything, since the broadcast only knows the tab. `doBroadcast` now sends one extra
+message to a frame whose own answer differs from its tab's, and only to those.
+
 ## 白い熊 Stylus 2.4.10.74 — 2026-09-28
 
 Built on upstream 2.4.10. One report — a webmail whose toolbar rendered as a row of black pills
