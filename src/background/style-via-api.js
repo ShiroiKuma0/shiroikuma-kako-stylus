@@ -59,7 +59,11 @@ export default function initStyleViaApi() {
     // shiroikuma fork: ...and the same switch held down for one host. The broadcast path already
     // removes the CSS from such a tab (injectorConfig below), but this is the other door — a
     // style update or a navigation re-applies through here, and it must ask the same question.
-    if (prefs.__values[pDisableAll] || isSiteOff(prefs.__values[pDisableSites], sender.url)) {
+    // A frame asks with its own url, so it asks about the page holding it too: see the same
+    // pair in `getSectionsByUrl`.
+    if (prefs.__values[pDisableAll]
+        || isSiteOff(prefs.__values[pDisableSites], sender.url)
+        || (sender.frameId && isSiteOff(prefs.__values[pDisableSites], sender.tab?.url || ''))) {
       return;
     }
     const {tab, frameId, url} = sender;

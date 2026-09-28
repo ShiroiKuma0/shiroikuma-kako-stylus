@@ -57,8 +57,9 @@ since withdrawn is taken back rather than left behind.
 Upstream has two scopes and nothing between them: a boss key that switches every style off
 everywhere, and exclusions that are set per style — so calling off a 28-style library on a single
 site would mean opening the popup menu 28 times. This fork adds the middle: a `⊘` beside the `+`
-that writes a style for the same host. One click and nothing is injected here; one click and it is
-back. Nothing on any other address moves.
+that writes a style for the same host. One click and nothing is injected here — not on the page,
+and not in the embedded players, maps and widgets it holds; one click and it is back. Nothing on any
+other address moves.
 
 The state is never a guess. The button lights up, the popup strikes the style names through, and
 the toolbar icon shows the same dimmed mark the boss key gives it — while the list itself stays, so

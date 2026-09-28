@@ -216,18 +216,26 @@ export function getSectionsByUrl(url, {id, init, dark} = {}) {
   // TODO: rework caching to set just the sender's scheme i.e. not globally
   if (dark != null && colorScheme.isDark == null)
     colorScheme.setSystemDark(dark);
-  // shiroikuma fork: ...and the same switch held down for one host — `disableAll.sites`. The
-  // injector has one word for "not here", `cfg.off`, so the per-site answer is given in exactly
-  // the same place and the content script needs to know nothing about any of it.
-  if (init && (__values[pDisableAll] || isSiteOff(__values[pDisableSites], url))) {
-    return {cfg: {off: true}};
-  }
   let v;
   const res = {};
   const {sender = {}} = this || {};
   const {tab = {}, frameId, TDM} = sender;
   const isTop = !frameId || TDM || sender.type === 'main_frame'; // prerendering in onBeforeRequest
   const td = tabCache[sender.tabId || tab.id] || {};
+  // shiroikuma fork: ...and the same switch held down for one host — `disableAll.sites`. The
+  // injector has one word for "not here", `cfg.off`, so the per-site answer is given in exactly
+  // the same place and the content script needs to know nothing about any of it.
+  // ⚠ And a FRAME asks with a url of its own. "Not on this site" has to mean the whole tab, or
+  // the page goes quiet while the video platform's embed inside it stays styled — which is how
+  // this library came to board up an embedded player on a page that was switched off. So a
+  // frame is off when its own host is on the list OR the page holding it is; the tab's url is
+  // the very one `topUrl` reads below, and `doBroadcast` has resolved the list per tab all
+  // along, so this is the load path catching up with the broadcast path.
+  if (init && (__values[pDisableAll]
+      || isSiteOff(__values[pDisableSites], url)
+      || (!isTop && isSiteOff(__values[pDisableSites], tab.url || td[kUrl]?.[0] || '')))) {
+    return {cfg: {off: true}};
+  }
   /** @type {Injection.Config} */
   res.cfg = !id && {
     ass: __values[pStyleViaASS] &&

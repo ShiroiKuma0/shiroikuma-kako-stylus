@@ -1,5 +1,5 @@
 import '@/js/browser';
-import {kTabOvr, pDisableSites, pExposeIframes, pStyleViaASS} from '@/js/consts';
+import {kTabOvr, kUrl, pDisableSites, pExposeIframes, pStyleViaASS} from '@/js/consts';
 import {isSiteOff, parseSites} from '@/js/fork-site-off';
 import {rxIgnorableError} from '@/js/msg-api';
 import {__values} from '@/js/prefs';
@@ -61,6 +61,21 @@ async function doBroadcast() {
     if (iframeSites) cfg.top = isOptionSite(iframeSites, url);
     if (offSites && offSites.length) cfg.off = offAll || isSiteOff(offSites, url);
     sendTab(t.id, data, null, true);
+    /* shiroikuma fork: ...and a FRAME has a host of its own. The tab's answer above is the right
+       one for the page — "not on this site" must reach the embedded player or widget inside it,
+       which is why it goes to every frame — but a frame whose OWN host is on the list is off
+       even where the page is not, exactly as `getSectionsByUrl` answers at load. Without this
+       the next broadcast of anything would style it again. One extra message, and only to the
+       frames whose answer differs from the tab's. */
+    if (offSites && offSites.length && !cfg.off) {
+      const frameUrls = tabCache[t.id]?.[kUrl];
+      for (const frameId in frameUrls) {
+        if (+frameId && isSiteOff(offSites, frameUrls[frameId])) {
+          sendTab(t.id, [{method: 'injectorConfig', cfg: {...cfg, off: true}}],
+            {frameId: +frameId}, true);
+        }
+      }
+    }
     if (patched) for (const p of patched) p.enabled = p[OLD];
     /* Broadcast messages are tiny, but sending them takes some time anyway,
        so we're yielding for a possible navigation/messaging event. */
