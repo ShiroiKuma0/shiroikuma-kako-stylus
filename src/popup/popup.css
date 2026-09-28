@@ -632,6 +632,37 @@ a:hover i {
     font-size: 15px; /* looks crisp even on a single density display */
   }
 }
+/* shiroikuma fork: the per-site master switch, beside the + that writes a style for the same
+   host. Lit red when this site is off, to say the same thing the boss key's red says. */
+#fork-site-off {
+  padding: $padToEntryH $pad;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  flex: none;
+  cursor: pointer;
+  border-left: var(--border);
+  i {
+    font-size: 15px;
+  }
+  &:hover {
+    background: hsla(20, 100%, 60%, .1);
+  }
+  &.site-off {
+    color: var(--red1);
+    font-weight: bold;
+    /* the idle dimming is for an affordance nobody is using; a site that is OFF has to read at
+       a glance, so the lit state outranks `.non-touch-dimmed:not(:hover)` on the id alone */
+    opacity: 1;
+    i {
+      color: var(--red1);
+    }
+  }
+}
+/* ...and the list says it too, the way `all-disabled` does: what WOULD apply here, struck out */
+.site-disabled .style-name {
+  text-decoration: line-through;
+}
 #write-style {
   cursor: pointer;
   overflow: hidden;

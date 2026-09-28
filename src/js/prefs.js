@@ -1,9 +1,9 @@
 /** Don't use this file in content script context! */
 import {
-  k_busy, kBadFavs, kNone, pArrowKeysTraverse, pDisableAll, pEditorBeautifyHotkey,
-  pEditorColorpickerHotkey, pEditorLinter, pEditorLinterOn, pEditorTheme, pEditorToggleHotkey,
-  pEditorToggleSave, pExposeIframes, pFavicons, pFaviconsGray, pKeyMap, pLintReportDelay,
-  pLivePreview, pManageNewUi, pManageNewUiTargets, pOpenEditInWindow, pPatchCsp,
+  k_busy, kBadFavs, kNone, pArrowKeysTraverse, pDisableAll, pDisableSites,
+  pEditorBeautifyHotkey, pEditorColorpickerHotkey, pEditorLinter, pEditorLinterOn, pEditorTheme,
+  pEditorToggleHotkey, pEditorToggleSave, pExposeIframes, pFavicons, pFaviconsGray, pKeyMap,
+  pLintReportDelay, pLivePreview, pManageNewUi, pManageNewUiTargets, pOpenEditInWindow, pPatchCsp,
   pPopupTogglerExpanded, pStyleViaASS, pStyleViaXhr, pSync, pUrlInstaller, STORAGE_KEY,
 } from '@/js/consts';
 import {API} from './msg-api';
@@ -30,6 +30,9 @@ const defaults = {
   __proto__: null,
   // TODO: sort everything aphabetically
   [pDisableAll]: false,            // boss key
+  // shiroikuma fork: the boss key held down for one host at a time — the popup's one-click
+  // "not on this site". A newline-separated host list; see `@/js/fork-site-off`.
+  [pDisableSites]: '',
   [pExposeIframes]: false,         // Add 'stylus-iframe' attribute to HTML element in all iframes
   [pExposeIframes + '.sites']: '',
   [pExposeIframes + '.sitesOnly']: false,

@@ -1,4 +1,6 @@
 import '@/js/browser';
+import {pDisableAll, pDisableSites} from '@/js/consts';
+import {isSiteOff} from '@/js/fork-site-off';
 import {API} from '@/js/msg-api';
 import * as prefs from '@/js/prefs';
 import {isEmptyObj, NOP} from '@/js/util';
@@ -54,7 +56,10 @@ export default function initStyleViaApi() {
   }
 
   async function styleApply({id = null, ignoreUrlCheck = false}, sender) {
-    if (prefs.__values['disableAll']) {
+    // shiroikuma fork: ...and the same switch held down for one host. The broadcast path already
+    // removes the CSS from such a tab (injectorConfig below), but this is the other door — a
+    // style update or a navigation re-applies through here, and it must ask the same question.
+    if (prefs.__values[pDisableAll] || isSiteOff(prefs.__values[pDisableSites], sender.url)) {
       return;
     }
     const {tab, frameId, url} = sender;

@@ -52,6 +52,19 @@ you have switched off survives an update untouched, and so does your per-site tu
 remembers what it seeded, so a site you excluded by hand stays excluded, and a seed the build has
 since withdrawn is taken back rather than left behind.
 
+### 🚫 One click to turn it off for one site
+
+Upstream has two scopes and nothing between them: a boss key that switches every style off
+everywhere, and exclusions that are set per style — so calling off a 28-style library on a single
+site would mean opening the popup menu 28 times. This fork adds the middle: a `⊘` beside the `+`
+that writes a style for the same host. One click and nothing is injected here; one click and it is
+back. Nothing on any other address moves.
+
+The state is never a guess. The button lights up, the popup strikes the style names through, and
+the toolbar icon shows the same dimmed mark the boss key gives it — while the list itself stays, so
+you can still see what *would* apply. The hosts collect in an editable list on the options page,
+where a leading `*.` widens one to its subdomains.
+
 ### 🖤 The extension's own windows, in the house palette
 
 The popup, the manager, the options page and the editor are black-and-yellow too, at a larger base

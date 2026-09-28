@@ -337,6 +337,22 @@
         </div>
       </div>
 
+      <!-- shiroikuma fork: the hosts the popup's one-click switch has been used on. It lives
+           here so the choice is reviewable and reversible in one place — the popup only ever
+           shows the site you are on. English literals rather than locale keys: src/_locales is
+           a byte copy of upstream's and is re-pulled from Transifex most weeks. -->
+      <div class="block" id="fork-site-off-block">
+        <h2>Sites 白い熊 Stylus is off for</h2>
+        <div class="items">
+          <label class="fork-sites">
+            <p>One host per line. A leading <code>*.</code> covers the subdomains too, so
+              <code>*.example.com</code> means example.com and everything under it. Nothing here
+              affects any other address.</p>
+            <textarea id="disableAll.sites" rows="3" spellcheck="false"></textarea>
+          </label>
+        </div>
+      </div>
+
       <div class="block">
         <h2 i18n="cm_theme"></h2>
         <div class="items no-stretch" i18n="optionsStylusThemes"></div>

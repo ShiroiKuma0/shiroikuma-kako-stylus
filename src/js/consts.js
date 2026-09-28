@@ -91,6 +91,10 @@ export const mimeLESS = 'text/x-less';
 //#region prefs
 export const pArrowKeysTraverse = 'editor.arrowKeysTraverse';
 export const pDisableAll = 'disableAll';
+/** shiroikuma fork: the hosts the master switch is held down for, one per line.
+ * Named in upstream's own `<option>.sites` idiom, because that is exactly what it is:
+ * `disableAll`, but only on these. See `@/js/fork-site-off`. */
+export const pDisableSites = pDisableAll + '.sites';
 export const pEditorBeautifyHotkey = 'editor.beautify.hotkey';
 export const pEditorColorpickerHotkey = 'editor.colorpicker.hotkey';
 export const pEditorLinter = 'editor.linter';

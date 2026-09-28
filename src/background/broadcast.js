@@ -1,6 +1,8 @@
 import '@/js/browser';
-import {kTabOvr, pExposeIframes, pStyleViaASS} from '@/js/consts';
+import {kTabOvr, pDisableSites, pExposeIframes, pStyleViaASS} from '@/js/consts';
+import {isSiteOff, parseSites} from '@/js/fork-site-off';
 import {rxIgnorableError} from '@/js/msg-api';
+import {__values} from '@/js/prefs';
 import {sleep0} from '@/js/util';
 import {isOptionSite, optionSites} from './option-sites';
 import {tabCache} from './tab-manager';
@@ -33,6 +35,12 @@ async function doBroadcast() {
   const updStyles = toBroadcastUpdStyles;
   const assSites = cfg?.ass && optionSites[pStyleViaASS];
   const iframeSites = cfg?.top && optionSites[pExposeIframes];
+  /* shiroikuma fork: `off` is the one config key with a per-host answer, so it is resolved here
+     for every tab rather than taken from `cfg` — and for EVERY broadcast that carries it, not
+     only the ones the host list started. Otherwise releasing the global switch would send
+     `off: false` to a site that is off on its own account and style it again. */
+  const offSites = cfg && 'off' in cfg && parseSites(__values[pDisableSites]);
+  const offAll = offSites && cfg.off;
   toBroadcastCfg = toBroadcastUpdStyles = toBroadcast = null;
   if (cfg)
     data.push({method: 'injectorConfig', cfg});
@@ -51,6 +59,7 @@ async function doBroadcast() {
       patchStyles(updStyles, tabOverrides);
     if (assSites) cfg.ass = isOptionSite(assSites, url);
     if (iframeSites) cfg.top = isOptionSite(iframeSites, url);
+    if (offSites && offSites.length) cfg.off = offAll || isSiteOff(offSites, url);
     sendTab(t.id, data, null, true);
     if (patched) for (const p of patched) p.enabled = p[OLD];
     /* Broadcast messages are tiny, but sending them takes some time anyway,

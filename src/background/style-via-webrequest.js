@@ -129,7 +129,11 @@ async function prepareStyles(req) {
   const data = oldData || {};
   const payload = getSectionsByUrl.call({sender: req}, url, {init: pStyleViaXhr});
   const samePayload = oldData && deepEqual(payload, data.payload);
-  const willStyle = payload.sections.length;
+  /* shiroikuma fork: `sections` can be absent now. Upstream could read it unguarded because the
+     only early return in getSectionsByUrl is the boss key, and `subscribe(pDisableAll, setup)`
+     above unregisters this listener whenever that is on — so the off answer never reached here.
+     The per-site switch leaves the listener registered and answers off per url, so it does. */
+  const willStyle = payload.sections?.length;
   data.payload = payload;
   data.url = url;
   if (samePayload) data.timer = clearTimeout(data.timer);

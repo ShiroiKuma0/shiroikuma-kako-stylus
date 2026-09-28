@@ -126,6 +126,15 @@ label {
     width: min-content;
     min-width: 100%;
   }
+  /* shiroikuma fork: the per-site off list — a note above its textarea, stacked, so the list
+     has the full width rather than a column beside the prose */
+  &.fork-sites {
+    flex-flow: column;
+    align-items: stretch;
+    > p {
+      margin: 0 0 6px;
+    }
+  }
   &.sites {
     &.disabled .slider:checked {
       color: var(--c70);

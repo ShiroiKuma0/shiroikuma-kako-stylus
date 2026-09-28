@@ -11,6 +11,7 @@ import {CHROME, FIREFOX, MAC, MOBILE, OPERA} from '@/js/ua';
 import {clamp, isSidebar, sleep0, t, urlParams} from '@/js/util';
 import {getActiveTab, ignoreChromeError} from '@/js/util-webext';
 import {openStyleFinder, pSideFinder, selUnstylable} from './events';
+import {initSiteOff} from './fork-site-off';
 import {initHotkeys} from './hotkeys';
 import {createWriterElement, showStyles, updateStateIcon} from './render';
 import './popup.css';
@@ -40,6 +41,7 @@ if (!isFullscreenPopup && window === top)
   initPopup(data);
   showStyles(data);
   initHotkeys(data);
+  initSiteOff(); // shiroikuma fork: needs tabUrl, which initPopup has just set
   if (port) // re-entry from connectPort()
     return;
   if (urlParams.has(pSideFinder)) openStyleFinder();

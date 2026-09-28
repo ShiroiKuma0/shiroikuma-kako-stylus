@@ -1,7 +1,9 @@
 import {
   IMPORT_THROTTLE, k_size, kEditorScrollInfo, kExclusions, kInclusions, kOverridden, kTabOvr, kUrl,
-  pDisableAll, pExposeIframes, pKeepAlive, pPatchCsp, pStyleViaASS, pStyleViaXhr, UCD,
+  pDisableAll, pDisableSites, pExposeIframes, pKeepAlive, pPatchCsp, pStyleViaASS,
+  pStyleViaXhr, UCD,
 } from '@/js/consts';
+import {isSiteOff} from '@/js/fork-site-off';
 import {__values} from '@/js/prefs';
 import {calcStyleDigest, styleCodeEmpty} from '@/js/style-util';
 import {calcObjSize, isEmptyObj, mapObj, NOP} from '@/js/util';
@@ -214,7 +216,10 @@ export function getSectionsByUrl(url, {id, init, dark} = {}) {
   // TODO: rework caching to set just the sender's scheme i.e. not globally
   if (dark != null && colorScheme.isDark == null)
     colorScheme.setSystemDark(dark);
-  if (init && __values[pDisableAll]) {
+  // shiroikuma fork: ...and the same switch held down for one host — `disableAll.sites`. The
+  // injector has one word for "not here", `cfg.off`, so the per-site answer is given in exactly
+  // the same place and the content script needs to know nothing about any of it.
+  if (init && (__values[pDisableAll] || isSiteOff(__values[pDisableSites], url))) {
     return {cfg: {off: true}};
   }
   let v;

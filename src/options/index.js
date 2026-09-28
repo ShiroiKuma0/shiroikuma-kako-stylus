@@ -115,6 +115,15 @@ setupConditionalPrefs(({el}, id, mode) => {
 if (browserSidebar)
   $rootCL.add('has-sidebar');
 setupLivePrefs();
+// shiroikuma fork: the per-site off list is a plain textarea rather than a conditional `.sites`
+// widget, so it takes the same autosize and Ctrl-S the others get from setupConditionalPrefs —
+// and it is resized from the PREF rather than once at load, because setupLivePrefs assigns the
+// value without firing `input` and the stored list arrives after this file has run.
+for (const el of $$('.fork-sites textarea')) {
+  el.on('keydown', onTextKey);
+  el.on('input', onTextInput);
+  prefs.subscribe(el.id, () => onTextInput.call(el), true);
+}
 (async () => {
   const {wrb} = __.MV3 && swController ? prefs.clientData : await prefs.clientData;
   if (wrb)

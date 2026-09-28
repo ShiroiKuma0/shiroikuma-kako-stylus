@@ -1,4 +1,5 @@
-import {kDisableAll, kSidebar, kStyleIds} from '@/js/consts';
+import {kDisableAll, kSidebar, kStyleIds, kUrl, pDisableSites} from '@/js/consts';
+import {isSiteOff} from '@/js/fork-site-off';
 import {__values as __prefs, subscribe} from '@/js/prefs';
 import {CHROME, FIREFOX, MOBILE, VIVALDI} from '@/js/ua';
 import {debounce, deepCopy, NOP, t} from '@/js/util';
@@ -78,6 +79,8 @@ function initIcons(runNow = !__.MV3) {
   ], () => debounce(refreshAllIconsBadgeText), runNow);
   subscribe([
     kDisableAll,
+    // shiroikuma fork: the per-site switch changes the icon on that site the same way
+    pDisableSites,
     kIconset,
   ], () => debounce(refreshAllIcons), runNow);
 }
@@ -130,10 +133,13 @@ function refreshIconBadgeText(tabId) {
   setBadgeText({tabId, text});
 }
 
-function getIconName(hasStyles = false) {
+/** shiroikuma fork: `off` is the tab's answer, not the browser's — a site on the host list
+ * wears the same dimmed `x` the boss key puts on every tab, so the state is readable from the
+ * toolbar without opening the popup. */
+function getIconName(hasStyles = false, off = false) {
   const i = __prefs[kIconset];
   const prefix = i === 0 || i === -1 && colorScheme.isDark ? '' : 'light/';
-  const postfix = __prefs[kDisableAll] ? 'x' : !hasStyles ? 'w' : '';
+  const postfix = off || __prefs[kDisableAll] ? 'x' : !hasStyles ? 'w' : '';
   return `${prefix}$SIZE$${postfix}`;
 }
 
@@ -143,7 +149,8 @@ function refreshIcon(tabId, force = false) {
     {id: tabId}
   );
   const oldIcon = td.icon;
-  const newIcon = getIconName(td[kStyleIds]?.[0]);
+  const newIcon = getIconName(td[kStyleIds]?.[0],
+    isSiteOff(__prefs[pDisableSites], td[kUrl]?.[0] || ''));
   // (changing the icon only for the main page, frameId = 0)
   if (!force && oldIcon === newIcon) {
     return;
