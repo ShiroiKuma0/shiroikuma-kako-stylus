@@ -508,6 +508,10 @@ __SHEETS__
   <div class="playerRoot" id="hashPlayer" role="button" tabindex="0"
     ><div class="ctpl_6uqqq21" id="hashPoster" role="button" tabindex="0"
       ><div id="hashInner"><button id="hashPlay"><span>Play</span></button></div></div></div>
+  <!-- the same chrome shape as a player document's, on a PAGE: a box holding one box, after a
+       box that holds a film. This body has headings and prose in it, so it is not a player's
+       document and the box keeps its ground. -->
+  <div id="notPlayerChrome"><div id="npcInner">not a player document</div></div>
   <!-- a thumbnail card: the picture, and the wrapper chain laid across it -->
   <div class="thumbFrame" id="thumbFrame"
     ><picture class="thumbPic" id="thumbPic"><img id="thumbImg"
@@ -1079,6 +1083,46 @@ t('a logo drawn as a background behind text SURVIVES (the jisho.org pattern)',
 checks.push({name: 'NOTE :empty vs whitespace-only element', ok: true,
              got: g('gradbar-ws').backgroundImage === 'none' ? 'whitespace ignored, stripped'
                                                              : 'whitespace counts, kept'});
+
+// --- a player's own DOCUMENT, and the chrome it stacks beside the film -----
+// The twelfth layer reads a DOCUMENT, not a page: a <body> that holds a film and whose own
+// children are nothing but boxes and scripts. This fixture page is a page, so the shape has to
+// be built in a document of its own -- an about:blank iframe inherits this origin, so the very
+// same sheets can be cloned into it and the cascade is the one that ships.
+{
+  const fr = document.createElement('iframe');
+  fr.id = 'playerDocFrame';
+  fr.setAttribute('style', 'width:320px;height:180px;border:0');
+  document.body.appendChild(fr);
+  const d = fr.contentDocument;
+  d.open();
+  d.write('<!doctype html><html><head></head><body>'
+    + '<div id="pdPlayer"><div id="pdMovie"><div id="pdBox"><video id="pdVideo"></video>'
+    +   '</div></div></div>'
+    + '<div id="pdChrome"><pd-host><pd-inner>'
+    +   '<div id="pdBar"><button id="pdBtn">Play</button></div>'
+    +   '<div id="pdLayer"><div id="pdInner">a caption cue</div></div>'
+    + '</pd-inner></pd-host></div>'
+    + '</body></html>');
+  d.close();
+  d.body.appendChild(d.createElement('script'));   // a player's body holds these too
+  d.body.appendChild(d.createElement('style'));
+  for (const el of document.querySelectorAll('style[data-name]')) d.head.appendChild(el.cloneNode(true));
+  const gp = id => fr.contentWindow.getComputedStyle(d.getElementById(id));
+  t('a player document paints its own grounds like any other (the film box is black)',
+    gp('pdPlayer').backgroundColor, gp('pdPlayer').backgroundColor === BLACK);
+  t('the chrome laid beside the film is a layer, whatever its one child is called',
+    gp('pdChrome').backgroundColor, gp('pdChrome').backgroundColor === 'rgba(0, 0, 0, 0)');
+  t('...and a layer inside it is one too, three component hosts down',
+    gp('pdLayer').backgroundColor, gp('pdLayer').backgroundColor === 'rgba(0, 0, 0, 0)');
+  t('a bar holding its <button> directly is chrome to sit on, and KEEPS its ground',
+    gp('pdBar').backgroundColor, gp('pdBar').backgroundColor === BLACK);
+  t('a box holding words keeps its ground, so a cue sits on black and not on the film',
+    gp('pdInner').backgroundColor, gp('pdInner').backgroundColor === BLACK);
+}
+t('the same shape on a PAGE is untouched: this body has prose in it, so it is not a player doc',
+  g('notPlayerChrome').backgroundColor + ' / ' + g('npcInner').backgroundColor,
+  g('notPlayerChrome').backgroundColor === BLACK && g('npcInner').backgroundColor === BLACK);
 
 // --- known trade-off, reported not asserted -------------------------------
 checks.push({name: 'NOTE italic <i> keeps page font (accepted trade-off)',

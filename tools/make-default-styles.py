@@ -1002,6 +1002,70 @@ MAP_CHROME_SEL = ",\n".join([
     "%s ~ %s" % (MAP_CHROME_HOST, MAP_CHROME),
     "%s ~ %s %s" % (MAP_CHROME_HOST, MAP_CHROME, MAP_CHROME),
 ])
+# ⚠ The twelfth kind of layer: the chrome a player's own DOCUMENT stacks over the film — and
+# the first of this family met not on a page but INSIDE a frame.  Our content script runs in every
+# frame (`all_frames: true`), so an embedded player is styled as a page in its own right, and a
+# video platform's embed lays its controls out BESIDE the film rather than inside it:
+#
+#     <body>
+#       <div id=player>  …  <video>            the film's box
+#       <div id=player-controls>               position: fixed, the size of the frame, one child
+#         <custom-element>  …                  and three levels down, another such box
+#
+# Both are transparent, both are the full size of the viewport, and `bg all` at (1,0,0), `bg div`
+# or `bg blocks` at (1,0,1) — any ONE of the three alone — makes each an opaque sheet over the
+# picture.  Measured on the page that reported it: 98.8 % of the player `#000` while the film
+# plays, 0.0 % with the two of them unpainted.
+#
+# It hides until the film starts, which is why every screenshot at rest showed a healthy player:
+# the embed's own poster layer lives INSIDE the black one and covers it, and starting the film
+# takes the poster to `opacity: 0` and leaves the sheet.
+#
+# Every handle walks past them.  Not `:empty` — each holds the next box.  Not a name: the classes
+# read `…ControlsContainerHost`, `new-controls bigbar` — the word *overlay* is in the ID, which
+# the overlay list does not read, and `controls` is the one word this file refuses to match on,
+# since that is what a player calls the bar that must KEEP its ground.  Not the player rules, the
+# eighth and the tenth: both are scoped INSIDE a box that directly holds a <video>, and here the
+# chrome is a sibling of the box holding the film, so no ancestor of it holds the film at all.
+# Not the control strip, whose children must be controls or empty boxes.  Not the wrapper chain,
+# scoped inside a picture's frame.  And not the map chrome, which is the right SHAPE — a box that
+# follows a sibling holding the drawing — but is keyed on <canvas>, and carries `:not(body) >`
+# where here the shared parent IS <body>.
+#
+# So the scope is the DOCUMENT, and that is the honest description of what this is: not a page
+# with a player on it, but a player's own document.  A <body> that holds a film and whose own
+# children are nothing but boxes and scripts — no header, no main, no article, no heading, no
+# paragraph — has no page in it to make legible.  The film IS the page, and every box laid beside
+# it is chrome the player draws its own scrim for.  An ordinary page fails that test on its own
+# structure; a single-root app passes it and still matches nothing, because the rule needs a box
+# AFTER the one holding the film and an app has one root.  What it does reach, and the cost to
+# weigh: such an app with a second body-level box — a portal root with a dialog open in it —
+# loses that box's ground, which is the dialog shell's trade and bounded the same way.
+#
+# ⚠ The custom element is what decides the content test, and it is where the map rule's own
+# documented limit ("a strip whose children are all custom elements") was met for real.  The map
+# asks for children that are BOXES or controls; this layer's only child is a component host,
+# which is neither, and that test matched nothing at all.  Structure is therefore spelled
+# NEGATIVELY here — a box whose element children hold no CONTENT, where content is the list this
+# file already keeps: text, links, media and controls.  A custom element is structure, as a <div>
+# is.  A bar that holds its <button>s directly is not, and keeps its ground, exactly as the
+# player rule says of the transport bar.
+#
+# Two arms, as the map has: the layer, and a layer inside the layer, since the met second sheet
+# is three levels down and the boxes between it and the first are component hosts.  The matched
+# element is a BOX, which is all the met case needs and what keeps a span, a link and a component
+# host out of it — 113 boxes inside the embed, none of them outside it.
+PLAYER_DOC_KINDS = ["div", "script", "style", "noscript", "template", "link"]
+IS_PLAYER_DOC_KIND = ":is(%s)" % ", ".join(PLAYER_DOC_KINDS)
+IS_CONTENT = ":is(%s)" % ", ".join(TEXT + LINKS + MEDIA + CONTROLS)
+PLAYER_DOC = "body%s:has(video):not(:has(> :not(%s)))" % (NEVER, IS_PLAYER_DOC_KIND)
+PLAYER_DOC_HOST = "%s > *%s:has(video)" % (PLAYER_DOC, NEVER)
+PLAYER_DOC_CHROME = "%s%s%s:has(> *):not(:has(> %s))" % (
+    IS_SHELL_BOX, SURFACE, NOT_VALUE_BAR, IS_CONTENT)
+PLAYER_DOC_CHROME_SEL = ",\n".join([
+    "%s ~ %s" % (PLAYER_DOC_HOST, PLAYER_DOC_CHROME),
+    "%s ~ %s %s" % (PLAYER_DOC_HOST, PLAYER_DOC_CHROME, PLAYER_DOC_CHROME),
+])
 CODE_TAGS = ["pre", "code", "kbd", "samp", "tt"]
 # These sit on the id ladder too, and have to: they carry a colour, so they compete with the
 # `fg all` blanket at (1,0,0), and the descendant form competes with `fg text` at (1,0,1) —
@@ -1584,7 +1648,38 @@ styles = [
             "   boxes (structure, not content) or controls (chrome), at least one a box. That is\n"
             "   what spares the promo card holding a heading, a picture and two links, and the\n"
             "   toggles holding an icon and a span. */\n"
-          + rule(MAP_CHROME_SEL, "background-color: transparent")),
+          + rule(MAP_CHROME_SEL, "background-color: transparent")
+          + "\n/* \u26a0 The twelfth kind of layer: the chrome a player's own DOCUMENT stacks\n"
+            "   over the film — and the first of this family met not on a page but inside a\n"
+            "   FRAME. Our content script runs in every frame, so an embedded player is styled\n"
+            "   as a page in its own right, and a video platform's embed lays its controls out\n"
+            "   BESIDE the film: <body> holds the film's box, and after it one fixed box the\n"
+            "   size of the viewport holding a single child, with another such box three levels\n"
+            "   inside it. `bg all`, `bg div` or `bg blocks` — any one alone — makes each an\n"
+            "   opaque sheet over the picture: 98.8 % of the player #000 while the film plays,\n"
+            "   0.0 % with the two of them unpainted. It hides until the film starts, because\n"
+            "   the embed's own poster layer lives INSIDE the black one and covers it.\n"
+            "   Nothing here reached them. Not `:empty` (each holds the next box); not a name\n"
+            "   (the word *overlay* is in the ID, and `controls` is what a player calls the bar\n"
+            "   that must KEEP its ground); not the player rules, both scoped inside a box that\n"
+            "   directly holds a <video>, where this chrome is a SIBLING of the box holding the\n"
+            "   film; not the control strip nor the wrapper chain; and not the map chrome, which\n"
+            "   is the right shape but is keyed on <canvas> and refuses <body> as the shared\n"
+            "   parent, where here the shared parent is <body>.\n"
+            "   So the scope is the document: a <body> that holds a film and whose own children\n"
+            "   are nothing but boxes and scripts is a PLAYER'S DOCUMENT, not a page with a\n"
+            "   player on it. The film is the page, and every box laid beside it is chrome the\n"
+            "   player draws its own scrim for. An ordinary page fails that on its own\n"
+            "   structure; a single-root app passes it and matches nothing, the rule needing a\n"
+            "   box AFTER the one holding the film.\n"
+            "   The content test is spelled NEGATIVELY, which is where the map rule's own\n"
+            "   documented limit — a strip whose children are all custom elements — was met for\n"
+            "   real: this layer's only child is a component host, neither a box nor a control,\n"
+            "   so the map's test matched nothing. A box whose element children hold no CONTENT\n"
+            "   (text, links, media, controls) is holding structure, and a custom element is\n"
+            "   structure as a <div> is. A bar holding its <button>s directly is not, and keeps\n"
+            "   its ground, exactly as the player rule says of the transport bar. */\n"
+          + rule(PLAYER_DOC_CHROME_SEL, "background-color: transparent")),
 
     # The doubled guard is not decoration: `ui: borders` sits at (1,1,0) now that it carves
     # the CSS triangles out, and a single guard here would tie with it and leave which of cyan
