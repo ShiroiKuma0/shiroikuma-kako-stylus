@@ -1066,6 +1066,48 @@ PLAYER_DOC_CHROME_SEL = ",\n".join([
     "%s ~ %s" % (PLAYER_DOC_HOST, PLAYER_DOC_CHROME),
     "%s ~ %s %s" % (PLAYER_DOC_HOST, PLAYER_DOC_CHROME, PLAYER_DOC_CHROME),
 ])
+# ⚠ The thirteenth kind of layer: the chrome a LIGHTBOX lays over its photo.  Click a picture on
+# a site that opens it full size and PhotoSwipe — the lightbox most of the web embeds — builds
+#
+#     div.pswp[role=dialog]
+#       div.pswp__bg                          the scrim, BEFORE the picture
+#       section.pswp__scroll-wrap
+#         div.pswp__container > div.pswp__item > div.pswp__zoom-wrap > … <img>
+#         div.pswp__top-bar                   the counter, the close button, the spinner box
+#         button.pswp__button--arrow…
+#       div.pswp__slot-root                   a site's own chrome, mounted after the picture:
+#         div  (position: absolute, the whole window, pointer-events: none)
+#           div (header: name, caption)   div (footer: like, tip, "go to post")
+#
+# and every box after the branch that holds the photo is laid OVER it.  The site leaves them
+# transparent; `bg all`, `bg div` or `bg blocks` — any one alone — makes the window-sized one an
+# opaque sheet and the top bar a 56px band across the top of the photo: a viewer measured 99.7 %
+# `#000` with the photo loaded at full resolution underneath, and the black square left in the
+# middle of it was the spinner box, 50x60, `position: fixed` at the centre.  Nothing structural
+# reaches the window-sized box — not `:empty` (it holds the header and the footer), not the
+# player rules (no <video>), not the map chrome (no <canvas>), not the wrapper chain (it holds
+# two boxes, and nothing frames the picture above it).
+#
+# The scope is NAMED, on the terms `vjs-` and the text layers are: `.pswp` is the library's root
+# and names an idiom, never a site.  A structural scope was weighed and refused — a dialog holding
+# an ARIA carousel (`aria-roledescription="carousel"`, which PhotoSwipe also writes) is a
+# lightbox here but a product quick-view elsewhere, a gallery column and a details column side by
+# side, and the details column would lose its ground over the page.  Inside the root the
+# structure carries it: what FOLLOWS a sibling holding the picture is stacked over it, and what
+# precedes it — the scrim — is under it; so a later sibling of any box on the path down to the
+# photo is chrome, and so is everything inside it.  Every element of it, not only the boxes: the
+# words of the caption sit on the photo, which is the choice made over keeping them on a black
+# band (that band would hide a strip of the photo top and bottom).  Controls keep the pill
+# `ui: controls` gives them, media the grey, marks and samples their own paint.  Next slides are
+# later siblings too and lose their grounds, which costs nothing: the container behind them is
+# black.  The cost is a menu opened from the chrome (a bookmark dropdown in the footer), whose
+# panel would show over the photo without a ground.
+LIGHTBOXES = [".pswp"]
+HOLDS_PICTURE = ":is(%s, :has(%s))" % (", ".join(MEDIA[:4]), ", ".join(MEDIA[:4]))
+LIGHTBOX_CHROME = "*%s%s%s" % (SURFACE, NOT_MEDIA, NOT_CONTROLS)
+LIGHTBOX_CHROME_SEL = ",\n".join([
+    "%s %s ~ %s" % (lb, HOLDS_PICTURE, LIGHTBOX_CHROME) for lb in LIGHTBOXES] + [
+    "%s %s ~ * %s" % (lb, HOLDS_PICTURE, LIGHTBOX_CHROME) for lb in LIGHTBOXES])
 CODE_TAGS = ["pre", "code", "kbd", "samp", "tt"]
 # These sit on the id ladder too, and have to: they carry a colour, so they compete with the
 # `fg all` blanket at (1,0,0), and the descendant form competes with `fg text` at (1,0,1) —
@@ -1679,7 +1721,22 @@ styles = [
             "   (text, links, media, controls) is holding structure, and a custom element is\n"
             "   structure as a <div> is. A bar holding its <button>s directly is not, and keeps\n"
             "   its ground, exactly as the player rule says of the transport bar. */\n"
-          + rule(PLAYER_DOC_CHROME_SEL, "background-color: transparent")),
+          + rule(PLAYER_DOC_CHROME_SEL, "background-color: transparent")
+          + "\n/* ⚠ The thirteenth layer: the chrome a LIGHTBOX lays over its photo. PhotoSwipe,\n"
+            "   the lightbox most of the web embeds, builds a scroll wrap holding the picture and,\n"
+            "   AFTER it, a top bar (counter, close button, spinner box) and whatever chrome the\n"
+            "   site mounts — met as one window-sized click-through box holding a header and a\n"
+            "   footer. All transparent; `bg all`, `bg div` or `bg blocks`, any one alone, made\n"
+            "   the window-sized box an opaque sheet: a viewer 99.7 % #000 with the photo loaded\n"
+            "   at full resolution underneath. Nothing structural reaches it (not :empty, no\n"
+            "   <video>, no <canvas>, nothing framing the picture above it), so the scope is\n"
+            "   NAMED, as `vjs-` and the text layers are: `.pswp` is the library's root, not a\n"
+            "   site. Inside it, what FOLLOWS a box holding the picture is stacked over it and\n"
+            "   what precedes it (the scrim) is under it — so every later sibling of a box on the\n"
+            "   path down to the photo is chrome, and everything inside it. The caption's words\n"
+            "   sit on the photo rather than on a black band that would hide a strip of it.\n"
+            "   Controls keep their pill, media the grey, marks and samples their own paint. */\n"
+          + rule(LIGHTBOX_CHROME_SEL, "background-color: transparent")),
 
     # The doubled guard is not decoration: `ui: borders` sits at (1,1,0) now that it carves
     # the CSS triangles out, and a single guard here would tie with it and leave which of cyan

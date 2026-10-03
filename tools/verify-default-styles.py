@@ -537,6 +537,29 @@ __SHEETS__
             src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw="
             ><a href="#">App Store</a></div></div></div
       ><button class="mapResizer" id="mapResizer"></button></div></div>
+  <!-- a lightbox: PhotoSwipe's scroll wrap holds the photo and, after it, the top bar; after
+       the wrap, a site's own chrome -- one window-sized box holding a header and a footer.
+       Everything after the branch that holds the photo is laid over it -->
+  <div class="pswp" id="lbRoot" role="dialog"
+    ><div class="pswp__bg" id="lbBg"></div
+    ><section class="pswp__scroll-wrap" id="lbWrap"
+      ><div class="pswp__container" id="lbContainer"
+        ><div class="pswp__item" id="lbItem"><div class="pswp__zoom-wrap"
+          ><div class="pswp__img" id="lbFrame"><img id="lbImg" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw="></div></div></div
+        ><div class="pswp__item" id="lbNext"></div></div
+      ><div class="pswp__top-bar" id="lbTopBar"
+        ><div class="pswp__counter" id="lbCounter">1 / 3</div
+        ><div class="pswp__preloader" id="lbSpinner"><svg width="8" height="8"></svg></div
+        ><button class="pswp__button" id="lbClose">Close</button></div></section
+    ><div class="pswp__slot-root" id="lbSlot"
+      ><div class="viewerChrome" id="lbLayer"
+        ><div class="viewerHeader" id="lbHeader"
+          ><div class="viewerCaption" id="lbCaptionBox"><span id="lbCaption">a caption</span></div></div
+        ><div class="viewerFooter" id="lbFooter"><button id="lbLike">Like</button></div></div></div></div>
+  <!-- the same shape without the library's root: a box holding a picture, and a box after it -->
+  <div id="notLightbox"
+    ><div id="nlbPics"><img id="nlbImg" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw="></div
+    ><div id="nlbAfter"><div id="nlbAfterIn">words after a picture</div></div></div>
   <video class="bgFilm" id="bgFilm"></video>
   <div class="pageBlock" id="pageBlock">page content over a background film</div>
   <a class="css-1qz4h9b" id="wordmark" href="#"></a>
@@ -1123,6 +1146,26 @@ checks.push({name: 'NOTE :empty vs whitespace-only element', ok: true,
 t('the same shape on a PAGE is untouched: this body has prose in it, so it is not a player doc',
   g('notPlayerChrome').backgroundColor + ' / ' + g('npcInner').backgroundColor,
   g('notPlayerChrome').backgroundColor === BLACK && g('npcInner').backgroundColor === BLACK);
+
+// --- the thirteenth layer: the chrome a lightbox lays over its photo -------
+const CLEAR = 'rgba(0, 0, 0, 0)';
+t('a lightbox keeps the ground BEHIND its photo (the container is black)',
+  g('lbContainer').backgroundColor + ' / ' + g('lbItem').backgroundColor,
+  g('lbContainer').backgroundColor === BLACK && g('lbItem').backgroundColor === BLACK);
+t('the top bar after the photo is laid over it, and so is the spinner box in it',
+  g('lbTopBar').backgroundColor + ' / ' + g('lbSpinner').backgroundColor + ' / ' + g('lbCounter').backgroundColor,
+  [g('lbTopBar'), g('lbSpinner'), g('lbCounter')].every(c => c.backgroundColor === CLEAR));
+t('the site chrome after the scroll wrap is a layer, the window-sized box and all inside it',
+  ['lbSlot', 'lbLayer', 'lbHeader', 'lbCaptionBox', 'lbCaption', 'lbFooter'].map(i => g(i).backgroundColor).join(' / '),
+  ['lbSlot', 'lbLayer', 'lbHeader', 'lbCaptionBox', 'lbCaption', 'lbFooter'].every(i => g(i).backgroundColor === CLEAR));
+t('...and the caption keeps its ink, sitting on the photo',
+  g('lbCaption').color, g('lbCaption').color === YELLOW);
+t('a control in the chrome keeps its pill',
+  g('lbLike').backgroundColor + ' / ' + g('lbClose').backgroundColor,
+  g('lbLike').backgroundColor === BLACK && g('lbClose').backgroundColor === BLACK);
+t('the same shape WITHOUT the lightbox root is untouched',
+  g('nlbAfter').backgroundColor + ' / ' + g('nlbAfterIn').backgroundColor,
+  g('nlbAfter').backgroundColor === BLACK && g('nlbAfterIn').backgroundColor === BLACK);
 
 // --- known trade-off, reported not asserted -------------------------------
 checks.push({name: 'NOTE italic <i> keeps page font (accepted trade-off)',
