@@ -5,6 +5,56 @@ for the upstream [Stylus](https://github.com/openstyles/stylus) release it is bu
 ships no changelog file of its own — its notes live only on GitHub Releases — so this file is
 entirely ours to maintain, newest first.
 
+## 白い熊 Stylus 2.4.10.79 — 2026-10-03
+
+Built on upstream 2.4.10. One report: on a photo site, clicking a picture opened it full size as a
+black rectangle. The behavioural fixture grows from 195 checks to 201. Note the version jump:
+2.4.10.78 was the unsigned iteration build the repair was measured on.
+
+### The thirteenth kind of layer: the chrome a lightbox lays over its photo
+
+Click a picture on a site that opens it full size and PhotoSwipe — the lightbox most of the web
+embeds — builds this:
+
+    div.pswp[role=dialog]
+      div.pswp__bg                          the scrim, BEFORE the picture
+      section.pswp__scroll-wrap
+        div.pswp__container > … > <img>     the photo
+        div.pswp__top-bar                   counter, close button, spinner box
+      div.pswp__slot-root                   the site's own chrome, after the picture:
+        div  (absolute, the whole window, pointer-events: none)
+          div (header: name, caption)   div (footer: like, tip, go to post)
+
+Every box after the branch that holds the photo is laid **over** it, and the site leaves them
+transparent. `bg all`, `bg div` or `bg blocks` — **any one alone** — made the window-sized box an
+opaque sheet, the top bar a band across the top of the photo, and the spinner box a black square in
+the middle of it: the viewer measured **99.7 % `#000`** with the photo loaded at full resolution
+underneath.
+
+**Not a regression of ours.** Swapping the live sheets for the libraries of 2.4.10.74, .71, .67,
+.59 and .50 in turn, every one painted the layer exactly the same; the site had changed its viewer.
+Plain PhotoSwipe, without the site's chrome, rendered correctly under all of them.
+
+Nothing structural reaches it: not `:empty` (it holds the header and the footer), no `<video>` for
+the player rules, no `<canvas>` for the map chrome, nothing framing the picture above it for the
+wrapper chain. So the scope is **named**, on the terms `vjs-` and the text layers are — `.pswp` is
+the library's root, not a site. A structural scope was weighed and refused: a dialog holding an ARIA
+carousel is a lightbox here and a product quick-view elsewhere, whose details column would lose its
+ground over the page.
+
+Inside the root, what **follows** a box holding the picture is stacked over it and what precedes it
+(the scrim) is under it, so every later sibling of a box on the path down to the photo is chrome, and
+everything inside it. **Every element, not only the boxes**: the caption's words sit on the photo,
+chosen over a black band that would hide a strip of it at the top and bottom. Controls keep their
+pill, media the grey, marks and colour samples their own paint. The ground *behind* the photo stays
+black. The one cost: a menu opened from that chrome — a bookmark dropdown in the footer — shows over
+the photo without a ground.
+
+Verified live in 白い熊 火狐 against the real viewer, attached over the remote debugger, and by six
+new fixture checks: the ground behind the photo kept, the top bar and spinner box cleared, the site's
+chrome and everything in it cleared, the caption still yellow, the controls still on their pills, and
+the same shape **without** the library root left untouched.
+
 ## 白い熊 Stylus 2.4.10.76 — 2026-09-28
 
 Built on upstream 2.4.10. One report — an embedded video that played as a black rectangle — and it
