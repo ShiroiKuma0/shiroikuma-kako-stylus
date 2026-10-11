@@ -5,6 +5,43 @@ for the upstream [Stylus](https://github.com/openstyles/stylus) release it is bu
 ships no changelog file of its own — its notes live only on GitHub Releases — so this file is
 entirely ours to maintain, newest first.
 
+## 白い熊 Stylus 2.4.10.81 — 2026-10-11
+
+Built on upstream 2.4.10. One report: a shop's catalogue page showed every product photo as a black
+rectangle. The behavioural fixture grows from 201 checks to 205. Note the version jump: 2.4.10.80
+was the unsigned iteration build.
+
+### The fourteenth kind of layer: the content box a shop's card lays over its photo
+
+Dawn — Shopify's reference theme, whose card most of the platform's stores render through its
+descendants — builds every product card like this:
+
+    div.card__inner.ratio                   in flow, sized by a padding-bottom ::before
+      div.card__media                       position: absolute; z-index: 0 — the frame
+        div.media > img                     the photo
+      div.card__content                     a flex child stretched to the card's full height,
+        div.card__information               so laid OVER the photo; display: none here
+        div.card__badge                     the sold-out pill, empty when there is none
+
+With a picture present the theme hides the information inside that content box; the box exists only
+to place the badge in a corner of the photo. `bg div` or `bg blocks` — **either one alone** — made it
+an opaque sheet the size of the photo, and the whole catalogue came out as names and prices under
+black rectangles, every photo loaded and intact behind them.
+
+Nothing structural reaches it: not `:empty` (it holds the hidden information), not the wrapper chain
+(it holds two boxes, and the picture is two levels down a sibling), not the whole-card click target
+(it is no link). What makes it a layer is its sibling's `position` and its children's `display` —
+facts about the page's stylesheet, which CSS cannot ask. So the pair is **named**,
+`.card__media ~ .card__content`, on the terms `.pswp` and `vjs-` are: the theme's BEM, never a store.
+Elsewhere the same pair is the commonest card of all, words below the picture in flow, and there
+unpainting the content box changes nothing, every ancestor being black already. The boxes inside it
+go too; the badge pill — a span with a ground of its own — keeps it, so it stays legible over the
+photo.
+
+Verified in Gecko on the live page at desktop and phone widths, by four new fixture checks (205 pass
+in 白い熊 火狐), and by a pixel A/B against the previous library: zero matches and zero changed
+pixels on the reference pages.
+
 ## 白い熊 Stylus 2.4.10.79 — 2026-10-03
 
 Built on upstream 2.4.10. One report: on a photo site, clicking a picture opened it full size as a
