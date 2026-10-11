@@ -560,6 +560,14 @@ __SHEETS__
   <div id="notLightbox"
     ><div id="nlbPics"><img id="nlbImg" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw="></div
     ><div id="nlbAfter"><div id="nlbAfterIn">words after a picture</div></div></div>
+  <!-- a shop's product card (Dawn): the photo in an absolute .card__media and, after it, a
+       .card__content stretched over it whose information the theme hides; the badge pill in it -->
+  <div class="card__inner ratio" id="cardInner"
+    ><div class="card__media" id="cardMedia"><div class="media" id="cardMediaBox"
+      ><img id="cardImg" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw="></div></div
+    ><div class="card__content" id="cardOver"
+      ><div class="card__information" id="cardOverInfo"><h3 id="cardOverHead"><a href="#">a product</a></h3></div
+      ><div class="card__badge" id="cardBadgeBox"><span class="badge" id="cardBadge">Sold out</span></div></div></div>
   <video class="bgFilm" id="bgFilm"></video>
   <div class="pageBlock" id="pageBlock">page content over a background film</div>
   <a class="css-1qz4h9b" id="wordmark" href="#"></a>
@@ -1166,6 +1174,18 @@ t('a control in the chrome keeps its pill',
 t('the same shape WITHOUT the lightbox root is untouched',
   g('nlbAfter').backgroundColor + ' / ' + g('nlbAfterIn').backgroundColor,
   g('nlbAfter').backgroundColor === BLACK && g('nlbAfterIn').backgroundColor === BLACK);
+
+// --- the fourteenth layer: the content box a shop's card lays over its photo -
+t('the card keeps its ground and its media frame keeps the one behind the photo',
+  g('cardInner').backgroundColor + ' / ' + g('cardMedia').backgroundColor,
+  g('cardInner').backgroundColor === BLACK && g('cardMedia').backgroundColor === BLACK);
+t('the content box after the media frame is laid over the photo, and the boxes in it',
+  ['cardOver', 'cardOverInfo', 'cardBadgeBox'].map(i => g(i).backgroundColor).join(' / '),
+  ['cardOver', 'cardOverInfo', 'cardBadgeBox'].every(i => g(i).backgroundColor === CLEAR));
+t('...the badge pill keeps its ground, so it stays legible over the photo',
+  g('cardBadge').backgroundColor, g('cardBadge').backgroundColor === BLACK);
+t('...and the photo keeps the grey behind it',
+  g('cardImg').backgroundColor, g('cardImg').backgroundColor !== CLEAR && g('cardImg').backgroundColor !== BLACK);
 
 // --- known trade-off, reported not asserted -------------------------------
 checks.push({name: 'NOTE italic <i> keeps page font (accepted trade-off)',

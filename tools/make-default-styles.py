@@ -1108,6 +1108,38 @@ LIGHTBOX_CHROME = "*%s%s%s" % (SURFACE, NOT_MEDIA, NOT_CONTROLS)
 LIGHTBOX_CHROME_SEL = ",\n".join([
     "%s %s ~ %s" % (lb, HOLDS_PICTURE, LIGHTBOX_CHROME) for lb in LIGHTBOXES] + [
     "%s %s ~ * %s" % (lb, HOLDS_PICTURE, LIGHTBOX_CHROME) for lb in LIGHTBOXES])
+# ⚠ The fourteenth kind of layer: the second content box a shop's product card lays over its
+# photo.  Dawn — Shopify's reference theme, and through its descendants the card most of the
+# platform's stores render — builds every product card as
+#
+#     div.card__inner.ratio                   in flow, sized by a padding-bottom ::before
+#       div.card__media                       position: absolute; z-index: 0 — the frame
+#         div.media > img                     the photo
+#       div.card__content                     position: relative, a flex child stretched to
+#         div.card__information               the full height of the box, so laid OVER the photo
+#         div.card__badge                     (the "sold out" pill, empty when there is none)
+#
+# and hides the information inside it with `display: none` whenever the card has a picture: the
+# box is there to place the badge in a corner of the photo and is otherwise nothing.  Painted, it
+# is an opaque sheet the size of the photo — `bg div` or `bg blocks` alone, either one — and a
+# shop's whole catalogue came out as names and prices under black rectangles, the photos loaded
+# and intact behind them.  Nothing structural reaches it.  Not `:empty` (it holds the hidden
+# information); not the wrapper chain, which wants a box whose whole content is ONE box and a
+# frame directly holding the picture, where this holds two and the picture is two levels down a
+# sibling; not the card-link sheet, it being no link.  What makes it a layer is that its sibling
+# is absolutely positioned and the information inside it is not displayed — two facts about the
+# page's stylesheet, which CSS cannot ask, the walls `pointer-events: none` and `text-indent`
+# already stand behind.  So it is NAMED, on the terms `.pswp` and `vjs-` are: the pair is the
+# theme's own BEM and names the idiom, never a store.  Following only, since the frame comes
+# first.  Elsewhere the same pair is the commonest card of all, picture above and words below in
+# flow, and there unpainting the content box costs nothing — every ancestor is black already.
+# The boxes inside go with it (the information, the badge slot), the badge pill itself does not:
+# it is a span with a ground of its own, which is what keeps it legible over the photo.
+CARD_OVERLAYS = [(".card__media", ".card__content")]
+CARD_OVERLAY = "%s%s%s" % (IS_SHELL_BOX, SURFACE, NOT_VALUE_BAR)
+CARD_OVERLAY_SEL = ",\n".join([
+    "%s ~ %s%s" % (frame, box, CARD_OVERLAY) for frame, box in CARD_OVERLAYS] + [
+    "%s ~ %s %s" % (frame, box, CARD_OVERLAY) for frame, box in CARD_OVERLAYS])
 CODE_TAGS = ["pre", "code", "kbd", "samp", "tt"]
 # These sit on the id ladder too, and have to: they carry a colour, so they compete with the
 # `fg all` blanket at (1,0,0), and the descendant form competes with `fg text` at (1,0,1) —
@@ -1736,7 +1768,18 @@ styles = [
             "   path down to the photo is chrome, and everything inside it. The caption's words\n"
             "   sit on the photo rather than on a black band that would hide a strip of it.\n"
             "   Controls keep their pill, media the grey, marks and samples their own paint. */\n"
-          + rule(LIGHTBOX_CHROME_SEL, "background-color: transparent")),
+          + rule(LIGHTBOX_CHROME_SEL, "background-color: transparent")
+          + "\n/* \u26a0 The fourteenth layer: the second content box a shop's product card lays\n"
+            "   over its photo. Dawn, Shopify's reference theme, puts the photo in an absolutely\n"
+            "   positioned .card__media and after it a .card__content stretched to the full\n"
+            "   height of the card, whose information is display: none whenever there is a\n"
+            "   picture — it only places the badge. Painted, it is a black sheet the size of the\n"
+            "   photo: a whole catalogue of names and prices under black rectangles. Its sibling's\n"
+            "   position and its children's display are facts about the stylesheet that CSS\n"
+            "   cannot ask, so the pair is NAMED, as .pswp is — the theme's BEM, not a store.\n"
+            "   Where the same pair is an ordinary card (words below the picture, in flow) the\n"
+            "   ancestors are black already and nothing changes. The badge pill keeps its ground. */\n"
+          + rule(CARD_OVERLAY_SEL, "background-color: transparent")),
 
     # The doubled guard is not decoration: `ui: borders` sits at (1,1,0) now that it carves
     # the CSS triangles out, and a single guard here would tie with it and leave which of cyan
