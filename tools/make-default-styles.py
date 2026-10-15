@@ -202,6 +202,11 @@ TEXT_INPUTS = ('[type=text], [type=search], [type=email], [type=url], [type=tel]
                '  [type=password], [type=number], [type=date], [type=datetime-local],\n'
                '  :not([type])')
 
+# Children that draw no box of their own. Counting what stands beside a field, these are not there:
+# a search form carries a row of hidden inputs before its box. Inside :where() so a selector reading
+# it weighs nothing for it.
+NO_BOX = ':where(input[type=hidden], script, style, template, noscript, datalist)'
+
 # A floating label or a fake placeholder is a span or a label that FOLLOWS its control, and that
 # order is not a coincidence: it is what makes `input:not(:placeholder-shown) + label` expressible,
 # so every implementation of the pattern puts it there. It is then laid back over the control's
@@ -1395,9 +1400,18 @@ styles = [
             "   which catches a leading icon written before the input as well as after it. Being\n"
             "   greedy costs nothing here, unlike everywhere else in this file: over-matching only\n"
             "   means a field keeps the padding the site chose, which is by definition what the\n"
-            "   site wanted. */\n"
-          + rule("*:not(:has(> :is(span, label, i, svg, img)))%s > input%s:is(%s)"
-                 % (NEVER, NEVER, TEXT_INPUTS),
+            "   site wanted.\n"
+            "   ⚠ And the adornment is not always a span or an icon element: a search box's\n"
+            "   magnifier is as often a <button> laid over the start of the field — the submit\n"
+            "   button — and a list of icon tags missed it, so the pad was cut and the first\n"
+            "   letters typed went under the glass. So the question is no longer WHAT stands\n"
+            "   beside the field but WHETHER anything does: a parent rendering two children is a\n"
+            "   parent with something next to the input. Hidden inputs, scripts and the like draw\n"
+            "   nothing and are not counted — a form carries a row of hidden inputs before every\n"
+            "   search box. `> A ~ B`, both non-rendering-excluded, says \"two such children\"\n"
+            "   whatever their order, and stays in one :has() (no nesting). */\n"
+          + rule("*:not(:has(> :not(%s) ~ :not(%s)))%s > input%s:is(%s)"
+                 % (NO_BOX, NO_BOX, NEVER, NEVER, TEXT_INPUTS),
                  "padding-left: 0.7em",
                  "padding-right: 0.7em")
           + "\n"

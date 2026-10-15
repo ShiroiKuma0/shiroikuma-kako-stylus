@@ -236,6 +236,10 @@ PAGE = """<!doctype html><meta charset="utf-8"><title>verify</title>
   .fieldGroup { position: relative; display: block; width: 260px; }
   /* the room the site made for its leading envelope — ours must not shrink it */
   .fieldGroup input { padding-left: 34px; }
+  /* a search box whose magnifier is the submit BUTTON laid over the start of the field */
+  .glassForm { position: relative; width: 260px; }
+  .glassForm button { position: absolute; left: 0; top: 0; width: 30px; height: 30px; }
+  .glassForm input { padding-left: 40px; }
   .floatLabel { position: absolute; inset: 11px 0 0 3px; background: #ffffff; }
   .plainSpan { background: #eeeeee; }
   /* a sports federation's results board: the winner of each bout is an empty span in a cell
@@ -334,7 +338,13 @@ __SHEETS__
   <p class="fieldGroup" id="fieldGroup"><input id="flInput" type="text" value="typed text"
     ><span class="floatLabel" id="flLabel"><i class="mailIcon" id="flIcon"></i>Email address</span></p>
   <!-- ... while a span that follows no control is ordinary content and keeps its ground -->
-  <div id="plainWrap"><input id="plainInp" type="text" value="nothing beside me"></div>
+  <!-- the leading icon is not always a span or an <i>: a search form's magnifier is as often
+       its submit <button>, after a row of hidden inputs that draw nothing -->
+  <form class="glassForm" id="glassForm" action="#"><input type="hidden" name="a" value="1"
+    ><input type="hidden" name="b" value="2"><button type="submit" id="glassBtn"><svg
+    width="16" height="16"><circle cx="8" cy="8" r="6"/></svg></button><input id="glassInp"
+    type="text" value="typed text"></form>
+  <div id="plainWrap"><input type="hidden" name="c" value="3"><input id="plainInp" type="text" value="nothing beside me"></div>
   <span class="plainSpan" id="plainSpan">not a field label</span>
   <!-- a results board: the marks are empty spans in cells, and their colour is the result -->
   <table class="board"><tr class="boutWin"><td id="winCell"><span id="winBar"></span></td
@@ -963,7 +973,9 @@ t('the field under it still shows what is typed',
   g('flInput').backgroundColor === BLACK && g('flInput').color === YELLOW);
 t('a field with a leading adornment keeps the room the site made for it',
   g('flInput').paddingLeft, g('flInput').paddingLeft === '34px');
-t('a field with nothing beside it still gets the pill padding',
+t('a field whose leading icon is a button keeps the room the site made for it',
+  g('glassInp').paddingLeft, g('glassInp').paddingLeft === '40px');
+t('a field with nothing beside it but a hidden input still gets the pill padding',
   g('plainInp').paddingLeft + ' vs 0.7em of ' + g('plainInp').fontSize,
   Math.abs(parseFloat(g('plainInp').paddingLeft) - 0.7 * parseFloat(g('plainInp').fontSize)) < 0.5);
 t('a span that follows no control is content and keeps its ground',
