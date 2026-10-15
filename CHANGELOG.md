@@ -5,6 +5,38 @@ for the upstream [Stylus](https://github.com/openstyles/stylus) release it is bu
 ships no changelog file of its own — its notes live only on GitHub Releases — so this file is
 entirely ours to maintain, newest first.
 
+## 白い熊 Stylus 2.4.10.82 — 2026-10-15
+
+Built on upstream 2.4.10. One report, met on many sites: click into a search box and the first three
+to five characters typed disappear under the icon at the start of the field. The behavioural fixture
+grows from 205 checks to 206.
+
+### A field's leading icon is not always an icon tag
+
+`ui: controls` gives every single-line text field `0.7em` of horizontal padding, so the pill's
+rounded ends do not sit against the text. Forcing that is wrong wherever the site padded the field
+for a leading icon — a smaller value walks the typed text underneath the glyph — so the padding was
+already skipped for a field whose parent holds an adornment. But the adornment test was a **list**:
+`span`, `label`, `i`, `svg`, `img`. A search box's magnifier is as often the form's **submit
+button**, laid over the start of the field:
+
+    form
+      input[type=hidden] × 4                the search parameters — draw nothing
+      button[type=submit] > svg             the magnifier, positioned over the field's start
+      input[type=text]                      padded by the site to clear it
+      button > svg                          a filter button at the other end
+
+A `<button>` was not on the list, so the site's room was cut to `0.7em` and the text started under
+the glass.
+
+The test now asks not *what* stands beside the field but *whether* anything does: a parent that
+renders two children has something next to the input, whatever it is, and the field keeps the
+padding the site chose. Children that draw no box are not counted — hidden inputs, `script`,
+`style`, `template`, `noscript`, `datalist` — since a search form carries a row of hidden inputs
+before its box. Being greedy is free here, as before: over-matching only means a field keeps the
+site's own padding. The exclusion list sits in a `:where()`, so the rule weighs less than it did,
+and nothing else in the library sets a field's padding.
+
 ## 白い熊 Stylus 2.4.10.81 — 2026-10-11
 
 Built on upstream 2.4.10. One report: a shop's catalogue page showed every product photo as a black
