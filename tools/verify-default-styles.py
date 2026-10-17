@@ -578,6 +578,12 @@ __SHEETS__
     ><div class="card__content" id="cardOver"
       ><div class="card__information" id="cardOverInfo"><h3 id="cardOverHead"><a href="#">a product</a></h3></div
       ><div class="card__badge" id="cardBadgeBox"><span class="badge" id="cardBadge">Sold out</span></div></div></div>
+  <!-- a shop's tile: the photo in a link and, after it, an absolute clipping span laid over it
+       holding the rotated "free delivery" band; a discount badge holding its words directly -->
+  <div class="bi" id="ribTile"
+    ><a class="pc" href="#" id="ribLink"><img id="ribImg" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw="></a
+    ><span class="label-free-delivery-list" id="ribClip"><span class="text" id="ribBand">Free<br>delivery</span></span
+    ><span class="discount" id="ribBadge">-20 %</span></div>
   <video class="bgFilm" id="bgFilm"></video>
   <div class="pageBlock" id="pageBlock">page content over a background film</div>
   <a class="css-1qz4h9b" id="wordmark" href="#"></a>
@@ -1198,6 +1204,17 @@ t('...the badge pill keeps its ground, so it stays legible over the photo',
   g('cardBadge').backgroundColor, g('cardBadge').backgroundColor === BLACK);
 t('...and the photo keeps the grey behind it',
   g('cardImg').backgroundColor, g('cardImg').backgroundColor !== CLEAR && g('cardImg').backgroundColor !== BLACK);
+
+// --- the fifteenth layer: the box a corner ribbon is clipped by ------------
+t('the span clipping a corner ribbon beside a picture is laid over the photo',
+  g('ribClip').backgroundColor, g('ribClip').backgroundColor === CLEAR);
+t('...the band inside it keeps its ground, so its words stay legible',
+  g('ribBand').backgroundColor, g('ribBand').backgroundColor === BLACK);
+t('...and a badge holding its words directly beside the picture keeps its ground',
+  g('ribBadge').backgroundColor, g('ribBadge').backgroundColor === BLACK);
+t('...and the tile and the link around the photo keep theirs',
+  g('ribTile').backgroundColor + ' / ' + g('ribLink').backgroundColor,
+  g('ribTile').backgroundColor === BLACK);
 
 // --- known trade-off, reported not asserted -------------------------------
 checks.push({name: 'NOTE italic <i> keeps page font (accepted trade-off)',

@@ -1145,6 +1145,32 @@ CARD_OVERLAY = "%s%s%s" % (IS_SHELL_BOX, SURFACE, NOT_VALUE_BAR)
 CARD_OVERLAY_SEL = ",\n".join([
     "%s ~ %s%s" % (frame, box, CARD_OVERLAY) for frame, box in CARD_OVERLAYS] + [
     "%s ~ %s %s" % (frame, box, CARD_OVERLAY) for frame, box in CARD_OVERLAYS])
+# ⚠ The fifteenth kind of layer: the clipping box a corner ribbon is cut by.  A shop's search
+# results put a diagonal "free delivery" band across the top corner of every photo, and the band
+# is built the only way CSS can build one: a long strip rotated 45° — itself 400x33, its bounding
+# box 306x306 — inside a box that clips it, and that box is laid over the photo at the full size
+# of the picture:
+#
+#     div                                     the tile's picture row
+#       a > img                               the photo, 210x210
+#       span.label-…                          position: absolute; overflow: hidden; 200x200
+#         span.text                           the band, rotated, with the words on it
+#
+# `bg all` at (1,0,0) or `bg text` at (1,0,1), either one alone, makes the clipping box an opaque
+# sheet the size of the photo, and every tile showed a sliver of its picture down one edge and a
+# black square where the rest belonged.  Nothing reached it: not `:empty` (it holds the band);
+# not the card link, it being no link; not the nav strip, the band being no control; not the
+# wrapper chain, which is scoped INSIDE a box directly holding the picture, where this is beside
+# the link that holds it.  The shape is the wrapper chain's premise on the sibling axis — a box
+# whose whole content is one element has nothing of its own to make legible, the thing it holds
+# does — scoped to a SPAN, which is what makes it a layer: a span is inline, and one with a box
+# of its own beside a picture has been given that box to lay something over the picture.  A span
+# holding text directly (a "-20 %" badge) is not matched and keeps its ground, and so does the
+# band itself, whose words stay on black.  Single guard: (1,1,2) clears `bg text`, and controls
+# keep `ui: controls` at (2,1,1).  Cost: an in-flow span wrapping one element next to a picture
+# shows its ancestor's black instead of its own, which is the same black.
+RIBBON_CLIP = "span%s%s%s:has(> *:only-child)" % (SURFACE, NOT_CONTROLS, NO_OWN_MEDIA)
+RIBBON_CLIP_SEL = beside_media(RIBBON_CLIP)
 CODE_TAGS = ["pre", "code", "kbd", "samp", "tt"]
 # These sit on the id ladder too, and have to: they carry a colour, so they compete with the
 # `fg all` blanket at (1,0,0), and the descendant form competes with `fg text` at (1,0,1) —
@@ -1793,7 +1819,15 @@ styles = [
             "   cannot ask, so the pair is NAMED, as .pswp is — the theme's BEM, not a store.\n"
             "   Where the same pair is an ordinary card (words below the picture, in flow) the\n"
             "   ancestors are black already and nothing changes. The badge pill keeps its ground. */\n"
-          + rule(CARD_OVERLAY_SEL, "background-color: transparent")),
+          + rule(CARD_OVERLAY_SEL, "background-color: transparent")
+          + "\n/* ⚠ The fifteenth layer: the box a corner ribbon is clipped by. A diagonal\n"
+            "   \"free delivery\" band is a long strip rotated 45° inside a span that clips it,\n"
+            "   and that span is absolutely positioned over the photo at the size of the picture.\n"
+            "   Painted by `bg all` or `bg text` alone, it is a black square over every photo of a\n"
+            "   shop's results. A span whose whole content is one element, beside a picture, has\n"
+            "   nothing of its own to make legible — the thing it holds does, and keeps its\n"
+            "   ground; a span holding its words directly (a discount badge) is not matched. */\n"
+          + rule(RIBBON_CLIP_SEL, "background-color: transparent")),
 
     # The doubled guard is not decoration: `ui: borders` sits at (1,1,0) now that it carves
     # the CSS triangles out, and a single guard here would tie with it and leave which of cyan
