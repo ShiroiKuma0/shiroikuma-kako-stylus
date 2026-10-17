@@ -5,6 +5,35 @@ for the upstream [Stylus](https://github.com/openstyles/stylus) release it is bu
 ships no changelog file of its own — its notes live only on GitHub Releases — so this file is
 entirely ours to maintain, newest first.
 
+## 白い熊 Stylus 2.4.10.84 — 2026-10-17
+
+Built on upstream 2.4.10. One report: on a shop's search results every product photo was black but
+for a sliver down one edge. The behavioural fixture grows from 206 checks to 210.
+
+### The box a corner ribbon is clipped by is not a surface
+
+A diagonal “free delivery” band across the corner of a product photo is built the only way CSS can
+build one — a long strip rotated 45° inside a box that clips it — and that box is laid over the
+photo at the size of the picture:
+
+    div                                     the tile's picture row
+      a > img                               the photo
+      span                                  position: absolute; overflow: hidden — the clip
+        span                                the band, rotated, with its words on it
+
+`bg all` or `bg text`, either one alone, painted the clipping span into an opaque square over the
+photo. None of the existing layer rules reached it: it is not `:empty` (it holds the band), not a
+link or a control, and the wrapper-chain rule only looks inside the box holding the picture, where
+this lies beside it.
+
+`ui: overlays` now leaves transparent a `span` that lies beside a picture, holds none itself, and
+whose whole content is one element — such a box has nothing of its own to make legible; what it
+holds does. The band keeps its black ground, and a badge holding its words directly (a “-20 %”) is
+not matched and keeps its own. Verified with a pixel A/B: no change on the reference pages.
+
+Known leftover: the typography blanket's `text-align: left` moves the band's words to the clipped-off
+end of the strip, so the ribbon reads as a plain black stripe.
+
 ## 白い熊 Stylus 2.4.10.82 — 2026-10-15
 
 Built on upstream 2.4.10. One report, met on many sites: click into a search box and the first three
