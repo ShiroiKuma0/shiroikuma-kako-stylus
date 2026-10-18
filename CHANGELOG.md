@@ -5,6 +5,21 @@ for the upstream [Stylus](https://github.com/openstyles/stylus) release it is bu
 ships no changelog file of its own — its notes live only on GitHub Releases — so this file is
 entirely ours to maintain, newest first.
 
+## 白い熊 Stylus 2.4.10.86 — 2026-10-18
+
+Built on upstream 2.4.10. Finishes the corner-ribbon repair of 2.4.10.84: the photo was back, but
+the ribbon read as a blank black stripe. The behavioural fixture grows from 210 checks to 212.
+
+### A corner ribbon's words stay on the part of the band that shows
+
+The band is a strip about twice the width of the box that clips it — 400px in a 200px clip, shifted
+left and rotated 45° — and only its middle is ever visible, so the page centres its words there.
+The typography blanket's `text-align: left` moved them to the end of the strip that is cut off.
+
+`text-align` now stops inside a ribbon clip, at zero specificity, the same exemption a scanned
+page's transcription layer already has. The words read in yellow on the black band again; text
+everywhere else is still aligned left. Verified with a pixel A/B: no change on the reference pages.
+
 ## 白い熊 Stylus 2.4.10.84 — 2026-10-17
 
 Built on upstream 2.4.10. One report: on a shop's search results every product photo was black but
