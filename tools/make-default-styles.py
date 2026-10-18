@@ -1171,6 +1171,13 @@ CARD_OVERLAY_SEL = ",\n".join([
 # shows its ancestor's black instead of its own, which is the same black.
 RIBBON_CLIP = "span%s%s%s:has(> *:only-child)" % (SURFACE, NOT_CONTROLS, NO_OWN_MEDIA)
 RIBBON_CLIP_SEL = beside_media(RIBBON_CLIP)
+# ...and the words on the band are laid out against the clip, not against the band.  The strip is
+# far longer than the box that shows it (400px in a 200px clip, shifted left and rotated), and only
+# its middle is ever visible, so the page centres its words there.  `text-align: left` moves them to
+# the end of the strip that is cut off and the ribbon reads as a blank stripe.  So the alignment
+# blanket stops inside a ribbon clip, at zero weight — the same exemption a transcription gets.
+NOT_RIBBON = ":where(:not(%s))" % ", ".join(
+    arm + " *" for arm in RIBBON_CLIP_SEL.split(",\n"))
 CODE_TAGS = ["pre", "code", "kbd", "samp", "tt"]
 # These sit on the id ladder too, and have to: they carry a colour, so they compete with the
 # `fg all` blanket at (1,0,0), and the descendant form competes with `fg text` at (1,0,1) —
@@ -1308,7 +1315,10 @@ styles = [
     style("sans-serif", SANS_SERIF),
     # A transcription's lines are laid against the scan, and `start` is the right edge in an RTL
     # book: forcing `left` there moves every line off the words it transcribes.
-    style("text-align", rule(guarded(TEXT, NOT_TRANSCRIPTION, per_line=4), "text-align: left")),
+    # The words on a corner ribbon are centred on the visible middle of a strip twice the width
+    # of its clip; `left` puts them on the end that is cut off.
+    style("text-align", rule(guarded(TEXT, NOT_TRANSCRIPTION + NOT_RIBBON, per_line=4),
+                             "text-align: left")),
 
     # --- UI affordances ----------------------------------------------------
     # Every frame, rule and divider on the page becomes yellow. border-color on an element whose

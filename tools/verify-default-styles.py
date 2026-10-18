@@ -582,7 +582,7 @@ __SHEETS__
        holding the rotated "free delivery" band; a discount badge holding its words directly -->
   <div class="bi" id="ribTile"
     ><a class="pc" href="#" id="ribLink"><img id="ribImg" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw="></a
-    ><span class="label-free-delivery-list" id="ribClip"><span class="text" id="ribBand">Free<br>delivery</span></span
+    ><span class="label-free-delivery-list" id="ribClip"><span class="text" id="ribBand" style="text-align: center">Free<br>delivery</span></span
     ><span class="discount" id="ribBadge">-20 %</span></div>
   <video class="bgFilm" id="bgFilm"></video>
   <div class="pageBlock" id="pageBlock">page content over a background film</div>
@@ -1210,6 +1210,10 @@ t('the span clipping a corner ribbon beside a picture is laid over the photo',
   g('ribClip').backgroundColor, g('ribClip').backgroundColor === CLEAR);
 t('...the band inside it keeps its ground, so its words stay legible',
   g('ribBand').backgroundColor, g('ribBand').backgroundColor === BLACK);
+t('...and its words keep the alignment the page gave them, centred on the visible middle',
+  g('ribBand').textAlign, g('ribBand').textAlign === 'center');
+t('...while text elsewhere is still aligned left',
+  g('ribBadge').textAlign, g('ribBadge').textAlign === 'left');
 t('...and a badge holding its words directly beside the picture keeps its ground',
   g('ribBadge').backgroundColor, g('ribBadge').backgroundColor === BLACK);
 t('...and the tile and the link around the photo keep theirs',
