@@ -5,6 +5,33 @@ for the upstream [Stylus](https://github.com/openstyles/stylus) release it is bu
 ships no changelog file of its own — its notes live only on GitHub Releases — so this file is
 entirely ours to maintain, newest first.
 
+## 白い熊 Stylus 2.4.10.88 — 2026-10-23
+
+Built on upstream 2.4.10. One report: on a music streaming site many items were black — every
+button of the player bar, the search glass, the menus, a sign-in label and the autoplay switch. The
+behavioural fixture grows from 212 checks to 218.
+
+### A control's touch-feedback layer no longer covers its icon
+
+Every component library draws a button's press cue as one absolutely positioned box laid across the
+whole control, holding a pair of empty boxes (a stroke and a fill) that fade in on press and are
+transparent at rest. `bg all` painted it into an opaque disc over the icon, so play, previous, next,
+shuffle, repeat, like, volume and the menus all came out as black circles.
+
+`ui: overlays` now leaves such a box transparent: one whose element children are all empty boxes,
+lying inside a control or immediately after one. The control itself keeps its black ground and
+yellow trace; a value bar's track is not touched.
+
+### A switch shows its state again
+
+A toggle's track and knob are empty boxes whose colour and position *are* the on/off state. The
+empty-element sweeps erased them and the blankets painted them black, so the switch was an empty
+pill. Empty parts inside a switch, checkbox, radio or pressed button now keep the page's own colours,
+exactly as a slider's parts already did.
+
+Verified with a pixel A/B on eight reference pages: the only real change is YouTube's own header
+gaining its menu icons back.
+
 ## 白い熊 Stylus 2.4.10.86 — 2026-10-18
 
 Built on upstream 2.4.10. Finishes the corner-ribbon repair of 2.4.10.84: the photo was back, but
