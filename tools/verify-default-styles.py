@@ -46,6 +46,9 @@ PAGE = """<!doctype html><meta charset="utf-8"><title>verify</title>
   /* the forum.mobilism.org pattern: a light wallpaper on <body> that black paints behind */
   body { font-family: Georgia, serif; line-height: 1.8; color: #333;
          background: #fff linear-gradient(#ccc, #e8e8e8); }
+  .row, .interaction, .touch-feedback, .toggle-container { background: #fff; }
+  .toggle-bar { width: 30px; height: 12px; background-color: rgb(30, 80, 130); }
+  .toggle-knob { width: 16px; height: 16px; background-color: rgb(62, 166, 255); }
   .fa { font-family: "Font Awesome 6 Free"; font-weight: 900; line-height: 1; }
   .material-icons { font-family: "Material Icons"; }
   .navIcon { font-family: "SiteIcons"; }
@@ -584,6 +587,15 @@ __SHEETS__
     ><a class="pc" href="#" id="ribLink"><img id="ribImg" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw="></a
     ><span class="label-free-delivery-list" id="ribClip"><span class="text" id="ribBand" style="text-align: center">Free<br>delivery</span></span
     ><span class="discount" id="ribBadge">-20 %</span></div>
+  <!-- a component library's icon button: the press cue is a box laid over the control holding a
+       stroke and a fill, both empty -- after the <button> inside its host, or inside the button
+       after the label; and a toggle whose track and knob are its state -->
+  <div><div class="row" id="fbNot"><div id="fbNotA"></div><div></div></div></div>
+  <span class="icon-btn-host" id="fbHost"><button id="fbBtn"><svg width="12" height="12"><rect width="12" height="12"/></svg></button
+    ><span class="interaction" id="fbLayer"><div class="stroke" id="fbStroke"></div><div class="fill" id="fbFill"></div></span></span>
+  <button id="fbBtn2"><span id="fbLabel">Sign in</span><span class="touch-feedback" id="fbIn"><div></div><div></div></span></button>
+  <div role="button" aria-pressed="true" class="toggle" id="swHost"><div class="toggle-container" id="swBox"
+    ><div class="toggle-bar" id="swBar"></div><div class="toggle-knob" id="swKnob"></div></div></div>
   <video class="bgFilm" id="bgFilm"></video>
   <div class="pageBlock" id="pageBlock">page content over a background film</div>
   <a class="css-1qz4h9b" id="wordmark" href="#"></a>
@@ -1219,6 +1231,23 @@ t('...and a badge holding its words directly beside the picture keeps its ground
 t('...and the tile and the link around the photo keep theirs',
   g('ribTile').backgroundColor + ' / ' + g('ribLink').backgroundColor,
   g('ribTile').backgroundColor === BLACK);
+
+// --- the sixteenth layer: the touch-feedback layer laid across a control ---
+t('the feedback layer after a button, holding two empty boxes, is laid over its icon',
+  g('fbLayer').backgroundColor, g('fbLayer').backgroundColor === CLEAR);
+t('...and one inside a button, after its label',
+  g('fbIn').backgroundColor, g('fbIn').backgroundColor === CLEAR);
+t('...the buttons themselves keep their ground',
+  g('fbBtn').backgroundColor + ' / ' + g('fbBtn2').backgroundColor,
+  g('fbBtn').backgroundColor === BLACK && g('fbBtn2').backgroundColor === BLACK);
+t('...and the same shape away from any control keeps its ground',
+  g('fbNot').backgroundColor, g('fbNot').backgroundColor === BLACK);
+t('a switch keeps its track and its knob in the colours the page gave them',
+  g('swBar').backgroundColor + ' / ' + g('swKnob').backgroundColor,
+  g('swBar').backgroundColor === 'rgb(30, 80, 130)' && g('swKnob').backgroundColor === 'rgb(62, 166, 255)');
+t('...while the box holding them is cleared, and the switch keeps its own ground',
+  g('swBox').backgroundColor + ' / ' + g('swHost').backgroundColor,
+  g('swBox').backgroundColor === CLEAR && g('swHost').backgroundColor === BLACK);
 
 // --- known trade-off, reported not asserted -------------------------------
 checks.push({name: 'NOTE italic <i> keeps page font (accepted trade-off)',

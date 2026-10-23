@@ -903,7 +903,18 @@ MARK = ":is(td, th) > span:empty"
 # sample's answer — do not match them, and let the page's colours stand.
 # `[role="slider"]`/`[role="progressbar"]` is the handle, and it is the markup's own word for "this
 # box carries a number".  Ground painters and both `:empty` sweeps only: an empty box has no ink.
-SLIDER_PART = ':is([role="slider"], [role="progressbar"]) *:empty'
+#
+# ...and a switch's parts are a reading of the same kind, carrying a state where the slider carries
+# a number.  A component library's toggle is a control holding two empty boxes — the track and the
+# knob — and nothing else, and which side the knob sits on and what colour it is are the only
+# things that render "on".  The sweeps erased both, the blankets painted them black, and an
+# autoplay switch came out as an empty pill.  The markup's word for "this control carries a state"
+# is `role="switch"`, `checkbox` or `radio`, or `aria-checked`/`aria-pressed` on whatever role it
+# chose instead — the met case is `role="button" aria-pressed="true"` — so those join the slider
+# roles.  Cost: an empty box inside a pressed button keeps the page's own ground, which at rest is
+# a transparent feedback layer or an icon drawn as a background image — both better kept.
+SLIDER_PART = (':is([role="slider"], [role="progressbar"], [role="switch"], [role="checkbox"], '
+               '[role="radio"], [aria-checked], [aria-pressed]) *:empty')
 NOT_MARK_OR_SAMPLE = ":where(:not(%s, %s *, %s, %s))" % (SAMPLE, SAMPLE, MARK, SLIDER_PART)
 # The guard for anything that paints or clears a GROUND: stops at a colour sample, at a mark and
 # at a transcription.
@@ -1178,6 +1189,28 @@ RIBBON_CLIP_SEL = beside_media(RIBBON_CLIP)
 # blanket stops inside a ribbon clip, at zero weight — the same exemption a transcription gets.
 NOT_RIBBON = ":where(:not(%s))" % ", ".join(
     arm + " *" for arm in RIBBON_CLIP_SEL.split(",\n"))
+# ⚠ The sixteenth kind of layer: the touch-feedback layer a control carries.  Every component
+# library draws its press and hover cue the same way — one absolutely-positioned box laid across
+# the whole control, holding a pair of EMPTY boxes (a stroke and a fill, a background and the
+# waves) that fade in on press and are transparent at rest.  Polymer's `paper-ripple` is exactly
+# that, and a music streaming site lays one over every button it has, sometimes inside the
+# `<button>` after its icon and sometimes beside it, as the button's next sibling inside the icon
+# button's host.  `bg all` paints the box at (1,0,0) and it is an opaque disc over the icon: the
+# whole transport bar — play, previous, next, shuffle, repeat, like, volume — came out as black
+# circles, and the search glass, the menu and a sign-in button's label with them.  Not `:empty`
+# (it holds the two boxes), named nothing a list carries (`yt-interaction`, a touch-feedback
+# shape), and not the nav strip or the drag layer, both scoped beside a PICTURE where this lies
+# over an icon in a button.  The drag layer's content test is the right one — a box whose whole
+# content is empty boxes has nothing of its own to make legible, the emptiness having moved one
+# level down — and the scope is the control: inside one, or the very next sibling of one, which is
+# where a feedback layer is laid by construction.  The NEXT sibling, not any later one: a row of
+# empty spacer boxes somewhere further down a body that once held a button is not laid over it.  The host is never a control itself (a button
+# whose glyph is an empty box keeps its ground), and a value bar is not an empty box but its
+# reading.  Cost: a box inside or after a control whose children are all empty shows its
+# ancestor's black instead of its own, which is the same black.
+EMPTY_BOX = "%s:empty%s" % (IS_SHELL_BOX, NOT_VALUE_BAR)
+FEEDBACK = "*%s%s:not(:has(> :not(%s))):has(> %s)" % (SURFACE, NOT_CONTROLS, EMPTY_BOX, EMPTY_BOX)
+FEEDBACK_SEL = ",\n".join(["%s %s" % (CONTROL_KINDS, FEEDBACK), "%s + %s" % (CONTROL_KINDS, FEEDBACK)])
 CODE_TAGS = ["pre", "code", "kbd", "samp", "tt"]
 # These sit on the id ladder too, and have to: they carry a colour, so they compete with the
 # `fg all` blanket at (1,0,0), and the descendant form competes with `fg text` at (1,0,1) —
@@ -1837,7 +1870,14 @@ styles = [
             "   shop's results. A span whose whole content is one element, beside a picture, has\n"
             "   nothing of its own to make legible — the thing it holds does, and keeps its\n"
             "   ground; a span holding its words directly (a discount badge) is not matched. */\n"
-          + rule(RIBBON_CLIP_SEL, "background-color: transparent")),
+          + rule(RIBBON_CLIP_SEL, "background-color: transparent")
+          + "\n/* ⚠ The sixteenth layer: the touch-feedback layer laid across a control. A box\n"
+            "   holding nothing but a pair of empty boxes (a stroke and a fill), inside a control\n"
+            "   or right after one, is the press cue every component library draws — transparent at\n"
+            "   rest. Painted, it is an opaque disc over the icon, and a player's whole transport\n"
+            "   bar came out as black circles. Its content is nothing one level down, the drag\n"
+            "   layer's test; its scope is the control. */\n"
+          + rule(FEEDBACK_SEL, "background-color: transparent")),
 
     # The doubled guard is not decoration: `ui: borders` sits at (1,1,0) now that it carves
     # the CSS triangles out, and a single guard here would tie with it and leave which of cyan
