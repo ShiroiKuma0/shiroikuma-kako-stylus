@@ -5,6 +5,32 @@ for the upstream [Stylus](https://github.com/openstyles/stylus) release it is bu
 ships no changelog file of its own — its notes live only on GitHub Releases — so this file is
 entirely ours to maintain, newest first.
 
+## 白い熊 Stylus 2.4.10.90 — 2026-10-24
+
+Built on upstream 2.4.10. One report: on YouTube the video's thumbnail was solid yellow until
+playback started, and the seek bar read fully played at 0:00. The behavioural fixture grows from 218
+checks to 220.
+
+### A player's feature flags are no longer read as a volume bar
+
+The rule that gives a slider's filled part yellow ink recognises it as an empty box inside a parent
+named after a bar — *volume*, *progress*, *scrub* and so on. A video platform's player puts its
+feature flags on its root as class names, two of which contain *volume* and *scrub*, so every empty
+box in the player was taken for a level. One of them is the caption layer, laid across the whole
+film and empty until captions show, so the poster sat under one yellow sheet. A slider's track never
+holds a picture, so a parent with media anywhere inside it is no longer treated as one.
+
+### A seek bar shows only what has been played
+
+A seek bar holds more empty boxes than its played part, all named after the bar: the buffered
+length, the length under the pointer, a live stream's buffer, and an invisible strip that makes a
+thin bar easier to hit. The last two are the bar's full width on an ordinary video, so the bar was
+yellow end to end at 0:00. A part whose own name says *buffer*, *load*, *hover* or *padding* now takes
+no yellow and is left transparent on the black track; only the played part is drawn.
+
+Verified on the live page in 白い熊 火狐: the thumbnail shows before playback and the bar is black at
+0:00.
+
 ## 白い熊 Stylus 2.4.10.88 — 2026-10-23
 
 Built on upstream 2.4.10. One report: on a music streaming site many items were black — every
