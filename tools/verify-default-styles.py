@@ -499,7 +499,13 @@ __SHEETS__
   <div id="loneWrap"><div class="actionRow" id="loneRow"><button id="loneBtn">Buy</button></div></div>
   <div class="volRow hovered"><div class="volumeBar-N1rUCF" id="volTrack"
     ><div style="width:70%" class="volumeLevel-VDMLnw" id="volLevel"></div></div></div>
+  <div class="ytp-fine-scrubbing-exp ytp-horizontal-volume-controls" id="flagPlayer"
+    ><div class="vidbox"><video></video></div><div class="captions" id="flagCaptions"></div></div>
   <div class="timelineTrack" id="seekTrack"><div class="progress-K0IenH" id="seekPlayed"></div></div>
+  <div class="bar-progress" id="vpBar"><div class="bar-progress-padding" id="vpPad"></div
+    ><div class="bar-progress-list" id="vpList"><div class="bar-play-progress" id="vpPlayed"
+    ></div><div class="bar-live-buffer" id="vpLive"></div><div class="bar-load-progress" id="vpLoad"
+    ></div><div class="bar-hover-progress" id="vpHover"></div></div></div>
   <div class="ctpl_178sn8c1" id="hashSlider" role="slider" aria-valuenow="40"
     ><div class="ctpl_9vxwfz1" id="hashRail"
       ><div class="ctpl_1gmgbia3" id="hashBuffered"></div
@@ -820,6 +826,12 @@ t('its track stays black, so the boundary between the two IS the number',
   g('volTrack').backgroundColor, g('volTrack').backgroundColor === BLACK);
 t('and the bar can still open, `width: auto !important` having stopped short of it',
   g('volTrack').width, g('volTrack').width === '100px');
+t('a player whose feature flags say volume/scrub is not a bar: its empty caption layer is no level',
+  g('flagCaptions').backgroundColor, g('flagCaptions').backgroundColor !== YELLOW);
+t('only the played part of a seek bar is the reading: buffer, load, hover and hit strip take no yellow',
+  ['vpPad', 'vpLive', 'vpLoad', 'vpHover'].map(i => g(i).backgroundColor).join(' / ') + ' | played ' + g('vpPlayed').backgroundColor,
+  ['vpPad', 'vpLive', 'vpLoad', 'vpHover'].every(i => g(i).backgroundColor === 'rgba(0, 0, 0, 0)')
+  && g('vpPlayed').backgroundColor === YELLOW);
 t('a seek bar is the same idiom and reads the same way',
   g('seekPlayed').backgroundColor + ' / ' + g('seekTrack').backgroundColor,
   g('seekPlayed').backgroundColor === YELLOW && g('seekTrack').backgroundColor === BLACK);

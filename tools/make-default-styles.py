@@ -811,8 +811,31 @@ NOT_TRIANGLES = ":not(%s)" % ", ".join(TRIANGLES)
 # every bg blanket.  Two ids make it (2,x,y) and the argument is over.
 VALUE_BAR_SELF = "*:empty%s%s%s%s%s%s" % (NEVER, NEVER, NOT_ICONS, NOT_MEDIA,
                                           NOT_CONTROLS, IS_VALUE_BAR)
-VALUE_BAR_KID = "%s%s > *:empty%s%s%s%s%s" % (IS_VALUE_BAR, NEVER, NEVER, NEVER,
-                                              NOT_ICONS, NOT_MEDIA, NOT_CONTROLS)
+# ⚠ The parent arm reads a NAME on the parent, and a player's root carries its feature flags as
+# classes: a video platform's is `ytp-delhi-horizontal-volume-controls ytp-fine-scrubbing-exp …`,
+# so "volume" and "scrub" both matched and every empty child of the player was taken for a level.
+# One of those is the caption layer, laid across the whole film and empty until captions show, so
+# the film sat under a solid yellow sheet until it was started — and with the poster on it, the
+# poster was all anyone could not see.  A track holds its fill, its buffer and its handle; it
+# never holds a picture.  So a parent with media anywhere inside it is a player, not a bar.  The
+# term only raises a rule already at (2,x,y), so nothing moves on the ladder.
+NOT_HOLDING_MEDIA = ":not(:has(%s))" % ", ".join(MEDIA)
+VALUE_BAR_KID = "%s%s%s > *:empty%s%s%s%s%s" % (IS_VALUE_BAR, NOT_HOLDING_MEDIA, NEVER, NEVER, NEVER,
+                                                NOT_ICONS, NOT_MEDIA, NOT_CONTROLS)
+# ⚠ Only the PLAYED part is the reading.  A seek bar holds more empty boxes than its level, and the
+# rest are named after the bar too: the buffered length, the length under the pointer, a live
+# stream's buffer, and an invisible padding strip that makes a 4px bar easier to hit.  All empty,
+# all saying *progress* — and the same video platform's live buffer and its hit strip are both the
+# full width of the bar on an ordinary video, so the seek bar read 100 % played at 0:00.  Yellow
+# on any of them is a false reading, and yellow is the only colour this file has for a level.  So
+# a part whose own name says it is secondary — buffer, load (Video.js calls the buffered length
+# `vjs-load-progress`), hover, padding — takes no ink and is cleared instead: transparent on the
+# black track, which is what an unread buffer costs.  `load` also catches *download* and
+# *upload*, harmless inside a name that already said it was a bar.
+VALUE_BAR_SECONDARY = ['[class*="buffer" i]', '[class*="load" i]', '[class*="hover" i]',
+                       '[class*="padding" i]']
+IS_VALUE_BAR_SECONDARY = ":is(%s)" % ", ".join(VALUE_BAR_SECONDARY)
+NOT_VALUE_BAR_SECONDARY = ":not(%s)" % ", ".join(VALUE_BAR_SECONDARY)
 # ⚠ A colour sample is an element whose colour IS its content, and the only way to keep it is to
 # leave it alone.  A map's legend is the shape that named it: each key is a blank <span> carrying
 # `style="background-color:#94C5DE; color:#94C5DE"` and four non-breaking spaces, and the map is
@@ -1509,8 +1532,14 @@ styles = [
             "   and sits on a track `bg all` painted black, so the number it carries is simply\n"
             "   gone: a volume slider opened as a black rectangle. Only the level is coloured;\n"
             "   the track stays black, and yellow on black is the boundary back. */\n"
-          + rule(wrap([VALUE_BAR_SELF, VALUE_BAR_KID], 1),
-                 "background-color: %s" % YELLOW)),
+          + rule(wrap([VALUE_BAR_SELF + NOT_VALUE_BAR_SECONDARY,
+                       VALUE_BAR_KID + NOT_VALUE_BAR_SECONDARY], 1),
+                 "background-color: %s" % YELLOW)
+          + "\n/* The bar's other empty parts — buffered, hovered, a live buffer, a hit strip — are\n"
+            "   not the reading, and yellow on any of them reads as played: cleared instead. */\n"
+          + rule(wrap([VALUE_BAR_SELF + IS_VALUE_BAR_SECONDARY,
+                       VALUE_BAR_KID + IS_VALUE_BAR_SECONDARY], 1),
+                 "background-color: transparent")),
 
     # Artwork drawn on transparency expects a page of some colour; on our black ground whichever
     # ink it uses can vanish. A ground behind the replaced element restores it, and costs nothing
