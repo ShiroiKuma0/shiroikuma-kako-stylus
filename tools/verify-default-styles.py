@@ -269,6 +269,11 @@ PAGE = """<!doctype html><meta charset="utf-8"><title>verify</title>
      inheritance — `:root` inside a shadow stylesheet matches nothing, so the value it sees is
      this one, which is why moving it here reaches inside the sealed tree */
   :root { --foreground: #0a0a0a; --muted-foreground: #737373; }
+  /* Pharos declares its tokens on :root as well, and reads them from inside shadow roots */
+  :root { --pharos-color-interactive-secondary: hsl(0, 0%, 0%);
+          --pharos-button-color-base-secondary-text-base: hsl(0, 0%, 0%);
+          --pharos-button-color-base-primary-text-base: hsl(0, 0%, 100%);
+          --pharos-button-color-base-primary-background-base: hsl(0, 100%, 30%); }
 </style>
 __SHEETS__
 <body>
@@ -393,6 +398,7 @@ __SHEETS__
   <!-- a widget sealed in a shadow root: nothing we inject reaches inside it, so the only route
        is what inherits through the host — which is what `ui: design tokens` exists for -->
   <div id="shadowHost"></div>
+  <div id="phShadow"></div>
   <!-- an extension's in-page overlay, positioned and sized with inline styles -->
   <div id="inlineMark" style="position:absolute;width:41px;height:12px;border:1px solid yellow"></div>
   <div class="gradientBar" id="gradbar"></div>
@@ -602,6 +608,11 @@ __SHEETS__
   <button id="fbBtn2"><span id="fbLabel">Sign in</span><span class="touch-feedback" id="fbIn"><div></div><div></div></span></button>
   <div role="button" aria-pressed="true" class="toggle" id="swHost"><div class="toggle-container" id="swBox"
     ><div class="toggle-bar" id="swBar"></div><div class="toggle-knob" id="swKnob"></div></div></div>
+  <!-- a design system's component hosts: the shadow root draws the component, the host in the
+       light DOM is a bare box (met parked fixed over the viewport, shut); and the same custom
+       element without the library's marker -->
+  <x-ds-modal data-pharos-component="PharosModal" id="phModal"><div id="phBody">slotted content</div></x-ds-modal>
+  <x-ds-menu id="phNot"><div id="phNotBody">a custom element</div></x-ds-menu>
   <video class="bgFilm" id="bgFilm"></video>
   <div class="pageBlock" id="pageBlock">page content over a background film</div>
   <a class="css-1qz4h9b" id="wordmark" href="#"></a>
@@ -1034,6 +1045,25 @@ t('the page ink token is moved off the site value', tok('--foreground'),
     sd('sdPlain').color === YELLOW);
 }
 
+{
+  // A Pharos link and two Pharos buttons: the face is drawn in the shadow root from the tokens.
+  const host = document.getElementById('phShadow');
+  const sr = host.attachShadow({mode: 'open'});
+  sr.innerHTML = '<style>#link-element{color:var(--pharos-color-interactive-secondary)}'
+    + '#sec{color:var(--pharos-button-color-base-secondary-text-base);background:transparent}'
+    + '#pri{color:var(--pharos-button-color-base-primary-text-base);'
+    + 'background-color:var(--pharos-button-color-base-primary-background-base)}</style>'
+    + '<a id="link-element" href="#">Cite</a><button id="sec">Register</button><button id="pri">Log in</button>';
+  const ph = id => getComputedStyle(sr.getElementById(id));
+  t('a Pharos link drawn in a shadow root gets the link ink through its token',
+    ph('link-element').color, ph('link-element').color === 'rgb(0, 255, 255)');
+  t('...a transparent-faced Pharos button gets the label ink',
+    ph('sec').color, ph('sec').color === YELLOW);
+  t('...and the primary button keeps the pair the site made, white on red',
+    ph('pri').color + ' / ' + ph('pri').backgroundColor,
+    ph('pri').color === 'rgb(255, 255, 255)' && ph('pri').backgroundColor === 'rgb(153, 0, 0)');
+}
+
 // --- colour samples --------------------------------------------------------
 // A legend key is a blank span whose inline colour is the content, and nothing of ours may match
 // it -- no `!important` of ours can defer to the page's normal inline value, so the painters
@@ -1228,6 +1258,14 @@ t('...the badge pill keeps its ground, so it stays legible over the photo',
   g('cardBadge').backgroundColor, g('cardBadge').backgroundColor === BLACK);
 t('...and the photo keeps the grey behind it',
   g('cardImg').backgroundColor, g('cardImg').backgroundColor !== CLEAR && g('cardImg').backgroundColor !== BLACK);
+
+// --- the seventeenth layer: a web component's host -------------------------
+t('the component host of a design system is unpainted, its shadow root drawing the component',
+  g('phModal').backgroundColor, g('phModal').backgroundColor === CLEAR);
+t('...its slotted content keeps the ground the blankets give it',
+  g('phBody').backgroundColor, g('phBody').backgroundColor === BLACK);
+t('...and a custom element without the marker of the library keeps its ground',
+  g('phNot').backgroundColor, g('phNot').backgroundColor === BLACK);
 
 // --- the fifteenth layer: the box a corner ribbon is clipped by ------------
 t('the span clipping a corner ribbon beside a picture is laid over the photo',

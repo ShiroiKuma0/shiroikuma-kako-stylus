@@ -286,6 +286,20 @@ TOKENS_SURFACE = ["--background", "--card", "--popover", "--muted", "--sidebar"]
 TOKENS_INK = ["--foreground", "--card-foreground", "--popover-foreground", "--sidebar-foreground"]
 TOKENS_DIM = ["--muted-foreground"]
 TOKENS_LINE = ["--border", "--input", "--ring", "--sidebar-border", "--sidebar-ring"]
+# Pharos, the design system whose component HOSTS are the seventeenth layer, draws every link and
+# button face inside a shadow root, so its ink is sealed in with it — `#link-element { color:
+# var(--pharos-color-interactive-secondary) }`, black — and every link label on our black ground
+# was simply gone.  Its tokens are declared on :root in the document and read by inheritance, the
+# same route the shadcn vocabulary takes, and the same restriction holds: only ink used ALONE
+# moves.  A link's ink sits on nothing, and so do the secondary and subtle buttons' labels (their
+# faces are transparent; the icon `fill` reads the same token, so a search glass comes back with
+# its label).  The primary button is white on the house red, a pair the site made legible, and a
+# dropdown item's ink travels with its own white ground — both stay.  The hover inks stay too:
+# `--pharos-color-hover-primary` is the house red, dim on black but a visible cue, and it is also
+# the hover ground of the primary button, so moving it would break that pair.
+TOKENS_PHAROS_LINK = ["--pharos-color-interactive-secondary"]
+TOKENS_PHAROS_INK = ["--pharos-button-color-base-secondary-text-base",
+                     "--pharos-button-color-base-subtle-text-base"]
 
 # --- exclusion globs -------------------------------------------------------
 # The leading `*.` makes the subdomain optional, so one pattern covers both the
@@ -1234,6 +1248,30 @@ NOT_RIBBON = ":where(:not(%s))" % ", ".join(
 EMPTY_BOX = "%s:empty%s" % (IS_SHELL_BOX, NOT_VALUE_BAR)
 FEEDBACK = "*%s%s:not(:has(> :not(%s))):has(> %s)" % (SURFACE, NOT_CONTROLS, EMPTY_BOX, EMPTY_BOX)
 FEEDBACK_SEL = ",\n".join(["%s %s" % (CONTROL_KINDS, FEEDBACK), "%s + %s" % (CONTROL_KINDS, FEEDBACK)])
+# ⚠ The seventeenth kind of layer: a web component's HOST.  A design system built on custom
+# elements draws every component inside its shadow root — the dialog window, the scrim, the menu
+# panel, the button face — and leaves the host in the light DOM as a bare box the page positions.
+# Pharos, the design system of a large scholarly archive, is the case met, and its hosts are the
+# worst shape this file knows: a modal host is `position: fixed`, the whole viewport, z-index
+# 9000 and `pointer-events: none` from page load, shut, waiting for the dialog its shadow root
+# will draw; a dropdown-menu host is `fixed` at the top-left corner, 173x252, holding its items at
+# `visibility: hidden` until it opens.  Three modal hosts on one article page, and `bg all` at
+# (1,0,0) — custom elements are none of the element groups, so the blanket alone — made each an
+# opaque sheet: the page rendered black but for the cookie banner, which sits above z-index 9000,
+# and with those gone the closed menus were still a black block over the logo.  Every handle
+# walked past them: not `:empty` (each holds its slotted content), not a name (`*-pharos-modal`
+# is a TAG, and CSS cannot match a substring of a tag name), not the dialog shell (the
+# `role=dialog` is inside the shadow root), and click-through, so no hit test sees them.  What the
+# light DOM does say is the marker the library writes on every host it defines,
+# `data-pharos-component`, so it is NAMED, on the terms `vjs-` and `.pswp` are — a library, never
+# a site — and it is every host rather than the modal and the menu alone, because the argument is
+# the library's, not the component's: a host's own ground is never part of the design, the shadow
+# root paints whatever the component looks like, and the host is the one box no rule inside the
+# shadow can be seen through if we paint it.  Unpainting one costs nothing wherever the blankets
+# have run, its ancestors being black already; the slotted children keep their grounds and are
+# painted as everywhere else.
+COMPONENT_HOSTS = ["[data-pharos-component]"]
+COMPONENT_HOST_SEL = ",\n".join("%s%s" % (host, SURFACE) for host in COMPONENT_HOSTS)
 CODE_TAGS = ["pre", "code", "kbd", "samp", "tt"]
 # These sit on the id ladder too, and have to: they carry a colour, so they compete with the
 # `fg all` blanket at (1,0,0), and the descendant form competes with `fg text` at (1,0,1) —
@@ -1906,7 +1944,17 @@ styles = [
             "   rest. Painted, it is an opaque disc over the icon, and a player's whole transport\n"
             "   bar came out as black circles. Its content is nothing one level down, the drag\n"
             "   layer's test; its scope is the control. */\n"
-          + rule(FEEDBACK_SEL, "background-color: transparent")),
+          + rule(FEEDBACK_SEL, "background-color: transparent")
+          + "\n/* ⚠ The seventeenth layer: a web component's HOST. A design system built on custom\n"
+            "   elements draws each component inside its shadow root and leaves the host as a bare\n"
+            "   box: Pharos parks a modal host fixed over the whole viewport at z-index 9000,\n"
+            "   click-through and shut from page load, and a dropdown-menu host fixed in the\n"
+            "   top-left corner with its items hidden. Painted by `bg all` alone, three modal hosts\n"
+            "   turned an article page black. The tag names say modal, and CSS cannot read a tag\n"
+            "   name by substring; the marker the library writes on every host can be read, so the\n"
+            "   scope is NAMED, as `vjs-` and .pswp are. A host's own ground is never the design —\n"
+            "   the shadow root paints the component — and its ancestors are black already. */\n"
+          + rule(COMPONENT_HOST_SEL, "background-color: transparent")),
 
     # The doubled guard is not decoration: `ui: borders` sits at (1,1,0) now that it carves
     # the CSS triangles out, and a single guard here would tie with it and leave which of cyan
@@ -1950,7 +1998,11 @@ styles = [
           + "\n/* secondary text keeps a rank of its own rather than flattening to body yellow */\n"
           + rule("html" + NEVER, *["%s: %s" % (t, DIM_YELLOW) for t in TOKENS_DIM])
           + "\n/* borders, focus rings and the input outline — line colours, not fills */\n"
-          + rule("html" + NEVER, *["%s: %s" % (t, YELLOW) for t in TOKENS_LINE]),
+          + rule("html" + NEVER, *["%s: %s" % (t, YELLOW) for t in TOKENS_LINE])
+          + "\n/* Pharos: a link's ink and the labels of the transparent-faced buttons, sealed in\n"
+            "   shadow roots and reached only through the tokens they inherit. Pairs stay. */\n"
+          + rule("html" + NEVER, *["%s: %s" % (t, CYAN) for t in TOKENS_PHAROS_LINK]
+                 + ["%s: %s" % (t, YELLOW) for t in TOKENS_PHAROS_INK]),
           [CLAUDE, OWNCLOUD], withdrawn=[SUMO]),
 
     # Sites constrain article text to a narrow column with max-width; this hands the window back.
