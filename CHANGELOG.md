@@ -5,6 +5,38 @@ for the upstream [Stylus](https://github.com/openstyles/stylus) release it is bu
 ships no changelog file of its own — its notes live only on GitHub Releases — so this file is
 entirely ours to maintain, newest first.
 
+## 白い熊 Stylus 2.4.10.92 — 2026-10-26
+
+Built on upstream 2.4.10. One report: on JSTOR an article page rendered entirely black but for the
+cookie banner. The behavioural fixture grows from 220 checks to 226.
+
+### A web component's host no longer covers the page
+
+A design system built on custom elements draws every component — a dialog, its scrim, a menu panel,
+a button face — inside the element's shadow root, and leaves the element itself in the page as a
+bare, transparent box. JSTOR's design system, Pharos, keeps its closed dialogs in the page from load:
+each one a box fixed over the whole viewport at a high stacking level, click-through, waiting for the
+dialog it will draw. Its closed dropdown menus are fixed boxes in the top-left corner. `bg all`
+painted them all black — three dialogs stacked over the article, and a black block over the logo.
+
+`ui: overlays` now leaves every Pharos component host transparent, recognised by the marker the
+library writes on each one. The component's own look is drawn inside its shadow root, and
+everything around the host is already black, so clearing it changes nothing else.
+
+### Pharos links and buttons show their labels again
+
+With the page visible, its links and outlined buttons had no labels: their text colour is set
+inside the shadow root to black, out of reach of every rule. The only way in is the colour variables
+the page declares at the top of the document, which the shadow root inherits, and `ui: design
+tokens` now overrides the three that set text on a transparent background — link text to cyan, the
+labels and icons of outlined and plain buttons to yellow. The white-on-red primary buttons and the
+menu entries keep the colours the site gave them, since each is already legible on its own
+background.
+
+Verified on the live page in 白い熊 火狐: the article preview, the title and the side panel are
+back, along with “Register”, “All Content”, the search and help icons, “Advanced Search”, the issue
+link and “Cite”.
+
 ## 白い熊 Stylus 2.4.10.90 — 2026-10-24
 
 Built on upstream 2.4.10. One report: on YouTube the video's thumbnail was solid yellow until
