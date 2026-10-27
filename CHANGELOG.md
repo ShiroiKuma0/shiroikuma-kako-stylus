@@ -5,6 +5,25 @@ for the upstream [Stylus](https://github.com/openstyles/stylus) release it is bu
 ships no changelog file of its own — its notes live only on GitHub Releases — so this file is
 entirely ours to maintain, newest first.
 
+## 白い熊 Stylus 2.4.10.94 — 2026-10-27
+
+Built on upstream 2.4.10. One report: on an XDA Forums thread every attached picture rendered as a
+black square. The behavioural fixture grows from 226 checks to 228.
+
+### A forum's attachment thumbnails show their pictures again
+
+XenForo — the forum software behind XDA Forums and a large share of the web's forums — draws each
+attachment thumbnail as a tile: the picture in an absolutely positioned link, and after it a
+transparent box stretched over the whole tile, carrying the file name and size in a strip along the
+bottom edge. `bg div` painted that box black, so it covered the photo, which had loaded intact
+underneath.
+
+`ui: overlays` now leaves that box transparent, by the same named rule that already handles a
+Shopify product card's content box laid over its photo. The caption strip inside keeps a black
+ground — the forum gives it a half-black one — so the name and size stay legible over the picture.
+
+Verified on the live thread in 白い熊 火狐: all three attachments show their photos.
+
 ## 白い熊 Stylus 2.4.10.92 — 2026-10-26
 
 Built on upstream 2.4.10. One report: on JSTOR an article page rendered entirely black but for the
