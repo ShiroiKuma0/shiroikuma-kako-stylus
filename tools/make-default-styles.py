@@ -1188,11 +1188,25 @@ LIGHTBOX_CHROME_SEL = ",\n".join([
 # flow, and there unpainting the content box costs nothing — every ancestor is black already.
 # The boxes inside go with it (the information, the badge slot), the badge pill itself does not:
 # it is a span with a ground of its own, which is what keeps it legible over the photo.
-CARD_OVERLAYS = [(".card__media", ".card__content")]
+#
+# XenForo — the forum software a large share of the web's forums run on — draws a post's
+# attachment thumbnails the same way, one level flatter:
+#
+#     li.file.file--linked                    position: relative, the tile
+#       a.file-preview > img                  position: absolute — the picture
+#       div.file-content                      position: absolute over the whole tile
+#         div.file-info                       the name and size, a strip along the bottom edge
+#
+# and `bg div` alone turned every thumbnail of a thread into a black square.  Here the box
+# inside is the caption strip the forum itself lays on a half-black ground, so only the outer
+# sheet goes: the strip keeps a ground of its own, as the ninth layer's badge row does, and the
+# name stays legible over the photo.  The third field says whether the boxes inside go too.
+CARD_OVERLAYS = [(".card__media", ".card__content", True),
+                 (".file-preview", ".file-content", False)]
 CARD_OVERLAY = "%s%s%s" % (IS_SHELL_BOX, SURFACE, NOT_VALUE_BAR)
 CARD_OVERLAY_SEL = ",\n".join([
-    "%s ~ %s%s" % (frame, box, CARD_OVERLAY) for frame, box in CARD_OVERLAYS] + [
-    "%s ~ %s %s" % (frame, box, CARD_OVERLAY) for frame, box in CARD_OVERLAYS])
+    "%s ~ %s%s" % (frame, box, CARD_OVERLAY) for frame, box, _ in CARD_OVERLAYS] + [
+    "%s ~ %s %s" % (frame, box, CARD_OVERLAY) for frame, box, deep in CARD_OVERLAYS if deep])
 # ⚠ The fifteenth kind of layer: the clipping box a corner ribbon is cut by.  A shop's search
 # results put a diagonal "free delivery" band across the top corner of every photo, and the band
 # is built the only way CSS can build one: a long strip rotated 45° — itself 400x33, its bounding
@@ -1928,7 +1942,10 @@ styles = [
             "   position and its children's display are facts about the stylesheet that CSS\n"
             "   cannot ask, so the pair is NAMED, as .pswp is — the theme's BEM, not a store.\n"
             "   Where the same pair is an ordinary card (words below the picture, in flow) the\n"
-            "   ancestors are black already and nothing changes. The badge pill keeps its ground. */\n"
+            "   ancestors are black already and nothing changes. The badge pill keeps its ground.\n"
+            "   XenForo's attachment tile is the same layer, one level flatter: an absolute\n"
+            "   .file-preview holding the picture and after it a .file-content over the whole\n"
+            "   tile. Only that sheet goes — the caption strip inside keeps its ground. */\n"
           + rule(CARD_OVERLAY_SEL, "background-color: transparent")
           + "\n/* ⚠ The fifteenth layer: the box a corner ribbon is clipped by. A diagonal\n"
             "   \"free delivery\" band is a long strip rotated 45° inside a span that clips it,\n"

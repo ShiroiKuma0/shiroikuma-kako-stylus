@@ -593,6 +593,13 @@ __SHEETS__
     ><div class="card__content" id="cardOver"
       ><div class="card__information" id="cardOverInfo"><h3 id="cardOverHead"><a href="#">a product</a></h3></div
       ><div class="card__badge" id="cardBadgeBox"><span class="badge" id="cardBadge">Sold out</span></div></div></div>
+  <!-- a forum's attachment thumbnail (XenForo): the picture in an absolute .file-preview and,
+       after it, a .file-content laid over the whole tile; the caption strip inside keeps its ground -->
+  <ul><li class="file file--linked" id="xfFile"
+    ><a class="file-preview" id="xfPreview" href="#"><img id="xfImg" alt="" width="150" height="200"
+      src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACwAAAAAAQABAAACAkQBADs="></a
+    ><div class="file-content" id="xfOver"><div class="file-info" id="xfInfo"
+      ><span class="file-name">IMG_1.JPG</span><div class="file-meta">831.7 KB</div></div></div></li></ul>
   <!-- a shop's tile: the photo in a link and, after it, an absolute clipping span laid over it
        holding the rotated "free delivery" band; a discount badge holding its words directly -->
   <div class="bi" id="ribTile"
@@ -1258,6 +1265,10 @@ t('...the badge pill keeps its ground, so it stays legible over the photo',
   g('cardBadge').backgroundColor, g('cardBadge').backgroundColor === BLACK);
 t('...and the photo keeps the grey behind it',
   g('cardImg').backgroundColor, g('cardImg').backgroundColor !== CLEAR && g('cardImg').backgroundColor !== BLACK);
+t("a forum's attachment tile: the sheet over the picture is unpainted",
+  g('xfOver').backgroundColor, g('xfOver').backgroundColor === CLEAR);
+t('...and the caption strip inside keeps a ground of its own',
+  g('xfInfo').backgroundColor, g('xfInfo').backgroundColor === BLACK);
 
 // --- the seventeenth layer: a web component's host -------------------------
 t('the component host of a design system is unpainted, its shadow root drawing the component',
