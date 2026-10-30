@@ -64,7 +64,7 @@ if (MENUS && (__.B_CHROME || __.B_ANY && CHROME)) {
 }
 
 chromeCommands?.onCommand.addListener(id => COMMANDS[id]());
-chromeMenus?.onClicked.addListener((info, tab) => MENUS[info.menuItemId][0](info, tab));
+chromeMenus?.onClicked.addListener((info, tab) => MENUS[info.menuItemId]?.[0](info, tab));
 
 export default !chromeMenus ? NOP : function initContextMenus() {
   createContextMenus(Object.keys(MENUS), true);

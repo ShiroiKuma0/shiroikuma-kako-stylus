@@ -24,6 +24,8 @@ import * as styleMan from './style-manager';
 // it pulls in ./style-manager, so importing it after that keeps upstream's module evaluation
 // order exactly as it was. The module hooks itself onto bgBusy; there is nothing to call.
 import './fork-default-styles';
+// shiroikuma fork: a click on the toolbar icon is the boss key; the menu moves to right/middle-click
+import './fork-action-click';
 import {inferHomepages} from './style-manager/fixer';
 import {styleMap} from './style-manager/util';
 import initStyleViaApi from './style-via-api';
