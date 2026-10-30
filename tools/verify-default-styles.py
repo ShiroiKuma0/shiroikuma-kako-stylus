@@ -274,6 +274,9 @@ PAGE = """<!doctype html><meta charset="utf-8"><title>verify</title>
           --pharos-button-color-base-secondary-text-base: hsl(0, 0%, 0%);
           --pharos-button-color-base-primary-text-base: hsl(0, 0%, 100%);
           --pharos-button-color-base-primary-background-base: hsl(0, 100%, 30%); }
+  /* Audible declares its light theme on :root and again on every light scope */
+  :root, .light { --csstools-color-scheme--light: initial; --adbl-primary-fill: #010e19;
+          --adbl-link: #0e5b9b; --adbl-surface: #ffffff; --adbl-accent: #ffa000; --adbl-on-accent: #010e19; }
 </style>
 __SHEETS__
 <body>
@@ -399,6 +402,17 @@ __SHEETS__
        is what inherits through the host — which is what `ui: design tokens` exists for -->
   <div id="shadowHost"></div>
   <div id="phShadow"></div>
+  <!-- Audible's design system: a theme host and a light scope, both redeclaring the tokens, and a
+       widget reading them in its shadow root -- one of them through the csstools light-dark()
+       polyfill, which picks its dark half when the scheme property is emptied -->
+  <adbl-theme mode="light" id="adTheme"><adbl-style-scope class="light" id="adScope">
+    <div id="adShadow"></div></adbl-style-scope></adbl-theme>
+  <!-- a wordmark drawn as inline SVG in a hard-coded near-black, and an icon SVG in a plain link -->
+  <a class="ui-header-logo" id="svgLogoA" href="#"><svg id="svgLogo" role="img" width="40" height="20">
+    <path fill="#212325" d="M0 0h40v20H0z"/></svg></a>
+  <a href="#" id="svgIconA"><svg id="svgIcon" width="16" height="16"><path d="M0 0h16v16H0z"/></svg></a>
+  <a class="header-logo" href="#"><svg id="svgLogoIcon" class="octicon octicon-mark" width="16" height="16">
+    <path d="M0 0h16v16H0z"/></svg></a>
   <!-- an extension's in-page overlay, positioned and sized with inline styles -->
   <div id="inlineMark" style="position:absolute;width:41px;height:12px;border:1px solid yellow"></div>
   <div class="gradientBar" id="gradbar"></div>
@@ -429,6 +443,15 @@ __SHEETS__
        library's cookie notice, and it keeps its ground -->
   <div class="dialogDivs" id="dialogNonModal" role="dialog" aria-modal="false"
     ><div class="stack"><div>Cookie preferences</div></div></div>
+  <!-- the table-less two-column page: a floated column of buttons, and beside it, running
+       under the float, a block holding a link, text and an icon, and a <p> holding a row of
+       icons. Isolated, either would be painted above the float and bury the buttons -->
+  <div style="overflow: hidden; width: 600px"><div id="floatCol" style="float: left; width: 200px"
+    ><a class="bt-dwl" id="floatBtn" href="#" style="display: inline-block; height: 30px; width: 180px; background-image: linear-gradient(#fff 5%, #e6e6e6 100%)">Download</a></div
+    ><div id="besideFloat" style="text-align: right; height: 60px"><a href="#">Rate quality</a> (1)
+      <img alt="" width="15" height="6" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="
+      ><p id="besideFloatP"><img alt="" width="19" height="19" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="
+      ><a href="#"><img alt="" width="19" height="19" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="></a></p></div></div>
   <ul><li class="tileCard" id="tileCard"
     ><a class="cardLink" id="cardLink" href="#">Bekenntnisse<card-data></card-data></a
     ><picture class="cardCover" id="cardCover"><img id="cardImg"
@@ -940,6 +963,23 @@ t('a title link beside a picture TABBED TO keeps cyan ink (the focus fill would 
   g('titleFocus').backgroundColor === 'rgba(0, 0, 0, 0)' && g('titleFocus').color === CYAN);
 t('the box around a cover is isolated, so a z-index:-1 picture is not buried by our own ground',
   g('tileCard').isolation, g('tileCard').isolation === 'isolate');
+t("a link named with the bt- prefix is a button: the site's white gradient goes under our ink",
+  g('floatBtn').backgroundImage + ' / ' + g('floatBtn').backgroundColor,
+  g('floatBtn').backgroundImage === 'none' && g('floatBtn').backgroundColor === BLACK);
+t('a block beside a float holding an icon among text is NOT isolated (it would bury the float)',
+  g('besideFloat').isolation + ' / ' + g('besideFloatP').isolation,
+  g('besideFloat').isolation === 'auto' && g('besideFloatP').isolation === 'auto');
+const floatTop = (() => {
+  const b = document.getElementById('floatBtn');
+  b.scrollIntoView();
+  const r = b.getBoundingClientRect();
+  // the first of the two in the hit stack (a fixture overlay frame elsewhere sits over all)
+  const e = document.elementsFromPoint(r.x + 90, r.y + 15)
+    .find(x => ['floatBtn', 'besideFloat', 'besideFloatP'].includes(x.id));
+  window.scrollTo(0, 0);
+  return e ? e.id : 'nothing';
+})();
+t('...and the floated button is on top where the two overlap', floatTop, floatTop === 'floatBtn');
 t('and the cover still gets the image ground under it',
   g('cardCover').backgroundColor, g('cardCover').backgroundColor === 'rgb(128, 128, 128)');
 t('a frame is never painted (a parked overlay frame would board up the whole page)',
@@ -1070,6 +1110,38 @@ t('the page ink token is moved off the site value', tok('--foreground'),
     ph('pri').color + ' / ' + ph('pri').backgroundColor,
     ph('pri').color === 'rgb(255, 255, 255)' && ph('pri').backgroundColor === 'rgb(153, 0, 0)');
 }
+
+{
+  // Audible: the theme host redeclares its tokens on :host, as the real one does.
+  const theme = document.getElementById('adTheme');
+  theme.attachShadow({mode: 'open'}).innerHTML =
+    '<style>:host{--csstools-color-scheme--light:initial;--adbl-primary-fill:#010e19;'
+    + '--adbl-link:#0e5b9b;--adbl-surface:#ffffff}</style><slot></slot>';
+  const sr = document.getElementById('adShadow').attachShadow({mode: 'open'});
+  sr.innerHTML = '<style>#t{color:var(--adbl-primary-fill)} #l{color:var(--adbl-link)}'
+    + '#p{background-color:var(--adbl-surface)}'
+    + '#a{background-color:var(--adbl-accent);color:var(--adbl-on-accent)}'
+    + '#s{--csstools-light-dark-toggle--0:var(--csstools-color-scheme--light) #4a6687;'
+    + 'border:2px solid var(--csstools-light-dark-toggle--0, #c0d2e9)}</style>'
+    + '<p id="t">Title</p><a id="l" href="#">Author</a><div id="p">tile</div>'
+    + '<button id="a">Try</button><div id="s">search</div>';
+  const ad = id => getComputedStyle(sr.getElementById(id));
+  t('an Audible label drawn in a shadow root gets yellow through its token, past two redeclarations',
+    ad('t').color, ad('t').color === YELLOW);
+  t('...its link gets the link ink', ad('l').color, ad('l').color === 'rgb(0, 255, 255)');
+  t('...the tile under it goes black', ad('p').backgroundColor,
+    ad('p').backgroundColor === 'rgb(0, 0, 0)');
+  t('...a light-dark() pair takes the dark half the system ships', ad('s').borderTopColor,
+    ad('s').borderTopColor === 'rgb(74, 102, 135)');
+  t('...and the accent button keeps its own pair', ad('a').backgroundColor + ' / ' + ad('a').color,
+    ad('a').backgroundColor === 'rgb(255, 160, 0)' && ad('a').color === 'rgb(1, 14, 25)');
+}
+t('a wordmark drawn as inline SVG under a logo name gets the image ground',
+  g('svgLogo').backgroundColor, g('svgLogo').backgroundColor === 'rgb(128, 128, 128)');
+t('...but an icon SVG in a plain link does not', g('svgIcon').backgroundColor,
+  g('svgIcon').backgroundColor === 'rgba(0, 0, 0, 0)');
+t('...nor a logo that is an icon in its link’s ink', g('svgLogoIcon').backgroundColor,
+  g('svgLogoIcon').backgroundColor === 'rgba(0, 0, 0, 0)');
 
 // --- colour samples --------------------------------------------------------
 // A legend key is a blank span whose inline colour is the content, and nothing of ours may match

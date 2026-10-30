@@ -194,8 +194,12 @@ ICON_PSEUDOS = [
 # rules never reached it — alza.cz uses `href="javascript:…"`, which is a precise signal that the
 # link is an action rather than navigation; the class-name forms cover the rest. Kept to `a` so
 # the blast radius stays on links, and carrying a doubled guard so these outrank `ui: links`,
-# whose own (1,2,1) hover would otherwise repaint them cyan.
-LINK_BUTTONS = ['a[href^="javascript:" i]', 'a[class*="btn" i]', 'a[class*="button" i]']
+# whose own (1,2,1) hover would otherwise repaint them cyan.  `bt-` is the other abbreviation —
+# a subtitle archive's Download buttons are `a.bt-dwl`, drawn with a white gradient, and missed by
+# every name here they kept it under our cyan ink at 1.2:1.  Matched as a class PREFIX only, since
+# "bt-" inside a word would catch `subt-`, `debt-`, `robot-`.
+LINK_BUTTONS = ['a[href^="javascript:" i]', 'a[class*="btn" i]', 'a[class*="button" i]',
+                'a[class^="bt-" i]', 'a[class*=" bt-" i]']
 
 # Single-line text entry — the things that become a yellow pill.
 TEXT_INPUTS = ('[type=text], [type=search], [type=email], [type=url], [type=tel],\n'
@@ -300,6 +304,41 @@ TOKENS_LINE = ["--border", "--input", "--ring", "--sidebar-border", "--sidebar-r
 TOKENS_PHAROS_LINK = ["--pharos-color-interactive-secondary"]
 TOKENS_PHAROS_INK = ["--pharos-button-color-base-secondary-text-base",
                      "--pharos-button-color-base-subtle-text-base"]
+# Audible's design system (`adbl-*` custom elements) is built the other way round from Pharos: the
+# whole page is web components, the light DOM holds only slotted text, and every window, tile,
+# button face and label inside is drawn in a shadow root from `--adbl-*` tokens.  So the blankets
+# black the hosts and nothing else — a book page was dark navy ink on black throughout, white
+# tiles and a white header standing in the black, the sample-play button's label gone.  Unlike
+# Pharos it ships a DARK theme of its own (`.dark` / `adbl-theme[mode=dark]`), and that is the lever:
+# its `light-dark()` pairs are compiled by the csstools polyfill into
+# `var(--csstools-color-scheme--light) <dark value>`, so emptying that one property picks the dark
+# half of every pair at once — borders, hover bands, focus rings — the way the site would itself.
+# The tokens read ALONE are then moved to the house colours: the four ink ranks (primary and
+# secondary yellow, tertiary and quaternary dim, which is how the system ranks its metadata), the
+# links, and every ground the ink sits on, which goes black.  `--adbl-inverse-fill` is a ground
+# (a menu panel) and also the ink on a `--adbl-primary-fill` face, so black there keeps that pair
+# legible as black on yellow.  The accent (the orange call to action) is a pair with
+# `--adbl-on-accent` and stays.  The tokens are redeclared on `adbl-theme`'s `:host` and on every
+# `adbl-style-scope.light`, so setting them on <html> alone would not survive inheritance; and the
+# scope is `:has()`-gated on the document using the system, since the csstools property is the
+# polyfill's, not Audible's, and flipping another site's pairs is not this rule's business.
+TOKENS_ADBL_SCOPE = ":is(html:has(adbl-theme, .adbl-light), adbl-theme, adbl-style-scope, .adbl-light)"
+TOKENS_ADBL_INK = ["--adbl-primary-fill", "--adbl-secondary-fill"]
+TOKENS_ADBL_DIM = ["--adbl-tertiary-fill", "--adbl-quaternary-fill"]
+TOKENS_ADBL_LINK = ["--adbl-link%s%s" % (kind, state) for kind in ("", "-secondary")
+                    for state in ("", "-hover", "-pressed")]
+TOKENS_ADBL_VISITED = ["--adbl-link-visited", "--adbl-link-secondary-visited"]
+TOKENS_ADBL_SURFACE = ["--adbl-background", "--adbl-surface", "--adbl-surface-hover",
+                       "--adbl-surface-pressed", "--adbl-surface-neutral", "--adbl-surface-base",
+                       "--adbl-foreground", "--adbl-background-input", "--adbl-background-highlight",
+                       "--adbl-inverse-fill", "--adbl-solid", "--adbl-gradient-surface-start",
+                       "--adbl-gradient-surface-end", "--adbl-gradient-primary-start",
+                       "--adbl-gradient-primary-end"]
+TOKENS_ADBL_LINE = ["--adbl-divider", "--adbl-border-default", "--adbl-outline",
+                    "--adbl-outline-hover", "--adbl-outline-pressed"]
+# hover and press bands: the system's own dark-theme values, a step above black under yellow ink
+TOKENS_ADBL_BAND = [("--adbl-solid-hover", "#304864"), ("--adbl-solid-pressed", "#304864"),
+                    ("--adbl-simple-hover", "#304864"), ("--adbl-simple-pressed", "#4a6687")]
 
 # --- exclusion globs -------------------------------------------------------
 # The leading `*.` makes the subdomain optional, so one pattern covers both the
@@ -810,6 +849,19 @@ PLAYER_LAYER_SEL = "*%s:not(body):has(> video) > *%s%s%s:not(:has(> %s))" % (
 # direct-child test keeps it off the deep wrappers where those layers usually live — against a
 # cover that is simply gone.
 MEDIA_PARENT = "*%s:has(> %s)" % (NEVER, IS_MEDIA)
+# ⚠ But a stacking context is painted ABOVE every float, and a block in flow beside a float runs
+# underneath it — that is what a float is.  Isolated and grounded black, such a block is an opaque
+# sheet over the float and everything in it.  A subtitle archive's detail page is the classic
+# two-column table-less layout: a floated column holding the Download buttons, and beside it a
+# block with the "rate quality" link, a little arrow image and, inside it, a <p> holding a row of
+# star icons.  Each held an <img> directly, so each was isolated, and the buttons vanished under
+# a black band.  The cover idiom the isolation exists for is a card with a picture in it, never a
+# line of text with an icon in it, so the isolating test is narrower than the frame test above:
+# a block surface (picture, video, canvas, a frame) counts as it stands, an <img> only when it is
+# the box's ONLY element (a bare cover in a card; an icon sits among links, text and other icons),
+# and never under a <p>, which holds text by definition.  The fixture asserts both sides.
+ISOLATE_SEL = "*%s:not(p):has(> :is(%s, img:only-child))" % (
+    NEVER, ", ".join(m for m in MEDIA if m != "img"))
 # ⚠ The CSS-triangle idiom: two transparent borders and one coloured, which is how a play arrow,
 # a select caret, a tooltip point and a speech-bubble tail are all drawn.  Recolouring every side
 # turns the triangle into a solid square — a white play arrow becomes a yellow block.  CSS
@@ -1618,6 +1670,15 @@ styles = [
           rule(guarded(["img", "picture", "object", "embed"], per_line=2),
                "background-color: #808080",
                "filter: none")
+          + "\n/* A wordmark drawn as inline SVG is a picture as an <img> one is, and as likely to\n"
+            "   be dark: a bookshop's logo fills its letters with a hard-coded #212325, visible\n"
+            "   only while its header stayed white. `svg` is otherwise an icon here, drawn in the\n"
+            "   ink around it, so only one the page names a logo gets the ground — and not one\n"
+            "   whose own class says icon: GitHub's mark is an octicon in its link's ink. */\n"
+          + rule(wrap(['[class*="logo" i] > svg:not([class*="icon" i])' + NEVER,
+                       'svg[class*="logo" i]:not([class*="icon" i])' + NEVER], 1),
+                 "background-color: #808080",
+                 "filter: none")
           + "\n/* An empty link is the other half of `an empty control's picture is its label`.\n"
             "   A wordmark drawn as an empty <a> with the PNG as its background, under a\n"
             "   CSS-in-JS hash for a class, gives ART no word to match at all: the name\n"
@@ -1640,8 +1701,12 @@ styles = [
             "   the text it belongs behind, where a stacking context around its card traps it\n"
             "   there — above that card's ground, still below its siblings, and out of reach of\n"
             "   every ancestor. `isolation` rather than a z-index because it makes the context\n"
-            "   without becoming a containing block for anything positioned inside it. */\n"
-          + rule(MEDIA_PARENT, "isolation: isolate")),
+            "   without becoming a containing block for anything positioned inside it.\n"
+            "   A stacking context paints above every float, though, and a block beside a float\n"
+            "   runs under it — so a line of text with an icon in it, isolated and black, buried\n"
+            "   a floated column of Download buttons. Only a block surface, or an <img> that is\n"
+            "   its box's only element, isolates; never a <p>. */\n"
+          + rule(ISOLATE_SEL, "isolation: isolate")),
 
     # background-color cannot remove a background *image*, so decorative gradients and banner
     # textures survive the blanket and keep painting pale bars across otherwise-black pages.
@@ -2019,7 +2084,17 @@ styles = [
           + "\n/* Pharos: a link's ink and the labels of the transparent-faced buttons, sealed in\n"
             "   shadow roots and reached only through the tokens they inherit. Pairs stay. */\n"
           + rule("html" + NEVER, *["%s: %s" % (t, CYAN) for t in TOKENS_PHAROS_LINK]
-                 + ["%s: %s" % (t, YELLOW) for t in TOKENS_PHAROS_INK]),
+                 + ["%s: %s" % (t, YELLOW) for t in TOKENS_PHAROS_INK])
+          + "\n/* Audible: its own dark half of every light-dark() pair, then the house colours\n"
+            "   on the tokens read alone. Redeclared on each theme scope, so set on each. */\n"
+          + rule(TOKENS_ADBL_SCOPE + NEVER, "--csstools-color-scheme--light: ",
+                 *["%s: %s" % (t, YELLOW) for t in TOKENS_ADBL_INK]
+                 + ["%s: %s" % (t, DIM_YELLOW) for t in TOKENS_ADBL_DIM]
+                 + ["%s: %s" % (t, CYAN) for t in TOKENS_ADBL_LINK]
+                 + ["%s: %s" % (t, MAGENTA) for t in TOKENS_ADBL_VISITED]
+                 + ["%s: #000000" % t for t in TOKENS_ADBL_SURFACE]
+                 + ["%s: %s" % (t, YELLOW) for t in TOKENS_ADBL_LINE]
+                 + ["%s: %s" % band for band in TOKENS_ADBL_BAND]),
           [CLAUDE, OWNCLOUD], withdrawn=[SUMO]),
 
     # Sites constrain article text to a narrow column with max-width; this hands the window back.
