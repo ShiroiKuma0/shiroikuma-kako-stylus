@@ -5,6 +5,53 @@ for the upstream [Stylus](https://github.com/openstyles/stylus) release it is bu
 ships no changelog file of its own — its notes live only on GitHub Releases — so this file is
 entirely ours to maintain, newest first.
 
+## 白い熊 Stylus 2.4.10.97 — 2026-10-30
+
+Built on upstream 2.4.10. Two page reports and one change of behaviour: on an OpenSubtitles page the
+Download buttons were black, and on Audible's book pages most items were black and the sample-play
+button was invisible; and the toolbar icon now switches every style off and on. The behavioural
+fixture grows from 228 checks to 239.
+
+### A click on the toolbar icon switches every style off, or back on
+
+On desktop, a left click on the icon is now the boss key: every style goes off, the icon dims, and
+the next click puts them back. The menu moves to where a menu is expected — right-click the icon
+and its first entry is “Open the menu”, or middle-click it to open the menu directly. A WebExtension
+cannot replace Firefox's own context menu on the icon or see a right-click any other way, so one
+entry in it is as close as the platform allows. On Android a tap still opens the menu: an add-on's
+action there has no right-click, middle-click or long-tap, and the menu could not be reached at all
+otherwise. With upstream's “open the menu in the sidebar” option on, the click keeps doing that.
+
+### A floated column is no longer buried under the block beside it
+
+`ui: overlays` puts a box that holds a picture on a layer of its own, so a card's cover cannot be
+buried under our black. A layer like that is drawn above every floated column, and in an old
+two-column layout the block beside a float runs underneath it — so a block holding a small arrow
+image, and a paragraph holding a row of star icons, became black sheets over OpenSubtitles' column of
+Download buttons. The layer is now given only to a box holding a block picture (a `picture`, a
+video, a canvas, a frame) or an image that is its only element, and never to a paragraph.
+
+The same buttons are links with class names starting `bt-` and a white gradient, which no button
+name matched, so they were cyan on white. The `bt-` prefix now counts as a button, and they get the
+black pill with yellow text.
+
+### Audible's pages are legible again
+
+Audible's pages are built from web components, which draw their text, tiles and buttons inside sealed
+shadow roots our styles cannot reach — only the colour variables they read get in. We blackened the
+boxes around them and nothing inside, which left dark navy text on black, white tiles and a white
+header in the black, and the “プレビューの再生” sample button with no visible label. Audible's design
+system ships a dark theme of its own, so `ui: design tokens` now switches it on and then sets its
+main variables to the house colours: yellow text, dim yellow for minor text, cyan links, magenta
+visited links, black grounds. The orange call-to-action buttons keep their own colours.
+
+With the header black, the Audible wordmark — an inline SVG in hard-coded near-black — disappeared
+with it. `ui: image-ground` now gives a logo drawn as SVG the same grey ground a logo image already
+gets, unless its own class says it is an icon (GitHub's mark is drawn in its link's colour).
+
+A pixel comparison with the previous library changes nothing on Wikipedia, GitHub, Hacker News,
+YouTube, OpenStreetMap or kaku.
+
 ## 白い熊 Stylus 2.4.10.94 — 2026-10-27
 
 Built on upstream 2.4.10. One report: on an XDA Forums thread every attached picture rendered as a

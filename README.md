@@ -66,6 +66,14 @@ the toolbar icon shows the same dimmed mark the boss key gives it — while the 
 you can still see what *would* apply. The hosts collect in an editable list on the options page,
 where a leading `*.` widens one to its subdomains.
 
+### 🔘 The toolbar icon is the boss key
+
+With a library that applies everywhere, switching it all off is what you reach for most — to see a
+page in its own colours, and back. So on desktop a click on the toolbar icon does exactly that, and
+the icon dims while everything is off. The menu is a right-click away, as the first entry of the
+icon's own context menu, and a middle-click opens it directly. On Android, where an add-on's action
+has no right-click or long-tap, a tap still opens the menu.
+
 ### 🖤 The extension's own windows, in the house palette
 
 The popup, the manager, the options page and the editor are black-and-yellow too, at a larger base
