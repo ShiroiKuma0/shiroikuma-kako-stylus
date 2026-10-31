@@ -623,6 +623,33 @@ __SHEETS__
       src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACwAAAAAAQABAAACAkQBADs="></a
     ><div class="file-content" id="xfOver"><div class="file-info" id="xfInfo"
       ><span class="file-name">IMG_1.JPG</span><div class="file-meta">831.7 KB</div></div></div></li></ul>
+  <!-- a hero film: the caption layer, named overlay, BEFORE the box holding the player, the
+       poster button between; and the mirror, an overlay AFTER the player box -->
+  <div class="gb-autosize" id="foFrame"
+    ><div class="gb-content-overlay gb-layer" id="foLayer"><div id="foBox"
+      ><h1 id="foHead">2026 MODEL</h1><p id="foP">the tagline</p></div></div
+    ><button class="gb-video-posterframe" id="foBtn">poster</button
+    ><div class="video-container" id="foVidBox"><video id="foVid"></video></div></div>
+  <div id="fo2Frame"
+    ><div id="fo2VidBox"><video id="fo2Vid"></video></div
+    ><div class="video-overlay" id="fo2Layer"><div id="fo2Box"><span id="fo2Words">words</span></div></div></div>
+  <!-- a hand-written modal: a host holding a scrim and the window, no role; and a card holding
+       a picture and its hover overlay, which is no modal -->
+  <div class="postal-code-popup" id="shHost"><div class="overlay" id="shScrim"></div
+    ><div class="popup_container" id="shWin"><p id="shP">Offers near you</p></div></div>
+  <div class="tile" id="shCard"><img id="shCardImg" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw="
+    ><div class="hover-overlay" id="shCardOv"></div></div>
+  <!-- a hero: an empty photo box whose picture is written inline, and the content laid over it;
+       then a box with an inline picture that is NOT empty, whose sibling keeps its ground -->
+  <section class="hero" id="bpHero"><div class="ph" id="bpPh"
+      style="background-image: url('data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==')"></div
+    ><div class="wrap hero-content" id="bpContent"><h1 id="bpHead">A home</h1><button id="bpBtn">Book</button></div></section>
+  <div id="bpNotFrame"><div id="bpFull" style="background-image: url('data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==')">words</div
+    ><div id="bpNotSib">a sibling</div></div>
+  <!-- not a film: a modal scrim beside a page section that holds a video AND a heading -->
+  <div id="fmFrame"
+    ><section id="fmSec"><h2>a section</h2><video id="fmVid"></video></section
+    ><div class="modal-overlay" id="fmScrim"><div class="modal" id="fmWin"><p id="fmP">a dialog</p></div></div></div>
   <!-- a shop's tile: the photo in a link and, after it, an absolute clipping span laid over it
        holding the rotated "free delivery" band; a discount badge holding its words directly -->
   <div class="bi" id="ribTile"
@@ -1341,6 +1368,41 @@ t("a forum's attachment tile: the sheet over the picture is unpainted",
   g('xfOver').backgroundColor, g('xfOver').backgroundColor === CLEAR);
 t('...and the caption strip inside keeps a ground of its own',
   g('xfInfo').backgroundColor, g('xfInfo').backgroundColor === BLACK);
+
+// --- an inline picture, and the content laid over it -------------------------
+t('an empty box whose picture is written inline keeps its picture',
+  g('bpPh').backgroundImage.slice(0, 20), g('bpPh').backgroundImage !== 'none');
+t('...and the content beside it goes transparent, words and all',
+  ['bpContent', 'bpHead'].map(i => g(i).backgroundColor).join(' / '),
+  ['bpContent', 'bpHead'].every(i => g(i).backgroundColor === CLEAR));
+t('...while a control in it keeps its pill',
+  g('bpBtn').backgroundColor, g('bpBtn').backgroundColor !== CLEAR);
+t('a box with an inline picture that holds words is no backdrop: its sibling keeps its ground',
+  g('bpNotSib').backgroundColor, g('bpNotSib').backgroundColor === BLACK);
+
+// --- the dialog shell without the role ----------------------------------------
+t('a host holding a scrim and one window goes transparent, so the scrim dims the page',
+  g('shHost').backgroundColor, g('shHost').backgroundColor === CLEAR);
+t('...and the window keeps its ground',
+  g('shWin').backgroundColor + ' / ' + g('shP').backgroundColor,
+  g('shWin').backgroundColor === BLACK && g('shP').backgroundColor === BLACK);
+t('a card holding a picture and its hover overlay is no modal, and keeps its ground',
+  g('shCard').backgroundColor, g('shCard').backgroundColor === BLACK);
+
+// --- the eighteenth layer: the words a page lays over its film --------------
+t('the frame holding a film keeps its ground',
+  g('foFrame').backgroundColor, g('foFrame').backgroundColor === BLACK);
+t('a caption layer before the player box: the boxes and words in it go transparent',
+  ['foBox', 'foHead', 'foP'].map(i => g(i).backgroundColor).join(' / '),
+  ['foBox', 'foHead', 'foP'].every(i => g(i).backgroundColor === CLEAR));
+t('...the poster button beside it is not in the layer and keeps its pill',
+  g('foBtn').backgroundColor, g('foBtn').backgroundColor !== CLEAR);
+t('an overlay after the player box: the same',
+  ['fo2Box', 'fo2Words'].map(i => g(i).backgroundColor).join(' / '),
+  ['fo2Box', 'fo2Words'].every(i => g(i).backgroundColor === CLEAR));
+t('a modal scrim beside a section holding a heading and a video: the window keeps its ground',
+  g('fmWin').backgroundColor + ' / ' + g('fmP').backgroundColor,
+  g('fmWin').backgroundColor === BLACK && g('fmP').backgroundColor === BLACK);
 
 // --- the seventeenth layer: a web component's host -------------------------
 t('the component host of a design system is unpainted, its shadow root drawing the component',

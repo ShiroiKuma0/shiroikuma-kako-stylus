@@ -457,7 +457,18 @@ ICONS_DRAWN = [t for t in ICONS if t != '[aria-hidden="true"]']
 NOT_ICONS_DRAWN = ":not(%s)" % ", ".join(ICONS_DRAWN)
 NOT_MEDIA = ":not(%s)" % ", ".join(MEDIA)
 NOT_CONTROLS = ":not(%s)" % ", ".join(CONTROLS)
-NOT_ART = ":not(%s)" % ", ".join(ART)
+# ⚠ A background image written into the element's own `style` attribute is a picture.  ART reads
+# the class for a word that means picture, and a site that names its photo box `ph` gives it none:
+# a hotel's home page draws its hero and every villa tile as an empty `<div class="ph"
+# style="background-image: linear-gradient(…), url('data:image/jpeg…')">`, and the `:empty` sweep
+# erased every photo, leaving the hero a black field with its words on it.  The attribute says
+# what the class does not.  A stylesheet holds the decoration — the stripes, the textures, the
+# gloss — and is written once for every element of a kind; a url() put inline was chosen for THIS
+# element, which is what a CMS does with the picture an editor picked.  So it joins ART wherever
+# ART spares a background image.  Same weight: an attribute selector is (0,1,0), as every ART
+# term is, so nothing moves on the ladder.
+INLINE_PICTURE = '[style*="url(" i]'
+NOT_ART = ":not(%s)" % ", ".join(ART + [INLINE_PICTURE])
 # A link is interactive, so it is never one of the transparent layers the `:empty` sweep is after,
 # and its background image is its label exactly as a control's is.
 LINKS = ["a", '[role="link"]']
@@ -1259,6 +1270,80 @@ CARD_OVERLAY = "%s%s%s" % (IS_SHELL_BOX, SURFACE, NOT_VALUE_BAR)
 CARD_OVERLAY_SEL = ",\n".join([
     "%s ~ %s%s" % (frame, box, CARD_OVERLAY) for frame, box, _ in CARD_OVERLAYS] + [
     "%s ~ %s %s" % (frame, box, CARD_OVERLAY) for frame, box, deep in CARD_OVERLAYS if deep])
+# ⚠ The dialog shell without the role.  A modal written by hand is the same three boxes —
+#
+#     div.postal-code-popup                   position: absolute over the whole section, flex
+#       div.overlay                           the scrim: rgba(0,0,0,.5) with a 6px backdrop blur
+#       div.popup_container                   the window, z-index 100
+#
+# — and nothing on the host says dialog.  `ui: overlays` clears the scrim by its name, but the host
+# is laid over the same area and `bg div`, `bg blocks` or `bg all` turns IT into the opaque sheet:
+# a car maker's offer panel showed the window on solid black where the page shows its photo dimmed
+# and blurred behind it.  The scrim names its host: a box whose children are a scrim and ONE
+# other thing is the scrim's frame, its ground is the scrim, and it goes transparent so the scrim
+# can do its work.  "One other thing" is what keeps it narrow — a player frame holding a caption
+# layer, a poster and the film has three — and a direct picture child keeps a card holding an
+# image and its hover overlay out of it.  `<body>` and `<html>` are never a scrim's frame: a page
+# that mounts its modal on the body is still a page.
+SCRIMS = ['[class*="overlay" i]', '[class*="backdrop" i]', '[class*="scrim" i]']
+IS_SCRIM = ":is(%s)" % ", ".join(SCRIMS)
+SCRIM_HOST_SEL = "%s%s:not(body, html):has(> %s):not(:has(> :not(%s) ~ :not(%s)))%s" % (
+    IS_SHELL_BOX, SURFACE, IS_SCRIM, IS_SCRIM, IS_SCRIM,
+    ":not(:has(%s))" % ", ".join("> " + m for m in MEDIA))
+# ⚠ The eighteenth kind of layer: the words a page lays over its film.  A car maker's hero
+# section is a video with the model's name over it, and the player sits beside its caption
+# rather than around it:
+#
+#     div.gb-autosize                         position: relative, the frame
+#       div.gb-content-overlay.gb-layer       position: absolute; z-index: 2 — the caption layer
+#         div > grid > col > div > h1, h2, p  the name, the tagline, the price, at full size
+#       button.gb-video-posterframe           the poster, gone once the film plays
+#       div.video-container > video-js > video
+#
+# `ui: overlays` already clears the layer itself, by its name, but not the boxes inside it — and
+# those are the full size of the film too: `bg div`, `bg blocks` or `bg text` paints the first
+# of them into an opaque sheet, and every video on the page played behind a black rectangle with
+# the caption in yellow on it.  The lightbox rule's argument, with a film for the photo: inside a
+# box laid over a film, everything is stacked over the film, so it all goes transparent and the
+# words sit on the picture.  The scope is the name AND the film beside it, both required.  The
+# name alone is every modal scrim on the web, whose window must keep its ground; the film alone
+# is any sibling of a player, a sticky header among them.  Two guards on the film keep a page
+# from passing for one: the shared parent is not `<body>` (a background film's siblings are the
+# page), and the box holding the film holds no heading (a box holding a heading is content,
+# where a player's own chrome is spans and buttons).  In the preceding arm the heading test has
+# to be spelled on the siblings, since `:has()` may not nest.  Video only: an overlay beside a
+# picture is the same shape, but was not met, and pictures are where the modal pattern lives.
+FILM_OVERLAY = '[class*="overlay" i]'
+FILM_HEADINGS = ["h1", "h2", "h3", "h4", "h5", "h6"]
+FILM_BOX = ":is(video, :has(video)):not(:has(%s))" % ", ".join(FILM_HEADINGS)
+FILM_OVERLAY_SEL = ",\n".join([
+    ":not(body) > %s:has(~ video, ~ * video):not(:has(%s)) %s" % (
+        FILM_OVERLAY, ", ".join("~ * " + h for h in FILM_HEADINGS), LIGHTBOX_CHROME),
+    ":not(body) > %s ~ %s %s" % (FILM_BOX, FILM_OVERLAY, LIGHTBOX_CHROME),
+])
+# ⚠ The nineteenth kind of layer: the content laid over a backdrop picture.  The inline-picture
+# row above gave a hotel's hero its photo back, and showed what sits on it:
+#
+#     section.hero                            position: relative
+#       div.ph[style="background-image: …"]   position: absolute; inset: 0 — empty, the photo
+#       div.wrap.hero-content                 position: relative; z-index: 2 — heading, text, buttons
+#
+# `bg div` paints the content box into a black block over half the photo.  An EMPTY box carrying
+# an inline picture has nothing but the picture, and the boxes beside it are what the picture is
+# behind: laid over it, as here, or below it in flow, as in the villa tiles further down, where
+# clearing them shows the ancestors' black and costs nothing.  So every sibling of such a box,
+# and everything inside one, goes transparent, as in the lightbox and the film caption: the words
+# sit on the photo, which the page has already darkened for them with its own gradient.
+# Controls keep their pill, media the grey, marks and samples their own paint.  Never at the top
+# of the page — a body-level backdrop's siblings are the page — and both directions, since the
+# picture is as often written after the content as before it.
+BACKDROP_PIC = "%s:empty%s" % (IS_SHELL_BOX, INLINE_PICTURE)
+BACKDROP_CONTENT_SEL = ",\n".join([
+    ":not(body) > %s ~ %s" % (BACKDROP_PIC, LIGHTBOX_CHROME),
+    ":not(body) > %s ~ * %s" % (BACKDROP_PIC, LIGHTBOX_CHROME),
+    ":not(body) > %s:has(~ %s)" % (LIGHTBOX_CHROME, BACKDROP_PIC),
+    ":not(body) > *:has(~ %s) %s" % (BACKDROP_PIC, LIGHTBOX_CHROME),
+])
 # ⚠ The fifteenth kind of layer: the clipping box a corner ribbon is cut by.  A shop's search
 # results put a diagonal "free delivery" band across the top corner of every photo, and the band
 # is built the only way CSS can build one: a long strip rotated 45° — itself 400x33, its bounding
@@ -1878,6 +1963,12 @@ styles = [
             "   children are painted by the same blankets. One with anything else is untouched,\n"
             "   and so is one saying `aria-modal=false`: a scrim host is modal by construction. */\n"
           + rule(DIALOG_SHELL_SEL, "background-color: transparent")
+          + "\n/* ...and the same shell written by hand, with no role: a box holding a scrim and one\n"
+            "   other thing (the window) is the scrim's frame, and its ground is the scrim. Painted,\n"
+            "   it is the opaque sheet the scrim was meant to dim — an offer panel's photo went\n"
+            "   solid black behind its postal-code window. Not <body>, not a box holding a picture\n"
+            "   directly (a card and its hover overlay), and never three children (a player). */\n"
+          + rule(SCRIM_HOST_SEL, "background-color: transparent")
           + "\n/* \u26a0 The eighth kind of layer: the one inside a player. A box that directly holds\n"
             "   a <video> IS a player — the video is laid across the whole of it, so every other\n"
             "   child is stacked over the picture by construction. Video.js's caption layer is\n"
@@ -2012,6 +2103,22 @@ styles = [
             "   .file-preview holding the picture and after it a .file-content over the whole\n"
             "   tile. Only that sheet goes — the caption strip inside keeps its ground. */\n"
           + rule(CARD_OVERLAY_SEL, "background-color: transparent")
+          + "\n/* ⚠ The eighteenth layer: the words a page lays over its film. A hero video\n"
+            "   with the model's name over it, the caption layer a SIBLING of the player box and\n"
+            "   named overlay — `ui: overlays` clears the layer, but the boxes inside it are the\n"
+            "   film's full size too, and `bg div`, `bg blocks` or `bg text` made them a black\n"
+            "   sheet over every video. Inside a box laid over a film everything is over the film,\n"
+            "   as in the lightbox, so the words sit on the picture. Both the name and the film\n"
+            "   are required (a name alone is every modal scrim), the parent is not <body>, and\n"
+            "   the box holding the film holds no heading, which is what a page section would. */\n"
+          + rule(FILM_OVERLAY_SEL, "background-color: transparent")
+          + "\n/* ⚠ The nineteenth layer: the content laid over a backdrop picture. An EMPTY box whose\n"
+            "   picture is written inline (an inline url() is a picture, see ART) is a backdrop, and\n"
+            "   its siblings are what it is behind — a hero's heading and buttons laid over it, or a\n"
+            "   tile's words below it in flow, where clearing them shows the black of the ancestors.\n"
+            "   So they and everything in them go transparent and the words sit on the photo, as in\n"
+            "   the lightbox. Never at the top of the page, where a backdrop's siblings are the page. */\n"
+          + rule(BACKDROP_CONTENT_SEL, "background-color: transparent")
           + "\n/* ⚠ The fifteenth layer: the box a corner ribbon is clipped by. A diagonal\n"
             "   \"free delivery\" band is a long strip rotated 45° inside a span that clips it,\n"
             "   and that span is absolutely positioned over the photo at the size of the picture.\n"
