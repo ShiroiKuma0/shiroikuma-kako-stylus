@@ -14,10 +14,14 @@
  *
  * The icon already shows the state: `disableAll` draws the dimmed `x` set.
  *
- * Desktop Firefox only. Firefox for Android puts an extension's action in its own menu, with no
- * right-click, no middle-click and no long-tap event, so a tap there must go on opening the menu
- * or the menu could not be reached at all. And it stands aside while upstream's `popup.sidePanel`
- * option is on, which takes the same click to open the menu in the sidebar.
+ * On Android the action is an entry in the browser's own menu, which stock Firefox lets you only
+ * tap — no right-click, no middle-click — so there a tap goes on opening the menu, or it could not
+ * be reached at all. 白い熊 火狐 adds a long-press to that entry which opens the manifest's
+ * `default_popup` whatever `setPopup` says, so there the tap is the switch as on desktop and the
+ * long-press is the menu. `inKako()` tells the two apart.
+ *
+ * It stands aside while upstream's `popup.sidePanel` option is on, which takes the same click to
+ * open the menu in the sidebar.
  */
 import {kDisableAll} from '@/js/consts';
 import * as prefs from '@/js/prefs';
@@ -27,9 +31,9 @@ import {bgInit} from './common';
 
 const MENU_ID = 'fork-open-menu';
 const POPUP = 'popup.html';
-const ON = (__.B_FIREFOX || __.B_ANY && FIREFOX) && !MOBILE && !__.MV3 && browserAction;
+const GECKO = (__.B_FIREFOX || __.B_ANY && FIREFOX) && !__.MV3 && browserAction;
 
-if (ON) {
+if (GECKO && !MOBILE) {
   // ahead of upstream's initContextMenus, which runs after bgInit, so the entry comes first
   bgInit.push(() => {
     chrome.contextMenus?.create({
@@ -41,6 +45,12 @@ if (ON) {
   chrome.contextMenus?.onClicked.addListener(info => {
     if (info.menuItemId === MENU_ID) openMenu();
   });
+  takeTheClick();
+} else if (GECKO) {
+  inKako().then(yes => yes && takeTheClick());
+}
+
+function takeTheClick() {
   prefs.subscribe('popup.sidePanel', (key, sidePanel) => {
     browserAction.onClicked.removeListener(onClick);
     if (!sidePanel) {
@@ -48,6 +58,16 @@ if (ON) {
       browserAction.onClicked.addListener(onClick);
     }
   }, true);
+}
+
+/** 白い熊 火狐 adds `fork` to getBrowserInfo() (from 157.0+004), and its presence also means a
+ * long-press on the action opens the menu. Stock Firefox leaves it undefined. */
+async function inKako() {
+  try {
+    return (await browser.runtime.getBrowserInfo()).fork === 'shiroikuma-kako';
+  } catch {
+    return false;
+  }
 }
 
 /** @param {chrome.tabs.Tab} tab @param {{button?: number}} [info] */

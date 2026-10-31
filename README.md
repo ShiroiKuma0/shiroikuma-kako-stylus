@@ -71,8 +71,10 @@ where a leading `*.` widens one to its subdomains.
 With a library that applies everywhere, switching it all off is what you reach for most — to see a
 page in its own colours, and back. So on desktop a click on the toolbar icon does exactly that, and
 the icon dims while everything is off. The menu is a right-click away, as the first entry of the
-icon's own context menu, and a middle-click opens it directly. On Android, where an add-on's action
-has no right-click or long-tap, a tap still opens the menu.
+icon's own context menu, and a middle-click opens it directly. On Android it works the same in
+白い熊 火狐 (157.0+004 or later): a tap on the add-on's entry is the switch and a long-press opens the
+menu. In stock Firefox for Android, whose add-on entries take nothing but a tap, a tap still opens
+the menu.
 
 ### 🖤 The extension's own windows, in the house palette
 
