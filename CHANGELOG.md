@@ -5,6 +5,43 @@ for the upstream [Stylus](https://github.com/openstyles/stylus) release it is bu
 ships no changelog file of its own — its notes live only on GitHub Releases — so this file is
 entirely ours to maintain, newest first.
 
+## 白い熊 Stylus 2.4.10.101 — 2026-10-31
+
+Built on upstream 2.4.10. The toolbar icon becomes the boss key on Android too, in 白い熊 火狐; and
+three page reports — black videos and a black offers panel on a car maker's model page, and black
+photos on a hotel's site. The behavioural fixture grows from 239 checks to 251.
+
+### On Android, in 白い熊 火狐, a tap switches every style off and a long-press opens the menu
+
+白い熊 火狐 157.0+004 gives an add-on's entry in its menu a long-press, which opens the add-on's own
+menu, and tells add-ons it is 白い熊 火狐. When 白い熊 Stylus sees that, a tap on its entry is the
+boss key, as a click on the icon is on desktop, and the long-press is the menu. In stock Firefox
+for Android, where an add-on's entry takes nothing but a tap, the tap still opens the menu.
+
+### A video plays under its caption
+
+A hero video's title is often a layer laid over the film beside the player rather than inside it,
+named as an overlay. That layer was already left clear, but the boxes inside it are as large as the
+film, and they were painted black — so every video on the page played behind a black rectangle with
+its yellow title on it. Everything inside such a layer is now transparent and the title sits on the
+film. It takes both the name and a video beside it, so a pop-up window's backdrop is not mistaken
+for one.
+
+### A pop-up no longer turns the page behind it black
+
+A pop-up window built without saying it is a dialog is a box laid over the page holding a dimming
+layer and the window. The dimming layer was already left clear; the box holding it was painted, and
+was the black sheet over the page instead. A box holding a dimming layer and one other thing is now
+left clear too, so the page shows behind the window, and the window keeps its black.
+
+### A picture set inline is kept
+
+A background image written into an element's own `style` attribute is now treated as a picture, as
+one in a box named *logo* or *photo* already was. The empty-box sweep had removed every photo of a
+site that names its photo boxes `ph`. And the boxes laid beside such a picture — a hero's heading
+and buttons — are now transparent, so the words sit on the photo instead of on a black block over
+half of it.
+
 ## 白い熊 Stylus 2.4.10.97 — 2026-10-30
 
 Built on upstream 2.4.10. Two page reports and one change of behaviour: on an OpenSubtitles page the
