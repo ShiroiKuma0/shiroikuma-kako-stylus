@@ -1477,6 +1477,36 @@ NOT_RIBBON = ":where(:not(%s))" % ", ".join(
 EMPTY_BOX = "%s:empty%s" % (IS_SHELL_BOX, NOT_VALUE_BAR)
 FEEDBACK = "*%s%s:not(:has(> :not(%s))):has(> %s)" % (SURFACE, NOT_CONTROLS, EMPTY_BOX, EMPTY_BOX)
 FEEDBACK_SEL = ",\n".join(["%s %s" % (CONTROL_KINDS, FEEDBACK), "%s + %s" % (CONTROL_KINDS, FEEDBACK)])
+# ⚠ The twenty-first kind of layer: a drop zone's frame.  A window that takes files draws its
+# "drop here" cue the way a control draws its press cue, one level further down: one box laid
+# across the whole window, `position: absolute; inset: 0; z-index: 10`, click-through, appended
+# LAST, holding a dashed outline and a ring — each an absolutely-positioned box at `opacity: 0`,
+# the ring holding a glow that is one more empty box.
+#
+#     div.window                              the dialog's window, 671x576
+#       … the search field, the tabs, the list, the key hints
+#       div.absolute.inset-0.z-10             the drop zone, 671x576
+#         div.opacity-0                       the outline, empty
+#         div.opacity-0                       the ring
+#           div.opacity-0                     the glow, empty
+#
+# The boxes inside are invisible whatever we paint them, `opacity` being the page's; the frame
+# holding them is not, and `bg div` alone made it an opaque sheet over the window — a chat app's
+# upload dialog came out as an empty black panel inside its own yellow border.  Not `:empty`, and
+# not the feedback layer, whose content is empty boxes ONE level down and whose scope is a control.
+# The premise is that one again with the emptiness two levels down: a box whose children are boxes
+# and whose grandchildren are all empty boxes has nothing of its own to make legible.  The scope is
+# what the frame's position in the DOM says — it FOLLOWS a sibling, which is where a layer laid
+# over content is written (appended, never prepended), so a box of empty structure standing alone
+# keeps its ground, as the feedback layer's same shape away from a control does.  A value bar is
+# not an empty box but its reading, so a track holding its fill is not matched.  Cost: a box after
+# content whose children hold nothing shows its ancestor's black instead of its own, which is the
+# same black.  Limit: a child holding text beside an empty box cannot be told from a child
+# holding only the box, `:has()` refusing to nest — that box goes transparent too, its words
+# keeping their ink on the black behind it.
+DROP_ZONE = "div%s%s:not(:has(> :not(%s))):not(:has(> * > :not(%s))):has(> * > %s)" % (
+    SURFACE, NOT_CONTROLS, IS_SHELL_BOX, EMPTY_BOX, EMPTY_BOX)
+DROP_ZONE_SEL = "* ~ " + DROP_ZONE
 # ⚠ The seventeenth kind of layer: a web component's HOST.  A design system built on custom
 # elements draws every component inside its shadow root — the dialog window, the scrim, the menu
 # panel, the button face — and leaves the host in the light DOM as a bare box the page positions.
@@ -2232,6 +2262,12 @@ styles = [
             "   bar came out as black circles. Its content is nothing one level down, the drag\n"
             "   layer's test; its scope is the control. */\n"
           + rule(FEEDBACK_SEL, "background-color: transparent")
+          + "\n/* ⚠ The twenty-first layer: a drop zone's frame. A window that takes files lays\n"
+            "   one box across itself, last, holding an outline and a ring at opacity 0 — boxes\n"
+            "   whose children are boxes and whose grandchildren are empty. Painted by `bg div`\n"
+            "   alone it was an opaque sheet over an upload dialog. The feedback layer's test\n"
+            "   with the emptiness two levels down; the scope is that it follows a sibling. */\n"
+          + rule(DROP_ZONE_SEL, "background-color: transparent")
           + "\n/* ⚠ The seventeenth layer: a web component's HOST. A design system built on custom\n"
             "   elements draws each component inside its shadow root and leaves the host as a bare\n"
             "   box: Pharos parks a modal host fixed over the whole viewport at z-index 9000,\n"

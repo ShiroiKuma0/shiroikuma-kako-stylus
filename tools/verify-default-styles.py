@@ -695,6 +695,11 @@ __SHEETS__
     ><div><button>model</button></div></div>
   <div class="tbar"><div><button>+</button></div><div id="tbNot"><div>beside one control</div></div
     ><p>words</p></div>
+  <!-- a window that takes files: its drop zone is laid across it last, holding an outline and a
+       ring with a glow inside, all empty; and the same structure standing alone -->
+  <div class="window"><div id="dzList"><div>an entry</div></div
+    ><div id="dropZone"><div></div><div id="dzRing"><div></div></div></div></div>
+  <div><div id="dzAlone"><div></div><div><div></div></div></div></div>
 <script>
 const g = id => getComputedStyle(document.getElementById(id));
 const g2 = sel => getComputedStyle(document.querySelector(sel));
@@ -1483,6 +1488,14 @@ t('one box between two clusters of controls is a gap in the toolbar', g('tbGap')
   g('tbGap').backgroundColor === CLEAR);
 t('...and the same box beside one control only keeps its ground', g('tbNot').backgroundColor,
   g('tbNot').backgroundColor === BLACK);
+
+// --- the twenty-first layer: a drop zone's frame ---------------------------
+t("a drop zone laid last across a window, holding nothing two levels down, is transparent",
+  g('dropZone').backgroundColor, g('dropZone').backgroundColor === CLEAR);
+t('...while the content before it keeps its ground', g('dzList').backgroundColor,
+  g('dzList').backgroundColor === BLACK);
+t('...and the same structure standing alone keeps its ground', g('dzAlone').backgroundColor,
+  g('dzAlone').backgroundColor === BLACK);
 
 // --- known trade-off, reported not asserted -------------------------------
 checks.push({name: 'NOTE italic <i> keeps page font (accepted trade-off)',
