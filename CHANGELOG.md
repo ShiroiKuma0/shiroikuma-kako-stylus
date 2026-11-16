@@ -5,6 +5,34 @@ for the upstream [Stylus](https://github.com/openstyles/stylus) release it is bu
 ships no changelog file of its own — its notes live only on GitHub Releases — so this file is
 entirely ours to maintain, newest first.
 
+## 白い熊 Stylus 2.4.10.103 — 2026-11-16
+
+Built on upstream 2.4.10. One change of house style and one page report: links laid out as menu
+entries are now yellow, and a chat app's message field was invisible, with its hint and the
+buttons under it gone. The behavioural fixture grows from 251 checks to 259.
+
+### Links in menus and sidebars are yellow
+
+Cyan is there to pick a link out of the sentence around it. A site's navigation, a sidebar of chat
+titles or a card's title link has no sentence around it, and a column of cyan rows read as a page
+of hyperlinks rather than a menu. A link is now yellow, like a button, when it sits inside the
+page's navigation or a menu, right beside a block such as a row's own buttons, or in a sidebar
+outside a sentence. Links inside text stay cyan. Visited links in those places lose their magenta.
+
+### A rich-text field shows its hint
+
+A field you type formatted text into draws its own hint, and a chat app lays that hint under the
+field rather than in it. Painted black, the field covered it: the “Reply” hint was gone, and with
+no border either the field could not be seen until clicked. Such a field is now left transparent,
+with a yellow caret, so the hint shows; the chat field also gets a yellow outline, which stays
+yellow while you type.
+
+### The buttons under a chat field are back
+
+A chat field's toolbar centres its notice between the buttons with one box stretched across the
+whole row, laid above the buttons before it. Painted black, it hid the attach, dictate and voice
+buttons. A single box sitting between two groups of buttons is now left transparent.
+
 ## 白い熊 Stylus 2.4.10.101 — 2026-10-31
 
 Built on upstream 2.4.10. The toolbar icon becomes the boss key on Android too, in 白い熊 火狐; and
