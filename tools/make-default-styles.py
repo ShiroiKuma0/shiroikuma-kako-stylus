@@ -606,6 +606,37 @@ IS_BLOCK = ":is(%s)" % ", ".join(BLOCKS)
 PROSE = ["p", "li", "dd", "dt", "blockquote", "pre", "figcaption"]
 IS_PROSE = ":is(%s)" % ", ".join(PROSE)
 LINK_ROOTS = [":any-link", '[role="link"]']
+# ⚠ A link laid out as an ENTRY — a menu item, a sidebar row, a card's title — is not a link in a
+# sentence, and wears the button ink, not the link ink.  Cyan exists to pick a link out of the
+# prose around it; a column of chat titles or a site's navigation IS the links and nothing else,
+# and a sidebar of thirty cyan rows reads as a page of hyperlinks rather than a menu (白い熊's
+# call, 2026-11-16: yellow for every nav-list entry, cyan kept for links in prose).  Three ways a
+# link says it is an entry, all structural:
+#   - it sits inside the page's own navigation or a menu: `nav` or any of the ARIA roles that
+#     mean a list of choices;
+#   - it lies right beside a BLOCK, the test the card-link repair rests on — a paragraph
+#     cannot hold a block, so a link with a `div` beside it is laid among boxes, not words.  A
+#     chat app's sidebar is exactly that: each title is an `<a>` filling a row with a `div` of
+#     row controls (the ⋯ menu) beside it, with no `nav`, no list and no role anywhere.
+# Zero weight, inside `:where()`, so each arm lands exactly on the weight of the cyan form it
+# overrides and wins by coming later; the hover fill, later still, inverts it as before.
+# Visited magenta goes with it — a menu is not a reading trail.  The cost is a link written in a
+# post body right before a quote box, which goes yellow: `~` cannot see the words around it.
+MENU_PLACES = ["nav", "menu", '[role="navigation"]', '[role="menu"]', '[role="menubar"]',
+               '[role="tablist"]', '[role="tree"]', '[role="listbox"]']
+# A sidebar is the third: an `<aside>` is where a page keeps its lists of links (a blog's widget
+# column, an app's navigation drawer), and a chat app's drawer is one — its "New" entry stands
+# alone in its row, beside nothing.  But an aside also holds callouts written in sentences, so
+# there a link counts only when its parent is not one of the elements prose is written in.
+INLINE_PARENTS = ["p", "dd", "dt", "blockquote", "figcaption", "span", "em", "strong", "b", "i",
+                  "small", "cite", "q", "label", "td", "th"]
+# The block arm is ADJACENT only, and leaves out the blocks prose is written in: `~` reaches a link
+# five inline elements past a paragraph, which is a sentence's neighbour, not a row's; and a link
+# written straight after a `<p>` is as often a sentence continued as an entry.
+ENTRY_BLOCKS = ":is(%s)" % ", ".join(b for b in BLOCKS if b not in ("p", "blockquote", "pre"))
+IS_MENU_ENTRY = ":where(%s)" % ", ".join(
+    ["%s *" % m for m in MENU_PLACES] + [":has(+ %s)" % ENTRY_BLOCKS, "%s + *" % ENTRY_BLOCKS]
+    + ["aside :not(%s) > *" % ", ".join(INLINE_PARENTS)])
 # A link written INSIDE that prose is a link again, label and all — kept out of the prose arm at
 # zero weight, since the arm has none to spare.
 NOT_INNER_LINK = ":not(:where(%s))" % ", ".join(
@@ -1344,6 +1375,53 @@ BACKDROP_CONTENT_SEL = ",\n".join([
     ":not(body) > %s:has(~ %s)" % (LIGHTBOX_CHROME, BACKDROP_PIC),
     ":not(body) > *:has(~ %s) %s" % (BACKDROP_PIC, LIGHTBOX_CHROME),
 ])
+# ⚠ The twentieth kind of layer: the gap in a toolbar.  A chat app's composer has a row of
+# controls under the field — attach, dictate, voice on the left; the model picker on the right —
+# and centres a one-line disclaimer between them the only way that keeps it centred whatever the
+# two clusters hold: one box laid across the WHOLE row, `position: absolute; inset-x: 0`,
+# click-through, holding a single box that holds the words.
+#
+#     div.flex                                the row
+#       div > button, button, button          the left cluster
+#       div.absolute.inset-x-0                784x24, click-through, holding one box
+#         div > div[role=note] > a            the disclaimer, 214px in the middle
+#       div > button, button                  the right cluster
+#
+# Positioned, it paints above the static boxes before it, and `bg div` alone made it an opaque
+# band over the left cluster: the three icons and their pills simply gone, while the right
+# cluster — positioned buttons LATER in the DOM — still painted over it.  Not `:empty` (it holds
+# the words), named nothing, and its position is a property no selector can read.  The row says
+# it instead: a box that holds no control, lying BETWEEN two siblings that hold one, is a gap in
+# a toolbar — whatever is in it is laid in the row of controls, and its ground is never the
+# design.  Between, not merely beside: a page's sticky header beside a `<main>` holding a button
+# is beside a control and keeps its ground.  And it holds exactly one box, which is the shape of
+# a centring layer — a strip of words between the clusters written in flow holds its text or
+# several children.  Cost when wrong: a box in a toolbar shows the black of the row behind it.
+# ⚠ And it is the gap only when its NEAREST neighbours on both sides are controls or hold one:
+# "between two siblings holding one" written with `~` is any box in a long column of cards and
+# forms, and the fixture lost a non-modal dialog, a seek bar and a switch's frame to it.
+TOOLBAR_GAP_SEL = "%s + div%s:not(:has(%s)):has(> :only-child):has(+ %s, + * %s)" % (
+    ":is(%s, *:has(%s))" % (CONTROL_KINDS, CONTROL_KINDS), SURFACE, CONTROL_KINDS,
+    CONTROL_KINDS, CONTROL_KINDS)
+# ⚠ A rich-text field is a field, and its placeholder is often not inside it.  An editable box
+# (`contenteditable`, as every rich editor — ProseMirror, Lexical, Slate, a webmail's compose
+# body — is) has no `::placeholder` to style: the editor draws its own hint, and a chat app's
+# composer draws it as an absolutely-positioned span written BEFORE the editor, with the editor
+# laid over it at `position: relative` and transparent so the hint shows through.  `bg div`
+# painted the editor and `bg text` its empty paragraph, both black and both later in the
+# stacking order, and the hint was gone; nothing outlined the field either, so the composer was
+# black on black until it took focus.  So an editable box takes a textarea's yellow caret but
+# NOT its black ground: it and everything inside it go transparent,
+# showing the black of the ancestors, which is the same black unless something is laid under
+# it, and then that is what the page meant to show.  Media keep the grey, controls the pill,
+# marks and samples their own paint (a pasted span's inline ground is content).
+# `contenteditable="false"` marks a non-editable island inside an editor, not a field.
+# (A link in one is left alone: `ui: links` fills it cyan under the mouse and turns its ink black,
+# and clearing that fill would leave black on black.)
+EDITABLE = ':is([contenteditable]):not([contenteditable="false" i])'
+EDITABLE_INSIDE_SEL = "%s%s *%s%s%s" % (EDITABLE, NEVER, SURFACE, ":not(%s)" % ", ".join(MEDIA),
+                                        ":not(%s)" % ", ".join(BUTTONS + BUTTON_INPUTS)
+                                        + ":not(a, [role=\"link\"], a *, [role=\"link\"] *)")
 # ⚠ The fifteenth kind of layer: the clipping box a corner ribbon is cut by.  A shop's search
 # results put a diagonal "free delivery" band across the top corner of every photo, and the band
 # is built the only way CSS can build one: a long strip rotated 45° — itself 400x33, its bounding
@@ -1707,6 +1785,19 @@ styles = [
                  "outline-offset: -1px")
           + "\n"
           + rule("textarea%s::placeholder" % NEVER, "color: %s" % DIM_YELLOW)
+          + "\n/* ⚠ a rich-text field is NOT painted: its placeholder is often a span laid UNDER it\n"
+            "   (written before, the editor positioned over it), and a black editor, or a black\n"
+            "   empty paragraph in it, covers the hint. Its ancestors are black already, so\n"
+            "   transparent costs nothing anywhere else. Nor traced: the editable box is usually\n"
+            "   one line of text high inside the page's own field, so a trace on it hugs the\n"
+            "   letters. The field is the page's box around it — ui: borders recolours its\n"
+            "   border, and a field drawn by a ground alone is named on its site. See EDITABLE. */\n"
+          + rule(EDITABLE + NEVER,
+                 "background-color: transparent",
+                 "background-image: none",
+                 "caret-color: %s" % YELLOW)
+          + "\n"
+          + rule(EDITABLE_INSIDE_SEL, "background-color: transparent")
           + "\n"
           + rule('input%s:is([type=checkbox], [type=radio])' % NEVER,
                  "accent-color: %s" % YELLOW)
@@ -2119,6 +2210,13 @@ styles = [
             "   So they and everything in them go transparent and the words sit on the photo, as in\n"
             "   the lightbox. Never at the top of the page, where a backdrop's siblings are the page. */\n"
           + rule(BACKDROP_CONTENT_SEL, "background-color: transparent")
+          + "\n/* ⚠ The twentieth layer: the gap in a toolbar. A composer centres its disclaimer\n"
+            "   between two clusters of controls with one click-through box laid across the whole\n"
+            "   row, and painted by `bg div` alone it was a black band over the left cluster —\n"
+            "   attach, dictate and voice gone. A box that holds no control and exactly one box,\n"
+            "   lying BETWEEN two siblings that hold a control, is a gap in the toolbar; between,\n"
+            "   so a sticky header merely beside a control keeps its ground. */\n"
+          + rule(TOOLBAR_GAP_SEL, "background-color: transparent")
           + "\n/* ⚠ The fifteenth layer: the box a corner ribbon is clipped by. A diagonal\n"
             "   \"free delivery\" band is a long strip rotated 45° inside a span that clips it,\n"
             "   and that span is absolutely positioned over the photo at the size of the picture.\n"
@@ -2148,8 +2246,10 @@ styles = [
     # The doubled guard is not decoration: `ui: borders` sits at (1,1,0) now that it carves
     # the CSS triangles out, and a single guard here would tie with it and leave which of cyan
     # and yellow wins to injection order. At (2,1,0) the focus ring is above every border rule.
+    # An editable box is left out: its caret is its focus cue, it is usually one line high inside
+    # the page's own field, and a 2px cyan box hugging that line reads as a second, wrong border.
     style("ui: focus",
-          rule(":focus-visible" + NEVER + NEVER,
+          rule(":focus-visible" + NEVER + NEVER + ":not(%s)" % EDITABLE,
                "outline: 2px solid %s" % CYAN,
                "outline-offset: 0")),
 
@@ -2312,6 +2412,16 @@ styles = [
                         for l in LINK_ROOTS]),
                  "color: %s" % YELLOW)
           + "\n"
+          + "\n/* ⚠ ...and a link laid out as an ENTRY wears the button ink: in a menu or the page's\n"
+            "   navigation, or directly beside a block, where a sentence could never put it. Cyan\n"
+            "   picks a link out of prose; a sidebar of chat titles is nothing but links. Each arm\n"
+            "   weighs exactly what the cyan form it overrides weighs, and wins by order. */\n"
+          + rule(",\n".join(
+                     ["%s%s%s" % (l, PAINT, IS_MENU_ENTRY) for l in ("a:any-link", '[role="link"]')]
+                     + ["%s%s *%s%s" % (l, IS_MENU_ENTRY, PAINT, NOT_ICONS)
+                        for l in ("a:any-link", '[role="link"]')]),
+                 "color: %s" % YELLOW)
+          + "\n"
           + "\n/* one guard, on the link, for the descendant forms too: (1,2,1), a painter's weight,\n"
             "   so that a layer `ui: overlays` leaves transparent stays so under the mouse */\n"
           + rule("a:any-link%s:hover, a:any-link%s:hover *%s,\n"
@@ -2365,7 +2475,14 @@ styles = [
                  "background-color: transparent"),
           domains=["alza.cz"]),
     style("site: claude.ai",
-          rule("pre.code-block__code", "padding: 4px 8px", "margin: 2px 0"),
+          rule("pre.code-block__code", "padding: 4px 8px", "margin: 2px 0")
+          # The composer's field is drawn by a lighter ground alone, no border, so on our black
+          # it vanished outright; the trace goes on that card, since the editable box inside it
+          # is one line of text high.
+          + "\n"
+          + rule('[data-cds-part="composer-card"]' + NEVER + NEVER,
+                 "outline: 1px solid %s" % YELLOW,
+                 "outline-offset: -1px"),
           domains=["claude.ai"]),
     # The results board's loss mark is a filled circle, and the fill is #2c2c2c — chosen for a
     # white page, and 1.3:1 against our black, so a loss reads as a win. MARK keeps the fill and

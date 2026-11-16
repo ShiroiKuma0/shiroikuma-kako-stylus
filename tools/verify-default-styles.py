@@ -678,6 +678,23 @@ __SHEETS__
   <div class="vjs-volume-level" id="plKnob"><span class="vjs-control-text"></span></div>
   <p class="pullquote" id="pullquote">a pulled quote</p>
   <svg id="inline-svg" width="12" height="12"><rect width="12" height="12"/></svg>
+  <!-- links laid out as entries: a sidebar row (the link beside its row controls, no nav, no
+       list), a nav list, an aside's lone entry; and a sentence in the same aside -->
+  <div class="row"><a href="/c/1" id="rowLink"><span id="rowLabel">a chat title</span></a
+    ><div><button>more</button></div></div>
+  <nav><ul><li><a href="/n" id="navLink">Home</a></li></ul></nav>
+  <aside><div><a href="/new" id="asideLink">New</a></div
+    ><p>See <a href="/x" id="asideProse">this</a> too.</p></aside>
+  <!-- a rich-text field, and the hint a composer lays UNDER it -->
+  <div class="composer"><span id="edHint">Reply</span
+    ><div contenteditable="true" id="ed"><p id="edPara"><br></p></div></div>
+  <div contenteditable="false" id="edOff">an island, not a field</div>
+  <!-- a toolbar's gap: one box across the row between two clusters of controls; and a box
+       beside a single control, in a row that is not a toolbar -->
+  <div class="tbar"><div><button>+</button></div><div id="tbGap"><div><a href="/d">a disclaimer</a></div></div
+    ><div><button>model</button></div></div>
+  <div class="tbar"><div><button>+</button></div><div id="tbNot"><div>beside one control</div></div
+    ><p>words</p></div>
 <script>
 const g = id => getComputedStyle(document.getElementById(id));
 const g2 = sel => getComputedStyle(document.querySelector(sel));
@@ -813,9 +830,9 @@ t('an element named as an overlay is left transparent, not painted into a sheet'
 
 t('a ripple layer stays transparent (painted, it hides the label underneath it)',
   g('muiRipple').backgroundColor, g('muiRipple').backgroundColor === 'rgba(0, 0, 0, 0)');
-t('the label under the ripple still gets its own ground and colour',
+t('the label under the ripple still gets its own ground and colour (a list entry: yellow)',
   g('muiLabel').backgroundColor + ' / ' + g('muiLabel').color,
-  g('muiLabel').backgroundColor === 'rgb(0, 0, 0)' && g('muiLabel').color === 'rgb(0, 255, 255)');
+  g('muiLabel').backgroundColor === 'rgb(0, 0, 0)' && g('muiLabel').color === YELLOW);
 t('a button merely MARKED as a ripple surface keeps its ground',
   g('mdcBtn').backgroundColor, g('mdcBtn').backgroundColor === 'rgb(0, 0, 0)');
 
@@ -1443,6 +1460,29 @@ t('a switch keeps its track and its knob in the colours the page gave them',
 t('...while the box holding them is cleared, and the switch keeps its own ground',
   g('swBox').backgroundColor + ' / ' + g('swHost').backgroundColor,
   g('swBox').backgroundColor === CLEAR && g('swHost').backgroundColor === BLACK);
+
+// --- links laid out as entries wear the button ink -------------------------
+t('a sidebar row: a link beside its row controls is an entry, yellow',
+  g('rowLink').color + ' / ' + g('rowLabel').color,
+  g('rowLink').color === YELLOW && g('rowLabel').color === YELLOW);
+t('...and a link in a nav list', g('navLink').color, g('navLink').color === YELLOW);
+t("...and an aside's lone entry", g('asideLink').color, g('asideLink').color === YELLOW);
+t('...but a link in a sentence in that aside stays a link', g('asideProse').color,
+  g('asideProse').color === CYAN);
+
+// --- a rich-text field is not painted, so the hint laid under it shows ----
+t('an editable box and its empty paragraph are transparent, caret yellow',
+  g('ed').backgroundColor + ' / ' + g('edPara').backgroundColor + ' / ' + g('ed').caretColor,
+  g('ed').backgroundColor === CLEAR && g('edPara').backgroundColor === CLEAR
+    && g('ed').caretColor === YELLOW);
+t('...but contenteditable=false is no field and keeps its ground', g('edOff').backgroundColor,
+  g('edOff').backgroundColor === BLACK);
+
+// --- the twentieth layer: the gap in a toolbar -----------------------------
+t('one box between two clusters of controls is a gap in the toolbar', g('tbGap').backgroundColor,
+  g('tbGap').backgroundColor === CLEAR);
+t('...and the same box beside one control only keeps its ground', g('tbNot').backgroundColor,
+  g('tbNot').backgroundColor === BLACK);
 
 // --- known trade-off, reported not asserted -------------------------------
 checks.push({name: 'NOTE italic <i> keeps page font (accepted trade-off)',
