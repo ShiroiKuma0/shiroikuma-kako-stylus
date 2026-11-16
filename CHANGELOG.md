@@ -5,6 +5,19 @@ for the upstream [Stylus](https://github.com/openstyles/stylus) release it is bu
 ships no changelog file of its own — its notes live only on GitHub Releases — so this file is
 entirely ours to maintain, newest first.
 
+## 白い熊 Stylus 2.4.10.105 — 2026-11-16
+
+Built on upstream 2.4.10. One page report: a chat app’s upload dialog opened as an empty black
+panel. The behavioural fixture grows from 259 checks to 262.
+
+### A dialog’s contents show under its drop zone
+
+A window you can drop files on lays its “drop here” highlight over itself as one box holding a
+few invisible outlines. Painted black, that box covered the whole window: the upload dialog
+showed its border and nothing inside, no search field, tabs or list. A box laid after other
+content and holding nothing but empty boxes is now left transparent, so the dialog shows again.
+The same shape standing on its own keeps its black ground.
+
 ## 白い熊 Stylus 2.4.10.103 — 2026-11-16
 
 Built on upstream 2.4.10. One change of house style and one page report: links laid out as menu
