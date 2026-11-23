@@ -321,7 +321,17 @@ TOKENS_PHAROS_INK = ["--pharos-button-color-base-secondary-text-base",
 # element is that element's alone (an empty box has no descendants to inherit it), so the tokens
 # move exactly where the ink is a ground and nowhere else.  The scope is the document that is
 # this software's — its skins put `mediawiki` on <body> — because the names are generic.
-TOKENS_CODEX_SCOPE = "body.mediawiki " + MASK_ICON
+#
+# ...and on every PSEUDO-element there, which is the other place the system draws a mask: the
+# chevron in an account button is the button's own `::after`, an empty generated box over the same
+# `var(--color-subtle)`, and with the tokens on icon elements alone it stayed the page's grey
+# beside a yellow avatar.  A custom property can be declared on a pseudo-element directly, and
+# there it is as private as on an empty box — nothing inherits from a pseudo.  Our ground painters
+# never touch one (`bg all` must never paint `::before`/`::after`), so the page's ground already
+# stands and only the token has to move.  The guard goes on the element, before the pseudo.
+TOKENS_CODEX_SCOPE = ",\n".join(["body.mediawiki " + MASK_ICON + NEVER,
+                                 "body.mediawiki *" + NEVER + "::before",
+                                 "body.mediawiki *" + NEVER + "::after"])
 TOKENS_CODEX_INK = ["--color-base", "--color-base--hover", "--color-emphasized", "--color-subtle"]
 TOKENS_CODEX_DIM = ["--color-placeholder", "--color-disabled"]
 TOKENS_CODEX_LINK = ["--color-progressive%s" % state for state in ("", "--hover", "--active",
@@ -2382,7 +2392,7 @@ styles = [
                  + ["%s: %s" % (t, YELLOW) for t in TOKENS_PHAROS_INK])
           + "\n/* Codex: the ink of its mask-drawn icons, which is a ground and so out of the\n"
             "   fg painters' reach. Ink tokens only; the filled button's pair stays. */\n"
-          + rule(TOKENS_CODEX_SCOPE + NEVER, *["%s: %s" % (t, YELLOW) for t in TOKENS_CODEX_INK]
+          + rule(TOKENS_CODEX_SCOPE, *["%s: %s" % (t, YELLOW) for t in TOKENS_CODEX_INK]
                  + ["%s: %s" % (t, DIM_YELLOW) for t in TOKENS_CODEX_DIM]
                  + ["%s: %s" % (t, CYAN) for t in TOKENS_CODEX_LINK])
           + "\n/* Audible: its own dark half of every light-dark() pair, then the house colours\n"
