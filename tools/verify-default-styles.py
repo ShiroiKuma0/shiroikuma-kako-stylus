@@ -253,6 +253,12 @@ PAGE = """<!doctype html><meta charset="utf-8"><title>verify</title>
   .siro, .kuro { display: block; width: 18px; height: 18px; border-radius: 9px;
       border: 1px solid #2c2c2c; margin: 0 auto; }
   .kuro { background: #2c2c2c; }
+  /* an icon drawn through a mask: an empty inline box whose GROUND is the ink. One spelling takes
+     the ink from the text colour, the other names a grey chosen for a white page. */
+  .tb-icon { display: inline-block; width: 20px; height: 20px; background-color: currentColor;
+      mask-image: linear-gradient(#000, #000); }
+  .tb-icon--grey { background-color: #54595d; }
+  .tb-iconLabel { background-color: #ffffff; }
   /* ...and the empty boxes around them, white on the page, whose sweep must stay */
   .boardCell { background: #ffffff; }
   /* a book scan and its transcription: the layer is laid over the picture at the scan's own
@@ -363,6 +369,17 @@ __SHEETS__
     <tr><th id="recCell"><span class="siro" id="siroMark"></span></th
     ><td><span class="kuro" id="kuroMark"></span></td
     ><td><div class="boardCell" id="cellDiv"></div></td></tr></table>
+  <!-- mask icons: in a button, in a link, and in the label that follows a hidden checkbox (the
+       menu toggle, which the floating-label repair would otherwise clear) -->
+  <p><button id="maskBtn"><span class="tb-icon" id="maskIcon"></span></button>
+    <a href="#m" role="button" id="maskLink"><span class="tb-icon tb-icon--grey" id="maskGrey"></span></a>
+    <i class="tb-icon" id="maskI"></i></p>
+  <div><input type="checkbox" id="maskCheck"><label for="maskCheck" id="maskLabel"><span
+    class="tb-icon tb-icon--grey" id="maskInLabel"></span></label></div>
+  <div><input type="search" id="maskField"><span class="tb-icon tb-icon--grey" id="maskGlass"></span></div>
+  <div><input type="radio" id="maskRadio"><span class="tb-icon tb-iconLabel" id="radioFace"></span></div>
+  <!-- ...and a box that names itself an icon but holds words is a surface like any other -->
+  <p><span class="tb-iconLabel" id="iconWords">Edit</span></p>
   <!-- an empty span outside a cell is not a mark, and keeps the sweep -->
   <p><span class="boardCell" id="looseSpan"></span></p>
   <!-- a scanned page and the transcription laid over it: BookReader's spelling, sized to the scan
@@ -892,9 +909,11 @@ t('an EMPTY pinned layer stays transparent (painted, the whole page goes black)'
   g('toastHost').backgroundColor, g('toastHost').backgroundColor === 'rgba(0, 0, 0, 0)');
 t('...and so does one marked aria-hidden (a scrim, shut: no content AND no meaning)',
   g('drawerScrim').backgroundColor, g('drawerScrim').backgroundColor === 'rgba(0, 0, 0, 0)');
-t('an empty icon marked aria-hidden still keeps its ground (the NAME is what spares it)',
+// (its ground was asserted black here until an empty icon box stopped being painted at all:
+// drawn through a mask, the ground is the ink — see the mask icons below)
+t('an empty icon marked aria-hidden still keeps its picture (the NAME is what spares it)',
   g('ariaSprite').backgroundColor + ' / ' + g('ariaSprite').backgroundImage,
-  g('ariaSprite').backgroundColor === BLACK && g('ariaSprite').backgroundImage !== 'none');
+  g('ariaSprite').backgroundColor === 'rgba(0, 0, 0, 0)' && g('ariaSprite').backgroundImage !== 'none');
 
 // --- the seventh layer: a dialog's shell, nothing but boxes inside -----------
 t('a dialog SHELL holding nothing but boxes is left transparent (painted, the page is a sheet)',
@@ -1237,6 +1256,22 @@ t('a hollow one stays hollow', g('siroMark').backgroundColor,
 t('and the ring around both is yellow (a border is chrome, and chrome is recoloured)',
   g('siroMark').borderTopColor + ' / ' + g('kuroMark').borderTopColor,
   g('siroMark').borderTopColor === YELLOW && g('kuroMark').borderTopColor === YELLOW);
+// --- mask icons: an empty icon box whose ground is its ink ------------------
+t('a mask icon spelled with currentColor takes our ink as its ground',
+  g('maskIcon').backgroundColor, g('maskIcon').backgroundColor === YELLOW);
+t('in an <i> as in a span', g('maskI').backgroundColor, g('maskI').backgroundColor === YELLOW);
+t('a mask icon with a ground of its own keeps it (the ink the page chose, not our black)',
+  g('maskGrey').backgroundColor, g('maskGrey').backgroundColor === 'rgb(84, 89, 93)');
+t('and so does one inside the label that follows a checkbox',
+  g('maskInLabel').backgroundColor, g('maskInLabel').backgroundColor === 'rgb(84, 89, 93)');
+t('the glass that follows a search field keeps its ink too', g('maskGlass').backgroundColor,
+  g('maskGlass').backgroundColor === 'rgb(84, 89, 93)');
+t('but the face that follows a radio is cleared (a white disc otherwise)',
+  g('radioFace').backgroundColor, g('radioFace').backgroundColor === 'rgba(0, 0, 0, 0)');
+t('the label around it is still cleared', g('maskLabel').backgroundColor,
+  g('maskLabel').backgroundColor === 'rgba(0, 0, 0, 0)');
+t('a box named icon that holds words is painted like any other', g('iconWords').backgroundColor,
+  g('iconWords').backgroundColor === 'rgb(0, 0, 0)');
 t('an empty CELL beside them keeps the sweep (its white would be a hole in the row)',
   g('lossCell').backgroundColor, g('lossCell').backgroundColor === 'rgba(0, 0, 0, 0)');
 t('so does an empty div in a cell (a mark is a span)',

@@ -273,6 +273,8 @@ TEXT_LAYERS = ['[class*="textlayer" i]', '[class*="text-layer" i]']
 IS_TEXT_LAYER = ":is(%s)" % ", ".join(TEXT_LAYERS)
 NOT_TRANSCRIPTION = ":where(:not(%s, %s *))" % (IS_TEXT_LAYER, IS_TEXT_LAYER)
 
+# The icon drawn through a mask — argued where the marks are, below (NOT_MARK_OR_SAMPLE).
+MASK_ICON = ':is(span, i)[class*="icon" i]:empty'
 # --- design tokens ---------------------------------------------------------
 # The shadcn/ui vocabulary, which Tailwind v4 sites declare on :root.  Only the tokens that get
 # used ALONE are moved, and that restriction is the whole design.  `--foreground` and
@@ -304,6 +306,26 @@ TOKENS_LINE = ["--border", "--input", "--ring", "--sidebar-border", "--sidebar-r
 TOKENS_PHAROS_LINK = ["--pharos-color-interactive-secondary"]
 TOKENS_PHAROS_INK = ["--pharos-button-color-base-secondary-text-base",
                      "--pharos-button-color-base-subtle-text-base"]
+# Codex, the design system of the wiki software most of the world's encyclopaedias run on, names
+# its icon ink through tokens: every icon is a mask (see MASK_ICON) over
+# `background-color: var(--color-subtle)`, a mid grey chosen for a white page that reads 2.7:1 on
+# our black.  The `--color-*` family is ink by the system's own naming, and the ranks are kept:
+# the three text ranks to yellow, placeholder and disabled to the dim rank, the progressive (link)
+# ink and its states to cyan.  `--color-inverted` is the ink on a filled button, half of a pair,
+# and the destructive red is a signal that already reads on black; both stay.
+#
+# ⚠ Set on the ICON, not on <html>, and the pixel A/B is why.  The first draft moved them for the
+# whole document, as the other vocabularies here are moved, and an article's colour-coded infobox
+# cells — pale grounds the SAMPLE rule deliberately leaves alone — had their link ink turned cyan
+# on pale, since the page's own blue reads the same token.  A custom property declared on an
+# element is that element's alone (an empty box has no descendants to inherit it), so the tokens
+# move exactly where the ink is a ground and nowhere else.  The scope is the document that is
+# this software's — its skins put `mediawiki` on <body> — because the names are generic.
+TOKENS_CODEX_SCOPE = "body.mediawiki " + MASK_ICON
+TOKENS_CODEX_INK = ["--color-base", "--color-base--hover", "--color-emphasized", "--color-subtle"]
+TOKENS_CODEX_DIM = ["--color-placeholder", "--color-disabled"]
+TOKENS_CODEX_LINK = ["--color-progressive%s" % state for state in ("", "--hover", "--active",
+                                                                    "--focus")]
 # Audible's design system (`adbl-*` custom elements) is built the other way round from Pharos: the
 # whole page is web components, the light DOM holds only slotted text, and every window, tile,
 # button face and label inside is drawn in a shadow root from `--adbl-*` tokens.  So the blankets
@@ -1046,7 +1068,30 @@ MARK = ":is(td, th) > span:empty"
 # a transparent feedback layer or an icon drawn as a background image — both better kept.
 SLIDER_PART = (':is([role="slider"], [role="progressbar"], [role="switch"], [role="checkbox"], '
                '[role="radio"], [aria-checked], [aria-pressed]) *:empty')
-NOT_MARK_OR_SAMPLE = ":where(:not(%s, %s *, %s, %s))" % (SAMPLE, SAMPLE, MARK, SLIDER_PART)
+# ⚠ And an icon drawn through a MASK is a mark whose ground is its ink.  The modern way to draw a
+# one-colour icon is an empty inline box with `mask-image: url(glyph.svg)` and a
+# `background-color` — the mask cuts the glyph's shape out of the box, so the ground is the only
+# thing that renders and the colour of the ground is the colour of the icon.  An encyclopaedia's
+# phone skin draws every icon it has that way (`<span class="…-icon …-icon--edit"></span>` inside
+# each button), and `bg all` at (1,0,0) and `bg text` at (1,0,1) painted the lot black: the page
+# toolbar, the header's menu, search and account buttons and the edit pencil beside every heading
+# came out as empty pills, twenty-odd of them on one article.  The `:empty` sweeps already stand
+# aside for an icon name; the ground painters never had to, because an icon drawn any OTHER way —
+# a font glyph in a `::before`, a sprite as a background image, an inline `<svg>` — has a ground
+# that is not the picture, and black behind it costs nothing.
+#
+# CSS cannot ask whether an element carries a mask — a property's value, the wall the padding, the
+# triangle and `pointer-events` already stand behind — so the handle is the one `ICONS` has: an
+# EMPTY `span` or `i` that names itself an icon.  The ground painters do not match it, and what
+# the page drew stands.  That is exact where it matters most: the commonest spelling of the idiom
+# is `background-color: currentColor`, which then resolves to OUR ink, since the fg painters still
+# match (as they must — a font glyph in the `::before` has to come out yellow).  A design system
+# that names the ink through a token instead is reached in `ui: design tokens`.
+#
+# Cost, per the asymmetry: an empty icon box to which the page gave a ground of its own keeps it —
+# a light disc behind a sprite stays light, where it used to go black — against an icon gone.
+NOT_MARK_OR_SAMPLE = ":where(:not(%s, %s *, %s, %s, %s))" % (SAMPLE, SAMPLE, MARK, SLIDER_PART,
+                                                             MASK_ICON)
 # The guard for anything that paints or clears a GROUND: stops at a colour sample, at a mark and
 # at a transcription.
 SURFACE = NEVER + NOT_MARK_OR_SAMPLE + NOT_TRANSCRIPTION
@@ -1983,7 +2028,14 @@ styles = [
                        NEVER + NEVER, per_line=1),
                "background-color: transparent")
           + "\n/* a control's own floating label, and whatever it carries */\n"
-          + rule("%s,\n%s *%s" % (ADORNMENT_SEL, ADORNMENT_SEL, NEVER),
+          # A mask icon stands outside this: the glass a design system lays in its search field
+          # is `input + span.…__icon`, empty, and so is one inside the label that follows a
+          # menu's hidden checkbox. The one exception is the box that follows a radio or a
+          # checkbox — there the same system's `span.…__icon` is the control's own face, a white
+          # disc, and it is cleared as before.
+          + rule("%s%s,\n%s *%s,\n:is(input[type=radio], input[type=checkbox])%s ~ :is(%s)%s"
+                 % (ADORNMENT_SEL, NOT_MARK_OR_SAMPLE, ADORNMENT_SEL, SURFACE,
+                    NEVER, ", ".join(ADORNMENTS), NEVER),
                  "background-color: transparent")
           + "\n/* ⚠ The fourth kind of layer, and the one that blanks a page outright: an EMPTY\n"
             "   element left pinned over the viewport. Two sites went completely black on this,\n"
@@ -2328,6 +2380,11 @@ styles = [
             "   shadow roots and reached only through the tokens they inherit. Pairs stay. */\n"
           + rule("html" + NEVER, *["%s: %s" % (t, CYAN) for t in TOKENS_PHAROS_LINK]
                  + ["%s: %s" % (t, YELLOW) for t in TOKENS_PHAROS_INK])
+          + "\n/* Codex: the ink of its mask-drawn icons, which is a ground and so out of the\n"
+            "   fg painters' reach. Ink tokens only; the filled button's pair stays. */\n"
+          + rule(TOKENS_CODEX_SCOPE + NEVER, *["%s: %s" % (t, YELLOW) for t in TOKENS_CODEX_INK]
+                 + ["%s: %s" % (t, DIM_YELLOW) for t in TOKENS_CODEX_DIM]
+                 + ["%s: %s" % (t, CYAN) for t in TOKENS_CODEX_LINK])
           + "\n/* Audible: its own dark half of every light-dark() pair, then the house colours\n"
             "   on the tokens read alone. Redeclared on each theme scope, so set on each. */\n"
           + rule(TOKENS_ADBL_SCOPE + NEVER, "--csstools-color-scheme--light: ",
