@@ -5,6 +5,18 @@ for the upstream [Stylus](https://github.com/openstyles/stylus) release it is bu
 ships no changelog file of its own — its notes live only on GitHub Releases — so this file is
 entirely ours to maintain, newest first.
 
+## 白い熊 Stylus 2.4.10.109 — 2026-11-23
+
+Built on upstream 2.4.10. A follow-up to 2.4.10.107: one icon on the encyclopaedia’s phone pages
+was still grey.
+
+### The last grey icon is yellow
+
+The small arrow in the account button stayed the site’s dim grey beside a yellow avatar. It is
+drawn the same way as the other icons, but as a decoration of the button rather than a box of its
+own, and the earlier repair did not reach those. It does now. On the encyclopaedia’s desktop
+pages the line under the selected tab, drawn the same way and invisible until now, is back too.
+
 ## 白い熊 Stylus 2.4.10.107 — 2026-11-23
 
 Built on upstream 2.4.10. One page report: an encyclopaedia’s phone pages showed their buttons as
