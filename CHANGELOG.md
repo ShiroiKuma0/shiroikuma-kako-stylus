@@ -5,6 +5,24 @@ for the upstream [Stylus](https://github.com/openstyles/stylus) release it is bu
 ships no changelog file of its own — its notes live only on GitHub Releases — so this file is
 entirely ours to maintain, newest first.
 
+## 白い熊 Stylus 2.4.10.107 — 2026-11-23
+
+Built on upstream 2.4.10. One page report: an encyclopaedia’s phone pages showed their buttons as
+empty pills. The behavioural fixture grows from 262 checks to 270.
+
+### Icons drawn through a mask are back
+
+Many sites now draw a one-colour icon as an empty box with the icon’s shape cut out of it, so the
+box’s background colour is the icon itself. Painted black, every such icon vanished: on the
+encyclopaedia’s phone pages the menu, search and account buttons, the page toolbar and the edit
+pencil beside each heading were empty outlines, and its desktop pages had lost the same icons. An
+empty box that names itself an icon is no longer painted, so the icon shows again — in yellow
+where the site takes the icon’s colour from the text, and on the encyclopaedia’s pages too, whose
+grey is moved to yellow. The magnifying glass inside a search field comes back the same way.
+
+An empty icon box that a site gave a light background of its own now keeps it, where it used to
+turn black.
+
 ## 白い熊 Stylus 2.4.10.105 — 2026-11-16
 
 Built on upstream 2.4.10. One page report: a chat app’s upload dialog opened as an empty black
