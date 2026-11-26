@@ -714,6 +714,40 @@ CARD_LINK_SEL = card_link()
 # `:is(:hover, :focus-visible)` weighs what its heaviest arm does, (0,1,0) — the same as the bare
 # `:hover` it replaces, so the twin sits exactly where it did: one class above the rest form.
 CARD_LINK_HOVER_SEL = card_link(":is(:hover, :focus-visible)")
+# ⚠ An EMPTY link beside a heading is a click target too, and no wordmark.  The card link above
+# leaves an empty link alone on purpose — an empty link is a wordmark and takes `ui: image-ground`'s
+# grey — and that rule's own argument, "a page only sizes an empty link to hold a picture", is
+# wrong for one shape: the same whole-card click target written with NO accessible name inside it.
+# A publisher's catalogue lays `<a href></a>` at `position: absolute; z-index: 1` across every
+# tile, beside the box holding the cover and the box holding the title, and each tile came out as
+# a mid-grey sheet with the cover and the title behind it — an author's page was a grid of grey
+# boxes on black.  Empty and interactive cannot tell the two apart, and CSS cannot ask whether a
+# background image is set, so the company it keeps decides: a wordmark stands in a header beside
+# navigation, a click target lies in a card beside its TITLE.  So an empty link with a heading as
+# a sibling, or inside one, in either direction, is cleared — flat, since `:has()` may not nest.
+# Never as a child of <body>, where every heading of the document is a sibling's.
+# Doubled guard, (2,1,2) and up: above the grey at (1,1,1) and the hover fill at (1,2,1).  Links
+# naming themselves buttons stay with `ui: controls`.  Cost: a wordmark drawn as an empty link
+# right beside the site's name in a heading loses its grey, and a dark one is then dim on black —
+# against a card that is simply gone.
+CARD_HEADINGS = ":is(h1, h2, h3, h4, h5, h6)"
+
+
+def empty_card_link(state=""):
+    """An empty link with a heading as a sibling or inside one — in the given state."""
+    sel = "a%s%s%s:empty%s" % (NEVER, NEVER, state, NOT_LINK_BUTTONS)
+    # never at the top of the page: there every heading of the document is "beside" the link
+    top = ":not(body) > "
+    return ",\n".join([
+        "%s%s:has(~ %s)" % (top, sel, CARD_HEADINGS),
+        "%s%s:has(~ * %s)" % (top, sel, CARD_HEADINGS),
+        "%s%s ~ %s" % (top, CARD_HEADINGS, sel),
+        "%s*:has(%s) ~ %s" % (top, CARD_HEADINGS, sel),
+    ])
+
+
+EMPTY_CARD_LINK_SEL = empty_card_link()
+EMPTY_CARD_LINK_HOVER_SEL = empty_card_link(":is(:hover, :focus-visible)")
 # ⚠ A value bar's reading IS the boundary between two colours, and it is empty on purpose.
 # A volume slider, a scrubber, a progress bar and a level meter are all one idiom: a track, and
 # inside it a filled part whose width (or height, or scaleX) is the number.  The filled part holds
@@ -2119,6 +2153,14 @@ styles = [
             "   Inset, so an ancestor's overflow:hidden cannot clip it. The descendants are\n"
             "   untouched: `a:hover *` still fills a span or a badge inside the link. */\n"
           + rule(CARD_LINK_HOVER_SEL, "color: %s" % CYAN,
+                 "outline: 2px solid %s" % CYAN, "outline-offset: -2px")
+          + "\n/* ⚠ The same click target with nothing inside it. An empty link is a wordmark and\n"
+            "   takes `ui: image-ground`'s grey — unless it lies beside a heading: a catalogue\n"
+            "   lays `<a href></a>` across every tile, beside the cover and the title, and each\n"
+            "   tile was a grey sheet over both. A wordmark stands beside navigation, a click\n"
+            "   target beside its title. Hovered, the same cyan frame as above. */\n"
+          + rule(EMPTY_CARD_LINK_SEL, "background-color: transparent")
+          + rule(EMPTY_CARD_LINK_HOVER_SEL,
                  "outline: 2px solid %s" % CYAN, "outline-offset: -2px")
           + "\n/* ⚠ The sixth kind of layer: a strip of chrome pinned over the picture it drives.\n"
             "   A carousel's nav is one absolutely-positioned layer stretched over the whole\n"

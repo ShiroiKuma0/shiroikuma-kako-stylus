@@ -469,6 +469,11 @@ __SHEETS__
       <img alt="" width="15" height="6" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="
       ><p id="besideFloatP"><img alt="" width="19" height="19" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="
       ><a href="#"><img alt="" width="19" height="19" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="></a></p></div></div>
+  <!-- the same click target with nothing inside it: an empty link over a tile, beside the box
+       holding the cover and the box holding the title -->
+  <div class="tileCard" id="emptyTile"><a class="cardLink" id="emptyCardLink" href="#"></a
+    ><div><img src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="></div
+    ><div><h2>Tile title</h2></div></div>
   <ul><li class="tileCard" id="tileCard"
     ><a class="cardLink" id="cardLink" href="#">Bekenntnisse<card-data></card-data></a
     ><picture class="cardCover" id="cardCover"><img id="cardImg"
@@ -954,6 +959,9 @@ t('an empty layer that is NOT a value bar keeps the sweep, not the ink',
 // --- a frame is a window onto another document, never a surface of this one ---
 t('the whole-card click target is left transparent (painted it boards up the tile)',
   g('cardLink').backgroundColor, g('cardLink').backgroundColor === 'rgba(0, 0, 0, 0)');
+
+t('an EMPTY click target beside a heading is left transparent too (no wordmark, so no grey)',
+  g('emptyCardLink').backgroundColor, g('emptyCardLink').backgroundColor === 'rgba(0, 0, 0, 0)');
 
 // --- ...and hovered: a hover fill is a painter, and no layer may take it -----
 t('the click target over a photo stays transparent UNDER THE MOUSE (filled, the photo is a cyan sheet)',
