@@ -5,6 +5,20 @@ for the upstream [Stylus](https://github.com/openstyles/stylus) release it is bu
 ships no changelog file of its own — its notes live only on GitHub Releases — so this file is
 entirely ours to maintain, newest first.
 
+## 白い熊 Stylus 2.4.10.111 — 2026-11-26
+
+Built on upstream 2.4.10. One page report: a publisher’s catalogue showed every book as an empty
+grey box. The behavioural fixture grows from 270 checks to 271.
+
+### Tiles covered by an empty link are back
+
+Many sites make a whole tile clickable by stretching one link across it. When that link holds
+nothing at all, the library took it for a logo drawn as a background picture and gave it the mid
+grey it puts behind pictures — so each tile became a grey sheet, with the cover and the title
+behind it. An empty link that lies beside a heading is now recognised as a tile’s click target and
+left transparent; under the mouse it shows the same cyan frame as other tile links. A logo drawn as
+an empty link keeps its grey as before, unless it stands directly beside a heading.
+
 ## 白い熊 Stylus 2.4.10.109 — 2026-11-23
 
 Built on upstream 2.4.10. A follow-up to 2.4.10.107: one icon on the encyclopaedia’s phone pages
